@@ -1,0 +1,49 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>action0336.jpg</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>320419695</flickrid>
+	</source>
+	<owner>
+		<flickrid>r6evo</flickrid>
+		<name>Chris Evans</name>
+	</owner>
+	<size>
+		<width>500</width>
+		<height>343</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>motorbike</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>55</xmin>
+			<ymin>76</ymin>
+			<xmax>446</xmax>
+			<ymax>309</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>person</name>
+		<pose>Left</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>162</xmin>
+			<ymin>8</ymin>
+			<xmax>375</xmax>
+			<ymax>251</ymax>
+		</bndbox>
+		<action>
+			<actionname>RidingBike</actionname>
+			<ambiguous>0</ambiguous>
+		</action>
+	</object>
+	<originalfile>006561.jpg</originalfile>
+</annotation>

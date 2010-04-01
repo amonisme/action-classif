@@ -1,0 +1,49 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>action0264.jpg</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>335999898</flickrid>
+	</source>
+	<owner>
+		<flickrid>bignoseduglyguy</flickrid>
+		<name>Jon Dunning</name>
+	</owner>
+	<size>
+		<width>333</width>
+		<height>500</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>person</name>
+		<pose>Rear</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>138</xmin>
+			<ymin>198</ymin>
+			<xmax>201</xmax>
+			<ymax>340</ymax>
+		</bndbox>
+		<action>
+			<actionname>RidingBike</actionname>
+			<ambiguous>0</ambiguous>
+		</action>
+	</object>
+	<object>
+		<name>bicycle</name>
+		<pose>Rear</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>135</xmin>
+			<ymin>246</ymin>
+			<xmax>201</xmax>
+			<ymax>377</ymax>
+		</bndbox>
+	</object>
+	<originalfile>002397.jpg</originalfile>
+</annotation>

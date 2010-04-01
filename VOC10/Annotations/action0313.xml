@@ -1,0 +1,61 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>action0313.jpg</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>330098740</flickrid>
+	</source>
+	<owner>
+		<flickrid>??????</flickrid>
+		<name>Chang Da Zen</name>
+	</owner>
+	<size>
+		<width>500</width>
+		<height>334</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>bicycle</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>223</xmin>
+			<ymin>150</ymin>
+			<xmax>261</xmax>
+			<ymax>193</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>motorbike</name>
+		<pose>Rear</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>335</xmin>
+			<ymin>125</ymin>
+			<xmax>368</xmax>
+			<ymax>187</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>person</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>1</difficult>
+		<bndbox>
+			<xmin>336</xmin>
+			<ymin>127</ymin>
+			<xmax>362</xmax>
+			<ymax>164</ymax>
+		</bndbox>
+		<action>
+			<actionname>RidingBike</actionname>
+			<ambiguous>0</ambiguous>
+		</action>
+	</object>
+	<originalfile>005332.jpg</originalfile>
+</annotation>

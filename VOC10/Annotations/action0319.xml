@@ -1,0 +1,50 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>action0319.jpg</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>327952075</flickrid>
+	</source>
+	<owner>
+		<flickrid>GFR</flickrid>
+		<name>Gillian Rodgers</name>
+	</owner>
+	<size>
+		<width>500</width>
+		<height>375</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>bicycle</name>
+		<pose>Rear</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>281</xmin>
+			<ymin>174</ymin>
+			<xmax>329</xmax>
+			<ymax>250</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>person</name>
+		<pose>Rear</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>285</xmin>
+			<ymin>131</ymin>
+			<xmax>329</xmax>
+			<ymax>234</ymax>
+		</bndbox>
+		<action>
+			<actionname>RidingBike</actionname>
+			<ambiguous>0</ambiguous>
+		</action>
+		<occluded>1</occluded>
+	</object>
+	<originalfile>005750.jpg</originalfile>
+</annotation>

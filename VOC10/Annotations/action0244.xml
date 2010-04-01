@@ -1,0 +1,49 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>action0244.jpg</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>338138999</flickrid>
+	</source>
+	<owner>
+		<flickrid>dirtdude2121</flickrid>
+		<name>?</name>
+	</owner>
+	<size>
+		<width>500</width>
+		<height>375</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>person</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>174</xmin>
+			<ymin>38</ymin>
+			<xmax>333</xmax>
+			<ymax>224</ymax>
+		</bndbox>
+		<action>
+			<actionname>RidingBike</actionname>
+			<ambiguous>0</ambiguous>
+		</action>
+	</object>
+	<object>
+		<name>bicycle</name>
+		<pose>Left</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>149</xmin>
+			<ymin>140</ymin>
+			<xmax>370</xmax>
+			<ymax>321</ymax>
+		</bndbox>
+	</object>
+	<originalfile>001096.jpg</originalfile>
+</annotation>
