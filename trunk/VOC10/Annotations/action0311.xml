@@ -1,0 +1,49 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>action0311.jpg</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>328036072</flickrid>
+	</source>
+	<owner>
+		<flickrid>Mind Of Ptah</flickrid>
+		<name>Saad</name>
+	</owner>
+	<size>
+		<width>500</width>
+		<height>333</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>person</name>
+		<pose>Left</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>291</xmin>
+			<ymin>93</ymin>
+			<xmax>403</xmax>
+			<ymax>270</ymax>
+		</bndbox>
+		<action>
+			<actionname>RidingBike</actionname>
+			<ambiguous>0</ambiguous>
+		</action>
+	</object>
+	<object>
+		<name>bicycle</name>
+		<pose>Left</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>237</xmin>
+			<ymin>130</ymin>
+			<xmax>464</xmax>
+			<ymax>290</ymax>
+		</bndbox>
+	</object>
+	<originalfile>005232.jpg</originalfile>
+</annotation>
