@@ -16,6 +16,7 @@ function model = train(name, model, pos, neg, warp, randneg, iter, ...
 % overlap is the minimum overlap in latent positive search
 % cont=true we restart training from a previous run
 % C & J are the parameters for LSVM objective function
+global LIB_DIR;
 
 if nargin < 9
   maxsize = 2^28;
@@ -120,8 +121,8 @@ for t = 1:iter
     fid = fopen(modfile, 'wb');
     fwrite(fid, zeros(sum(model.blocksizes), 1), 'double');
     fclose(fid);
-    cmd = sprintf('./common/libs/latent-svm/learn %.4f %.4f %s %s %s %s %s', ...
-                  C, J, hdrfile, datfile, modfile, inffile, lobfile);
+    cmd = sprintf('%s %.4f %.4f %s %s %s %s %s', ...
+                  fullfile(LIB_DIR, 'latent-svm', 'learn'), C, J, hdrfile, datfile, modfile, inffile, lobfile);
     fprintf('executing: %s\n', cmd);
     status = unix(cmd);
     if status ~= 0

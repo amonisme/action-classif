@@ -3,9 +3,9 @@ all:
 	
 clean:
 	rm -f makefile~
-	find . -name "*.m~" -exec rm {} \;
-	find . -name "*.asv" -exec rm {} \;
-	find . -name "*.c~" -exec rm {} \;
-	find . -name "*.cpp~" -exec rm {} \;	
-	find . -name "*.h~" -exec rm {} \;	
+	find ./framework/common/matlab -name "*.m~" -exec rm {} \;
+	find ./framework/common/matlab -name "*.asv" -exec rm {} \;
+	find ./framework/common/matlab -name "*.c~" -exec rm {} \;
+	find ./framework/common/matlab -name "*.cpp~" -exec rm {} \;	
+	find ./framework/common/matlab -name "*.h~" -exec rm {} \;	
 
