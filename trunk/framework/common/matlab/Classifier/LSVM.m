@@ -3,11 +3,12 @@ classdef LSVM < ClassifierAPI
     
     properties
         class_names
-        lsvm
+        models
     end
     
-    methods (Access = protected)
-        function [pos, neg] = make_examples(obj, Ipaths, class_ids, id)
+    methods (Static)
+        %------------------------------------------------------------------
+        function [pos, neg] = make_examples(Ipaths, class_ids, id)
             n_img = numel(Ipaths);
             
             w = cell(n_img, 1);
@@ -25,13 +26,27 @@ classdef LSVM < ClassifierAPI
             n = class_ids ~= id;
             neg = struct('im', Ipaths(n), 'x1', O(n), 'y1', O(n), 'x2', w(n), 'y2', h(n));            
         end
-        
-        function model = train_model(obj, Ipaths, class_ids, name, i, n)
+        %------------------------------------------------------------------
+        function models = train_model_parallel(common, index)
+            tid = task_open();
+                        
+            n_index = length(index);
+            models = cell(n_index, 1);
+            
+            for k = 1:n_index
+                LSVM.train_model(common.Ipaths, common.names{index(k)}, common.class_ids, common.n, index(k));
+                task_progress(tid, k/n_index);
+            end
+            
+            task_close(tid);
+        end
+        %------------------------------------------------------------------
+        function model = train_model(Ipaths, name, class_ids, n, i)
             global TEMP_DIR HASH_PATH;
             try
               load(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)));
             catch  
-                [pos, neg] = make_examples(obj, Ipaths, class_ids, i);
+                [pos, neg] = LSVM.make_examples(Ipaths, class_ids, i);
 
                 if n>length(pos)
                     n = length(pos);
@@ -87,6 +102,32 @@ classdef LSVM < ClassifierAPI
                 save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');
             end
         end
+        %------------------------------------------------------------------
+        function scores = classify_parallel(Ipaths, models)
+            tid = task_open();
+                        
+            n_img = common.Ipaths;
+            n_classes = length(models);
+            scores = zeros(n_img, n_classes);
+            
+            for i = 1:n_img;
+                im = imread(Ipaths{i});
+                for j = 1:n_classes
+                    boxes = detect(im, models{j}, models{j}.thresh);
+                    if ~isempty(boxes)
+                      b1 = boxes(:,[1 2 3 4 end]);
+                      scores(i,j) = max(b1(:,end));
+                    end
+                end            
+                task_progress(tid, i/n_img);
+            end    
+            
+            scores = scores';
+            
+            task_close(tid);
+        end        
+        %------------------------------------------------------------------
+               
     end
     
     methods
@@ -99,7 +140,7 @@ classdef LSVM < ClassifierAPI
         %------------------------------------------------------------------
         % Learns from the training directory 'root'
         function cross_validation = learn(obj, root)
-            global TEMP_DIR HASH_PATH;
+            global TEMP_DIR HASH_PATH USE_PARALLEL;
             [Ipaths labels] = get_labeled_files(root, 'Loading training set...\n');
             [class_ids names] = names2ids(labels);
             obj.class_names = names;
@@ -109,25 +150,68 @@ classdef LSVM < ClassifierAPI
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat', HASH_PATH, obj.toFileName()));
             
             if exist(file, 'file') == 2
-                load(file, 'models');                
-                obj.models = models;
+                load(file, 'lsvm_models');                
+                obj.models = lsvm_models;
                 write_log(sprintf('Classifier loaded from cache: %s.\n', file));
             else
-                models = cell(n_classes, 1); 
-                for i = 1:n_classes
-                    models{i} = obj.train_model(Ipaths, class_ids, obj.class_names{i}, i, 3);
+                if USE_PARALLEL
+                    common = struct('Ipaths', [], 'names', [], 'class_ids', class_ids, 'n', 1);
+                    common.Ipaths = Ipaths;
+                    common.names = obj.class_names;
+                    lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, [1:n_classes]', 0, 0);
+                else
+                    lsvm_models = cell(n_classes, 1);
+                    for k = 1:n_classes
+                        lsvm_models{k} = LSVM.train_model(Ipaths, obj.class_names{k}, class_ids, 1, k);
+                    end
                 end
-                save(file, 'models');
-                obj.models = models;
+                save(file, 'lsvm_models');
+                obj.models = lsvm_models;
             end
                 
             cross_validation = [];
         end
         
         %------------------------------------------------------------------
-        % Classify the testing directory 'root'
-        function [Ipaths classes correct_label assigned_label score] = classify(obj, Ipaths, correct_label)
+        % Classify the testing pictures
+        function [Ipaths classes correct_label assigned_label scores] = classify(obj, Ipaths, correct_label)
+            global USE_PARALLEL;
             
+            classes = obj.class_names;
+            n_classes = size(classes, 1);
+            
+            if nargin < 3
+                [Ipaths l] = get_labeled_files(Ipaths, 'Loading testing set...\n');
+                correct_label = names2ids(l, classes);    
+            end
+            n_img = length(Ipaths);
+                    
+            pg = ProgressBar('Classifying', 'Computing bounding boxes...');
+             
+            if USE_PARALLEL
+                scores = run_in_parallel('LSVM.classify_parallel', Ipaths, obj.models, 0, 0, pg, 0, 1)';
+            else
+                scores = zeros(n_img,n_classes); 
+                for i = 1:n_img;
+                    im = imread(Ipaths{i});
+                    for j = 1:n_classes
+                        boxes = detect(im, obj.models{j}, obj.models{j}.thresh);
+                        if ~isempty(boxes)
+                          b1 = boxes(:,[1 2 3 4 end]);
+                          scores(i,j) = max(b1(:,end));
+                        end
+                    end                
+                    pg.progress(i/n_img);
+                end    
+            end
+
+            assigned_label = zeros(n_img,1); 
+            for i = 1:n_img
+                [m, j] = max(scores(i,:));
+                assigned_label(i) = j;
+            end
+            
+            pg.close();
         end
         
         %------------------------------------------------------------------

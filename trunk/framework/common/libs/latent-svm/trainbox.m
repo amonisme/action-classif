@@ -13,15 +13,22 @@ catch
 end
 
 for c = 1:model.numcomponents
-  A = [boxes{c}(:,3)-boxes{c}(:,1)];
-  for j=1:4:size(boxes{c}, 2);
-    A = [A boxes{c}(:, j:j+1)];
-  end
-
-  model.components{c}.x1 = A \ bboxes{c}(:,1);
-  model.components{c}.y1 = A \ bboxes{c}(:,2);
-  model.components{c}.x2 = A \ bboxes{c}(:,3);
-  model.components{c}.y2 = A \ bboxes{c}(:,4);
+    
+  if isempty(boxes{c})
+    model.components{c}.x1 = [];
+    model.components{c}.y1 = [];
+    model.components{c}.x2 = [];
+    model.components{c}.y2 = [];
+  else
+    A = [boxes{c}(:,3)-boxes{c}(:,1)];
+    for j=1:4:size(boxes{c}, 2);
+        A = [A boxes{c}(:, j:j+1)];
+    end
+    model.components{c}.x1 = A \ bboxes{c}(:,1);
+    model.components{c}.y1 = A \ bboxes{c}(:,2);
+    model.components{c}.x2 = A \ bboxes{c}(:,3);
+    model.components{c}.y2 = A \ bboxes{c}(:,4);
+  end 
 end
 
 function [boxes, bboxes] = poslatent(name, model, pos, overlap)
