@@ -4,7 +4,7 @@ function files = get_classes_files(root)
     for i=1:size(classe,1)
         path = fullfile(root,classe{i});
         f = dir(path);
-        f = f(not([f(:).isdir]));
+        f = f(~[f(:).isdir]);
         names = struct('name',{f(:).name}');
         files = cat(1,files,struct('name', classe{i}, 'path', path, 'files', names));
     end

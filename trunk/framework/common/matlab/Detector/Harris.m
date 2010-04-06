@@ -62,7 +62,7 @@ classdef Harris < DetectorAPI
         % Describe parameters as text or filename:
         function str = toString(obj)
             if obj.rotInvariant
-                RI = 'RS';
+                RI = 'SR';
             else
                 RI = 'S';
             end
@@ -70,7 +70,7 @@ classdef Harris < DetectorAPI
         end
         function str = toFileName(obj)
             if obj.rotInvariant
-                RI = 'RS';
+                RI = 'SR';
             else
                 RI = 'S';
             end
@@ -78,7 +78,7 @@ classdef Harris < DetectorAPI
         end
         function str = toName(obj)
             if obj.rotInvariant
-                RI = 'RS';
+                RI = 'SR';
             else
                 RI = 'S';
             end
