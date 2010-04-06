@@ -7,7 +7,7 @@ function display_img(N, dir, prefix, root)
     end
     
 
-    %load(fullfile(root,dir,'classifier.mat'));   
+    load(fullfile(root,dir,'classifier.mat'));   
     load(fullfile(root,dir,'results.mat'));    
     n_classes = size(classes, 1);
    
@@ -20,9 +20,9 @@ function display_img(N, dir, prefix, root)
     end
     
     fid = fopen(fullfile('experiments', file), 'w+');
-    fprintf(fid, '\\documentclass[10pt,a4paper]{article}\n\\usepackage{graphicx}\n\\usepackage[tight,footnotesize]{subfigure}\n\n\\title{%s}\n\n\\begin{document}\n\n\\maketitle\n\n', 'SVM[S(1vA)-C([])-J(1)-K(5)-Kernel(RBF[A()])]\_BOF[K(512)-L(0)-Norm(L2[N(1)])-Kmeans(cpp)]-OfChannels-(DENSE[S(12-14-17-20-24-29-35-42-51-61)-Lib(mylib)]+SIFT[Norm(L2[N(1)])-Lib(colorDescriptor)])'); %regexprep('classifier.toFileName(),'_', '\\_'));
+    fprintf(fid, '\\documentclass[10pt,a4paper]{article}\n\\usepackage{graphicx}\n\\usepackage[tight,footnotesize]{subfigure}\n\n\\title{%s}\n\n\\begin{document}\n\n\\maketitle\n\n', regexprep(classifier.toFileName(),'_', '\\_'));
            
-    %fprintf(fid, regexprep(classifier.toString(),'\n', '\\\\\\\\\n'));
+    fprintf(fid, regexprep(classifier.toString(),'\n', '\\\\\\\\\n'));
     
     for i=1:n_classes
         

@@ -22,12 +22,13 @@ function [feat descr] = run_colorDescriptor(Ipath, args, load_feat)
     end
 
     if(nargin == 3)
-        args = [sprintf('--loadRegions %s ', fullfile(back, dir, 'input')) args];
-        write_input(fullfile(back, dir, 'input'), load_feat);
+        args = [sprintf('--loadRegions %s%sinput ',back, dir) args];
+        write_input([back dir 'input'], load_feat);
     end
     
-    args = sprintf('%s --output %s --outputFormat binary %s', fullfile(back, Ipath), fullfile(back, dir, 'output'), args);
-    [st res] = system([cmd args]);
-    [feat descr] = read_output(fullfile(back, dir, 'output'));
+    args = sprintf('%s%s --output %s%soutput --outputFormat binary %s', back, Ipath, back, dir, args);
+    cmd = [cmd args];
+    [st res] = system(cmd);
+    [feat descr] = read_output([back dir 'output']);
 end
 
