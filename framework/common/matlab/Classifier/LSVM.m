@@ -34,7 +34,7 @@ classdef LSVM < ClassifierAPI
             models = cell(n_index, 1);
             
             for k = 1:n_index
-                LSVM.train_model(common.Ipaths, common.names{index(k)}, common.class_ids, common.n, index(k));
+                models{k} = LSVM.train_model(common.Ipaths, common.names{index(k)}, common.class_ids, common.n, index(k));
                 task_progress(tid, k/n_index);
             end
             
@@ -66,34 +66,50 @@ classdef LSVM < ClassifierAPI
                   save(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)), 'models');
                 end
 
-                % merge models and train using latent detections & hard negatives
-                try 
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)));
-                catch
-                  model = mergemodels(models);
-                  model = train(name, model, pos, neg(1:n_neg), 0, 0, 2, 2, 2^28, true, 0.7);
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)), 'model');
-                end
-
-                % add parts and update models using latent detections & hard negatives.
-                try 
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)));
-                catch
-                  for i=1:n
-                    model = addparts(model, i, 6);
-                  end 
-                  % use more data mining iterations in the beginning
-                  model = train(name, model, pos, neg(1:n_neg), 0, 0, 1, 4, 2^30, true, 0.7);
-                  model = train(name, model, pos, neg(1:n_neg), 0, 0, 6, 2, 2^30, true, 0.7, true);
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
-                end
+%               % <rev 4>
+%                 % merge models and train using latent detections & hard negatives
+%                 try 
+%                   load(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)));
+%                 catch
+%                   model = mergemodels(models);
+%                   model = train(name, model, pos, neg(1:n_neg), 0, 0, 2, 2, 2^28, true, 0.7);
+%                   save(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)), 'model');
+%                 end
+% 
+%                 % add parts and update models using latent detections & hard negatives.
+%                 try 
+%                   load(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)));
+%                 catch
+%                   for i=1:n
+%                     model = addparts(model, i, 6);
+%                   end 
+%                   % use more data mining iterations in the beginning
+%                   model = train(name, model, pos, neg(1:n_neg), 0, 0, 1, 4, 2^30, true, 0.7);
+%                   model = train(name, model, pos, neg(1:n_neg), 0, 0, 6, 2, 2^30, true, 0.7, true);
+%                   save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
+%                 end
+%               % </rev 4>
+                % <rev 5>
+                model = mergemodels(models);
+                for i=1:n
+                  model = addparts(model, i, 6);
+                end    
+                % </rev 5>
 
                 % update models using full set of negatives.
                 try 
                   load(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)));
                 catch
-                  model = train(name, model, pos, neg, 0, 0, 1, 3, 2^30, true, 0.7, true, ...
-                                0.003*model.numcomponents, 2);
+                  % <rev 5>
+                  model = train(name, model, pos, neg, 0, 0, 1, 4, 2^30, true, 0.7);
+                  model = train(name, model, pos, neg, 0, 0, 4, 1, 2^30, true, 0.7, true, ...
+                                0.003*model.numcomponents, 2);                  
+                  % </rev 5>
+                            
+                  % <rev 4>
+%                   model = train(name, model, pos, neg, 0, 0, 4, 1, 2^30, true, 0.7, true, ...
+%                                 0.003*model.numcomponents, 2);
+                  % </rev 4>
                   save(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)), 'model');
                 end
 
@@ -106,14 +122,14 @@ classdef LSVM < ClassifierAPI
         function scores = classify_parallel(Ipaths, models)
             tid = task_open();
                         
-            n_img = common.Ipaths;
+            n_img = length(Ipaths);
             n_classes = length(models);
-            scores = zeros(n_img, n_classes);
+            scores = ones(n_img,n_classes)*(-Inf);
             
             for i = 1:n_img;
                 im = imread(Ipaths{i});
                 for j = 1:n_classes
-                    boxes = detect(im, models{j}, models{j}.thresh);
+                    boxes = detect(im, models{j}, -Inf); %models{j}.thresh);
                     if ~isempty(boxes)
                       b1 = boxes(:,[1 2 3 4 end]);
                       scores(i,j) = max(b1(:,end));
@@ -148,21 +164,21 @@ classdef LSVM < ClassifierAPI
             n_classes = length(obj.class_names);
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat', HASH_PATH, obj.toFileName()));
-            
+
             if exist(file, 'file') == 2
                 load(file, 'lsvm_models');                
                 obj.models = lsvm_models;
                 write_log(sprintf('Classifier loaded from cache: %s.\n', file));
             else
                 if USE_PARALLEL
-                    common = struct('Ipaths', [], 'names', [], 'class_ids', class_ids, 'n', 1);
+                    common = struct('Ipaths', [], 'names', [], 'class_ids', class_ids, 'n', 2);
                     common.Ipaths = Ipaths;
                     common.names = obj.class_names;
                     lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, [1:n_classes]', 0, 0);
                 else
                     lsvm_models = cell(n_classes, 1);
                     for k = 1:n_classes
-                        lsvm_models{k} = LSVM.train_model(Ipaths, obj.class_names{k}, class_ids, 1, k);
+                        lsvm_models{k} = LSVM.train_model(Ipaths, obj.class_names{k}, class_ids, 2, k);
                     end
                 end
                 save(file, 'lsvm_models');
@@ -191,11 +207,11 @@ classdef LSVM < ClassifierAPI
             if USE_PARALLEL
                 scores = run_in_parallel('LSVM.classify_parallel', Ipaths, obj.models, 0, 0, pg, 0, 1)';
             else
-                scores = zeros(n_img,n_classes); 
+                scores = ones(n_img,n_classes)*(-Inf); 
                 for i = 1:n_img;
                     im = imread(Ipaths{i});
                     for j = 1:n_classes
-                        boxes = detect(im, obj.models{j}, obj.models{j}.thresh);
+                        boxes = detect(im, obj.models{j}, -Inf); %models{j}.thresh);
                         if ~isempty(boxes)
                           b1 = boxes(:,[1 2 3 4 end]);
                           scores(i,j) = max(b1(:,end));

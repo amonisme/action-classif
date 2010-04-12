@@ -26,14 +26,15 @@ function test_SVM(use_cluster)
         signature{9,i} = BOF(channels{i}, 1024, None());
     end
     
-    kernels = cell(3,1);
+    kernels = cell(4,1);
     kernels{1} = Linear();
     kernels{2} = Chi2();
     kernels{3} = RBF();
+    kernels{4} = Intersection();
     
-    strat = cell(2,1);
+    strat = cell(1,1);
     strat{1} = 'OneVsOne';
-    strat{2} = 'OneVsAll';
+    %strat{2} = 'OneVsAll';  
     
     n_sig = numel(signature);
     n_ker = size(kernels, 1);
@@ -52,16 +53,16 @@ function test_SVM(use_cluster)
         USE_CLUSTER = 1;
         dir = '../../test_SVM';
         
-        % Cache signatures
+        % Cache dictionnary
         classifiers = cell(n_sig,3);        
         for i = 1:n_sig
             classifiers{i,1} = SVM(kernels{1}, signature{i}, strat{1}, [], 1, 5);           
             classifiers{i,2} = database;
             classifiers{i,3} = dir;              
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
               
-        % Full classify
+        % Full test
         classifiers = cell(n_ker*n_strat*n_sig,3);   
         for k = 1:n_ker
             for j=1:n_strat
@@ -72,7 +73,7 @@ function test_SVM(use_cluster)
                 end
             end
         end    
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
     else
         dir = 'baseline/test_SVM';
         [status,message,messageid] = mkdir(dir);

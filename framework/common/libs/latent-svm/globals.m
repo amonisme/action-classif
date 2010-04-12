@@ -3,7 +3,11 @@
 global FILE_BUFFER_PATH;
 
 % directory for caching models, intermediate data, and results
-cachedir = FILE_BUFFER_PATH;
+if FILE_BUFFER_PATH(end) ~= '/'
+    cachedir = [FILE_BUFFER_PATH '/'];
+else
+    cachedir = FILE_BUFFER_PATH;
+end
 
 % directory for LARGE temporary files created during training
 tmpdir = FILE_BUFFER_PATH;

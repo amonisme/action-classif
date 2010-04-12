@@ -31,7 +31,7 @@
 			<ymax>486</ymax>
 		</bndbox>
 		<action>
-			<actionname>Walking</actionname>
+			<actionname>Running</actionname>
 			<ambiguous>0</ambiguous>
 		</action>
 	</object>

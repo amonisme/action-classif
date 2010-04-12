@@ -2,8 +2,19 @@ classdef Chi2 < KernelAPI
     
     properties (SetAccess = protected, GetAccess = protected)
         a
+        param_cv    % remember which parameterter was cross-validated
     end
 
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if ~isfield(a, 'param_cv')
+                obj.param_cv = [1];
+            end
+        end 
+    end
+    
     methods        
         %------------------------------------------------------------------
         % Constructor Kernel type: exp(-1/a*Chi2(X,Y)^2)
@@ -17,6 +28,12 @@ classdef Chi2 < KernelAPI
             
             obj.a = a;
             obj.lib_name = lib;
+            
+            obj.param_cv = [0];
+            if isempty(a)
+                obj.param_cv(1) = 1;    
+            end
+            
             if(strcmpi(lib, 'svmlight'))
                 obj.lib = 0;
             else
@@ -44,7 +61,12 @@ classdef Chi2 < KernelAPI
             str = sprintf('Chi2 kernel: exp(-1/%s*Chi2(X,Y)^2)',num2str(obj.a));
         end
         function str = toFileName(obj)
-            str = sprintf('Chi2[A(%s)]',num2str(obj.a));
+            if obj.param_cv(1)
+                a = '?';
+            else
+                a = num2str(obj.a);
+            end
+            str = sprintf('Chi2[%s]',a);
         end
         function str = toName(obj)
             str = 'Chi2';
@@ -59,9 +81,9 @@ classdef Chi2 < KernelAPI
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
         function [params do_cv] = get_testing_params(obj, training_sigs)
-            dist = obj.get_chi2_dist(training_sigs);
             do_cv = false;
             if isempty(obj.a)
+                dist = obj.get_chi2_dist(training_sigs);
                 val_a = mean(mean(dist)) * (1.5.^(-3:3));
                 do_cv = true;
             else

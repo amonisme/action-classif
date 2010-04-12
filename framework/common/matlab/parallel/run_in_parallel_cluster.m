@@ -1,15 +1,21 @@
-function res = run_in_parallel_cluster(fun, common_args, parallel_args, pg, pg_offset, pg_scale)
+function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, pg, pg_offset, pg_scale)
     % Given a function name 'fun' and 'n' instances (each instance is
     % reprented by a line of 'args' (might be a cell or an array)), 'run_in_parallel_cluster' calls
     % 'n' Matlab clients to run 'fun' in parallel over the cluster
-    global CLUSTER_WORKING_DIR CLUSTER_USER TEMP_DIR;
+    global CLUSTER_WORKING_DIR CLUSTER_USER TEMP_DIR HASH_PATH;
         
     current_dir = cd;
     current_temp = TEMP_DIR;
     TEMP_DIR = '../../temp';
     cd(CLUSTER_WORKING_DIR);
     
-    pg_enabled = nargin >= 4 && isa(pg, 'ProgressBar');
+    if memory == 0
+        memory = 2048;
+    end
+    memory = sprintf('%dmb', memory);
+        
+    
+    pg_enabled = nargin >= 5 && isa(pg, 'ProgressBar');
     
     num_instances = size(parallel_args, 1);
     
@@ -17,18 +23,22 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, pg, pg_o
  
     save_file('args', tid, 0, common_args);
     
-    M = cell(num_instances, 3);
+    if isempty(HASH_PATH)
+        HASH_PATH = '0';
+    end
+    M = cell(num_instances, 4);   
     for i = 1:num_instances
         save_file('args', tid, i, parallel_args(i, :));
         M{i,1} = tid;
         M{i,2} = i;
-        M{i,3} = fun;     
+        M{i,3} = HASH_PATH;
+        M{i,4} = fun;     
     end
     
     % Run on cluster
     main_file = sprintf('run_instance_on_cluster.m'); 
     %system(sprintf('cp run_instance_on_cluster.m %s', main_file));
-    compileAndRunForCluster(main_file,CLUSTER_USER,CLUSTER_WORKING_DIR,M,'1800mb')
+    compileAndRunForCluster(main_file,CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
     
     % Wait all tasks finishes.
     num_waiting = num_instances;

@@ -28,7 +28,7 @@ classdef L1 < NormAPI
             str = sprintf('L1 (norm = %s)', num2str(obj.norm));
         end
         function str = toFileName(obj)
-            str = sprintf('L1[N(%s)]', num2str(obj.norm));
+            str = sprintf('L1[%s]', num2str(obj.norm));
         end
         function str = toName(obj)
             str = 'L1';

@@ -24,7 +24,7 @@ function update_tests_results(root)
             files = dir(fullfile(root,directories{i}));
            
             for j = 1:size(files, 1)
-                if isempty(find(strcmp(files(j).name, {'.' '..' 'classifier.mat' 'results.mat' 'log.txt' 'precision.txt' 'accuracy.txt'}), 1))
+                if isempty(find(strcmp(files(j).name, {'.' '..' 'classifier.mat' 'results.mat' 'log.txt' 'precision.txt' 'accuracy.txt' 'cross_validation.txt'}), 1))
                     delete(fullfile(root,directories{i},files(j).name));
                 end
             end          

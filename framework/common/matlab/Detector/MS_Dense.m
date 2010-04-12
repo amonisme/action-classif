@@ -25,7 +25,8 @@ classdef MS_Dense < Dense
             str = sprintf('DENSE[spacing = %s%d, library: %s]', sprintf('%d-',obj.spacing(1:(end-1))), obj.spacing(end), obj.lib_name);
         end
         function str = toFileName(obj)
-            str = sprintf('DENSE[S(%d%s)-Lib(%s)]', obj.spacing(1), sprintf('-%d', obj.spacing(2:end)), obj.lib_name);
+            offset = obj.spacing - obj.spacing(1);
+            str = sprintf('DENSE[%s-%d%s]', obj.lib_name, obj.spacing(1), sprintf('+%d', offset(2:end)));
         end
         function str = toName(obj)
             str = sprintf('MSDENSE');

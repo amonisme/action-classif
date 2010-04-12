@@ -29,7 +29,7 @@ classdef Intersection < KernelAPI
             str = sprintf('Intersection kernel: sum_i(min(Xi, Yi))');
         end
         function str = toFileName(obj)
-            str = 'Intersection';
+            str = 'Inter';
         end
         function str = toName(obj)
             str = 'Inter';

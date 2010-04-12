@@ -2,8 +2,19 @@ classdef RBF < KernelAPI
     
     properties (SetAccess = protected, GetAccess = protected)
         a
+        param_cv    % remember which parameterter was cross-validated
     end
 
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if ~isfield(a, 'param_cv')
+                obj.param_cv = [1];
+            end
+        end 
+    end
+    
     methods        
         %------------------------------------------------------------------
         % Constructor Kernel type: exp(-1/a*||X-Y||^2)
@@ -17,6 +28,12 @@ classdef RBF < KernelAPI
             
             obj.a = a;
             obj.lib_name = lib;
+            
+            obj.param_cv = [0];
+            if isempty(a)
+                obj.param_cv(1) = 1;    
+            end
+            
             if(strcmpi(lib, 'svmlight'))
                 obj.lib = 0;
             else
@@ -36,7 +53,12 @@ classdef RBF < KernelAPI
             str = sprintf('RBF kernel: exp(-1/%s*||X-Y||^2)',num2str(obj.a));
         end
         function str = toFileName(obj)
-            str = sprintf('RBF[A(%s)]',num2str(obj.a));
+            if obj.param_cv(1)
+                a = '?';
+            else
+                a = num2str(obj.a);
+            end            
+            str = sprintf('RBF[%s]',a);
         end
         function str = toName(obj)
             str = 'RBF';

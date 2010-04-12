@@ -23,7 +23,6 @@ function results = K_cross_validate(common, params)
             Kperf(j) = common.obj.CV_validate(model, validate);
         end
         results(i) = mean(Kperf);
-        results(i)
     end   
     
     task_close(tid);
