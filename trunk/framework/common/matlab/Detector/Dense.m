@@ -6,6 +6,17 @@ classdef Dense < DetectorAPI
         lib_name
     end
     
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if obj.lib == 0
+                obj.lib_name = 'mylib';
+            elseif obj.lib == 1
+                obj.lib_name = 'cd';                   
+            end
+        end    
+    end    
     methods (Access = protected)
         %------------------------------------------------------------------
         function feat = impl_mylib(obj, Ipath)
@@ -86,10 +97,10 @@ classdef Dense < DetectorAPI
             if(strcmpi(lib, 'mylib'))
                 obj.lib = 0;
             else
-                if(strcmpi(lib, 'colorDescriptor'))
+                if(strcmpi(lib, 'cd'))
                     obj.lib = 1;
                 else
-                    throw(MException('',['Unknown library for computing dense features: "' lib '".\nPossible values are: "mylib" and "colorDescriptor".\n']));
+                    throw(MException('',['Unknown library for computing dense features: "' lib '".\nPossible values are: "mylib" (for myLib) and "cd" (for colorDescriptor).\n']));
                 end
             end
         end
@@ -110,7 +121,7 @@ classdef Dense < DetectorAPI
             str = sprintf('DENSE[spacing = %d, library: %s]', obj.spacing, obj.lib_name);
         end
         function str = toFileName(obj)
-            str = sprintf('DENSE[S(%d)-Lib(%s)]', obj.spacing, obj.lib_name);
+            str = sprintf('DENSE[%s-%d]', obj.lib_name, obj.spacing);
         end
         function str = toName(obj)
             str = sprintf('DENSE');

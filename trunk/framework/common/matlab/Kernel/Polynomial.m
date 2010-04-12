@@ -4,8 +4,19 @@ classdef Polynomial < KernelAPI
         a
         b
         c
+        param_cv    % remember which parameterter was cross-validated
     end
 
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if ~isfield(a, 'param_cv')
+                obj.param_cv = [1 1 1];
+            end
+        end 
+    end
+    
     methods        
         %------------------------------------------------------------------
         % Constructor   Kernel type: (a * X.Y + b)^c
@@ -27,6 +38,18 @@ classdef Polynomial < KernelAPI
             obj.b = b;
             obj.c = floor(c);
             obj.lib_name = lib;
+            
+            obj.param_cv = [0 0 0];
+            if isempty(a)
+                obj.param_cv(1) = 1;    
+            end
+            if isempty(b)
+                obj.param_cv(2) = 1;    
+            end
+            if isempty(c)
+                obj.param_cv(3) = 1;    
+            end            
+            
             if(strcmpi(lib, 'svmlight'))
                 obj.lib = 0;
             else
@@ -46,7 +69,22 @@ classdef Polynomial < KernelAPI
             str = sprintf('Polynomial kernel: (%s * X.Y + %s)^%d',num2str(obj.a), num2str(obj.b), obj.c);
         end
         function str = toFileName(obj)
-            str = sprintf('Poly[A(%s)-B(%s)-C(%d)]',num2str(obj.a), num2str(obj.b), obj.c);
+            if obj.param_cv(1)
+                a = '?';
+            else
+                a = num2str(obj.a);
+            end
+            if obj.param_cv(2)
+                b = '?';
+            else
+                b = num2str(obj.b);
+            end
+            if obj.param_cv(3)
+                c = '?';
+            else
+                c = num2str(obj.c);
+            end            
+            str = sprintf('Poly[%s-%s-%d]',a,b,c);
         end
         function str = toName(obj)
             str = 'Poly';

@@ -3,10 +3,10 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
     % reprented by a line of 'args' (might be a cell or an array)), 'run_in_parallel' calls
     % 'num_instances' Matlab clients to run 'fun' in parallel over subpart
     % of 'args' of size: size(args,1)/num_instances
-	global TEMP_DIR;
+	global TEMP_DIR HASH_PATH;
 
     if nargin < 4 || num_instances == 0
-        num_instances = maxNumCompThreads;
+        num_instances = 3; %maxNumCompThreads;
     end
     if nargin < 5
         debug = 0;
@@ -38,7 +38,7 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
         if ~isempty(index)
             subargs = cat(1,parallel_args(index, :));
             save_file('args', tid, i, subargs);
-            run_matlab_instance(tid, i, fun, debug);
+            run_matlab_instance(tid, i, HASH_PATH, fun, debug);
         else
             num_instances = i-1;
             break;

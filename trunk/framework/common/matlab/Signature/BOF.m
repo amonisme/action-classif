@@ -1,8 +1,10 @@
 classdef BOF < SignatureAPI
-    % Baf of features
-    properties (SetAccess = protected, GetAccess = protected)
+    % Bag of features
+    properties % (SetAccess = protected, GetAccess = protected)
         K          % for K-means
         L          % for spatial pyramid
+        L_Wchan    % weight for each channel
+        L_Wchan_cv % remember if weight estimation was performed automaticaly
         centers   
         maxiter
         kmeans
@@ -15,20 +17,61 @@ classdef BOF < SignatureAPI
             global USE_PARALLEL;
            
             if USE_PARALLEL
-                s = run_in_parallel('BOF.parallel_signatures', struct('centers', centers, 'sig_size', obj.channel_sig_size, 'L', obj.L), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale);
+                sigs = run_in_parallel('BOF.parallel_signatures', struct('centers', centers, 'sig_size', obj.channel_sig_size, 'L', obj.L), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale);
             else
                 n_img = size(Ipath, 1);
-                s = zeros(n_img, obj.channel_sig_size);
+                sigs = zeros(n_img, obj.channel_sig_size);
                 for k=1:n_img
                     pg.progress(offset+scale*k/n_img);
-                    s(k, :) = obj.sig_from_feat_descr(obj.L, centers, feat{k}, descr{k}, Ipath{k});
+
+                    sigs(k, :) = obj.sig_from_feat_descr(obj.L, centers, feat{k}, descr{k}, Ipath{k});
                 end    
             end
-            sigs = obj.norm.normalize(s);
+            
+            % Looks for the grid with null weight and set it to the
+            % average chi² distance between features
+            z_index = find(obj.L(:,3) == 0);
+            for k=1:length(z_index)
+                s = sigs(:, obj.L(z_index(k),4):obj.L(z_index(k),5));
+                n_sigs = size(s, 1);
+                dist = 0;
+                for i=1:n_sigs
+                    for j=(i+1):n_sigs
+                        dist = dist + chi2(s(i,:), s(j,:));
+                    end
+                end    
+                % Average distance
+                obj.L(z_index(k), 3) = 1 / (dist / (n_sigs*(n_sigs-1)/2));
+                sigs(:, obj.L(z_index(k),4):obj.L(z_index(k),5)) = s * obj.L(z_index(k), 3);
+            end
+
+            sigs = obj.norm.normalize(sigs);
         end   
     end
     
-    methods (Static)
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if isempty(obj.L)
+                obj.L = [1 1 1];
+            elseif isscalar(obj.L)
+                obj.L = floor(obj.L);
+                levels = (0:obj.L)';
+                grid = [2.^levels, 2.^levels, 1./2.^(obj.L-levels+1)];
+                grid(1,3) = 1/2^obj.L;
+                obj.L = grid;
+            end
+            if size(obj.L_Wchan,1) ~= size(obj.L,1)
+                obj.L_Wchan = repmat(obj.L(:,3), 1, obj.channels.number());
+            end
+            if ~isfield(a, 'L_Wchan_cv')
+                obj.L_Wchan_cv = ones(size(obj.L_Wchan,1),1);
+                if obj.L_Wchan(1,1) == 1/2^size(obj.L_Wchan,1);
+                    obj.L_Wchan_cv = zeros(size(obj.L_Wchan,1),1);
+                end
+            end            
+        end        
         %------------------------------------------------------------------
         function feat = compute_features(detector, Ipaths, pg, offset, scale)
             global HASH_PATH USE_PARALLEL TEMP_DIR;
@@ -98,36 +141,29 @@ classdef BOF < SignatureAPI
             else
                 d = dist2(centers, descr);
                 m = (d == repmat(min(d), size(d,1), 1));  
-                if L == 0   % Classic BOF
-                    sig = sum(m, 2)';     
-                else            % Spatial pyramid signature                   
-                    % Get imgage size and normalize feature position
-                    info = imfinfo(Ipath);
-                    w = info.Width;
-                    h = info.Height;                   
-                    X = (feat(:,1)-1)/w;
-                    Y = (feat(:,2)-1)/h;
-                    
-                    % Compute signature
-                    sig = cell(L+1,1);
-                    sig{1} = sum(m,2) / (2^L);                    
-                    for i = 1:L
-                        n_bin_side = 2^i;
-                        n_bin = n_bin_side*n_bin_side;
-                        s = cell(n_bin,1);
-                        I = floor(X*n_bin_side) * n_bin_side + floor(Y*n_bin_side) + 1;
-                        size(feat)
-                        size(descr)
-                        size(d)
-                        size(m)
-                        size(I)
-                        for j = 1:n_bin
-                            s{j} = sum(m(:,I == j), 2);
-                        end
-                        sig{i+1} = cat(1, s{:}) / (2^(L-i+1));
+                
+                info = imfinfo(Ipath);
+                w = info.Width;
+                h = info.Height;                   
+                X = (feat(:,1)-1)/w;
+                Y = (feat(:,2)-1)/h;
+                
+                n_grid = size(L, 1);             
+                sig = cell(n_grid,1);
+                for i = 1:n_grid
+                    n_bin = L(i,1)*L(i,2);
+                    s = cell(n_bin,1);
+                    I = floor(X*L(i,1)) * L(i,2) + floor(Y*L(i,2)) + 1;
+                    for j = 1:n_bin
+                        s{j} = sum(m(:,I == j), 2);
                     end
-                    sig = cat(1,sig{:})';
+                    if L(i,3) ~= 0 && L(i,3) ~= 1
+                        sig{i} = cat(1, s{:}) * L(i,3);
+                    else
+                        sig{i} = cat(1, s{:});
+                    end
                 end
+                sig = cat(1,sig{:})';
             end
         end        
     end
@@ -136,16 +172,17 @@ classdef BOF < SignatureAPI
         %------------------------------------------------------------------
         % Constructor
         function obj = BOF(channels, K, norm, L, kmeans_lib, maxiter)
-            if(nargin < 4)
-                L = 0;
+            if nargin < 4 || isempty(L)
+                L = [1 1 1];
             end              
-            if(nargin < 5)
+            if nargin < 5
                 kmeans_lib = 'cpp';
             end
-            if(nargin < 6)
+            if nargin < 6
                 maxiter = 200;
-            end          
+            end        
             
+            L(:,1:2) = floor(L(:,1:2));
             
             obj.maxiter = maxiter;
             obj.kmeans_lib = kmeans_lib;           
@@ -172,8 +209,12 @@ classdef BOF < SignatureAPI
             end
             obj.channels = channels;
             obj.K = floor(K);
-            obj.L = floor(L);
-            obj.channel_sig_size = K*(4^(L+1)-1)/3;   % See Lazebnik, Spatial Pyramid Matching
+            n_cells = sum(L(:,1).*L(:,2));
+            end_index = cumsum(L(:,1).*L(:,2));
+            beg_index = [0; end_index(1:(end-1))];
+            obj.L_Wchan = repmat(L(:,3), 1, channels.number());
+            obj.L = [L (beg_index*obj.K+1) (end_index*obj.K)];
+            obj.channel_sig_size = K*n_cells;   % See Lazebnik, Spatial Pyramid Matching
             obj.total_sig_size = obj.channels.number()*obj.channel_sig_size;
             obj.norm = norm;
         end
@@ -238,13 +279,21 @@ classdef BOF < SignatureAPI
 
                     % Compute signature for this channel
                     pg.setCaption([progress_text 'Computing signatures...']);
+                    obj.L(:,3) = obj.L_Wchan(:, obj.channels.channel_id());
                     sigs{obj.channels.channel_id()} = obj.compute_signatures(c, feat, descr, Ipaths, pg, progress_value, sigs_progress_frac);
+                    obj.L_Wchan(:, obj.channels.channel_id()) = obj.L(:,3);
 
                     % Next channel
                     obj.channels.next();
                 end
 
                 obj.train_sigs = cat(2, sigs{:});
+                % Each channel is already normalized, renormalize the
+                % overall in case of multi-channel
+                if obj.channels.number > 1
+                    obj.train_sigs = obj.norm.normalize(obj.train_sigs);
+                end
+                
                 train_sigs = obj.train_sigs;
                 centers = obj.centers;
                 save(file,'centers','train_sigs');
@@ -287,6 +336,7 @@ classdef BOF < SignatureAPI
                
                 % Compute signature for this channel
                 pg.setCaption([progress_text 'Computing signatures...']);
+                obj.L(:,3) = obj.L_Wchan(:, obj.channels.channel_id());
                 sigs{obj.channels.channel_id()} = obj.compute_signatures(obj.centers{obj.channels.channel_id()}, feat, descr, Ipaths, pg, progress_value, sigs_progress_frac);
                 
                 % Next channel
@@ -301,23 +351,44 @@ classdef BOF < SignatureAPI
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
+        function str = get_pyramid(obj)
+            n_grid = size(obj.L, 1);
+            str = cell(1,n_grid);
+            for i = 1:n_grid
+                if obj.L_Wchan_cv(i)
+                    w = '?';
+                else
+                    w = num2str(obj.L(i,3));
+                end
+                str{i} = sprintf('%dx%dx%s', obj.L(i,1), obj.L(i,2), w);
+                if i ~= n_grid
+                    str{i} = [str{i} '+'];
+                end
+            end
+            str = cat(2, str{:});
+        end
         function str = toString(obj)
-            str = [sprintf('Signature: Bag of features (K = %d, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.norm.toString(), obj.kmeans_lib) obj.channels.toString()];
+            if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
+                str = [sprintf('Signature: Bag of features (K = %d, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.norm.toString(), obj.kmeans_lib) obj.channels.toString()];
+            else
+                str = [sprintf('Signature: Spatial pyramid (K = %d, L = %s, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.get_pyramid(), obj.norm.toString(), obj.kmeans_lib) obj.channels.toString()];
+            end
         end
         function str = toFileName(obj)
-            if isempty(obj.L)
-                obj.L = 0;
+            if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
+                str = sprintf('BOF[%s-%d-%s]-%s', obj.kmeans_lib, obj.K, obj.norm.toFileName(), obj.channels.toFileName());
+            else
+                str = sprintf('PYR[%s-%d-%s-%s]-%s', obj.kmeans_lib, obj.K, obj.get_pyramid(), obj.norm.toFileName(), obj.channels.toFileName());
             end
-            str = sprintf('BOF[K(%d)-L(%d)-Norm(%s)-Kmeans(%s)]-OfChannels-%s', obj.K, obj.L, obj.norm.toFileName(), obj.kmeans_lib, obj.channels.toFileName());
         end
         function str = KmeanstoFileName(obj, numChannel)
-            str = sprintf('Kmeans[K(%d)-L(%d)-Lib(%s)]-OfChannel(%d)-%s', obj.K, obj.L, obj.kmeans_lib, numChannel, obj.channels.toFileName());
+            str = sprintf('Kmeans[%s-%d-%s]-C(%d)-%s', obj.kmeans_lib, obj.K, obj.get_pyramid(), numChannel, obj.channels.toFileName());
         end
         function str = toName(obj)
-            if obj.L == 0
-                str = sprintf('BOF%d', obj.K);
+            if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
+                str = sprintf('BOF(%d)', obj.K);
             else
-                str = sprintf('PYR%d-BOF%d', obj.L, obj.K);
+                str = sprintf('PYR(%s)-BOF(%d)', obj.get_pyramid(), obj.K);
             end
         end
     end

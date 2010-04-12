@@ -78,7 +78,7 @@ classdef NN < ClassifierAPI
             str = ['Classifier: Nearest Neighbours\n' obj.signature.toString()];
         end
         function str = toFileName(obj)
-            str = sprintf('NN_%s', obj.signature.toFileName());
+            str = sprintf('NN-%s', obj.signature.toFileName());
         end
         function str = toName(obj)
             str = 'NN';

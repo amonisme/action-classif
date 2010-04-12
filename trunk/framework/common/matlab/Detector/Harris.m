@@ -8,6 +8,16 @@ classdef Harris < DetectorAPI
         lib_name
     end
     
+        
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if obj.lib == 0
+                obj.lib_name = 'cd';
+            end
+        end    
+    end
     methods (Access = protected)
         %------------------------------------------------------------------  
         function feat = impl_colorDescriptor(obj, Ipath)
@@ -32,7 +42,7 @@ classdef Harris < DetectorAPI
                 laplaceTh = 0.03;
             end    
             if(nargin < 5)
-                lib = 'colorDescriptor';
+                lib = 'cd';
             end
             
             obj = obj@DetectorAPI(rotInvariant); 
@@ -41,10 +51,10 @@ classdef Harris < DetectorAPI
             obj.harrisK = harrisK;
             obj.laplaceTh = laplaceTh;
             
-            if(strcmpi(lib, 'colorDescriptor'))
+            if(strcmpi(lib, 'cd'))
                 obj.lib = 0;
             else
-                throw(MException('',['Unknown library for computing Harris-Laplace features: "' lib '".\nPossible values are: "colordescr".\n']));
+                throw(MException('',['Unknown library for computing Harris-Laplace features: "' lib '".\nPossible values are: "cd" (for colorDescriptor).\n']));
             end
         end
         
@@ -66,7 +76,7 @@ classdef Harris < DetectorAPI
             else
                 RI = 'S';
             end
-            str = sprintf('HARRIS[rotation invariant = %s, threshold = %s, K = %s, Laplace threshold = %s, library: %s]', RI, num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh), obj.lib_name);
+            str = sprintf('HARRIS[Invariant type = %s, threshold = %s, K = %s, Laplace threshold = %s, library: %s]', RI, num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh), obj.lib_name);
         end
         function str = toFileName(obj)
             if obj.rotInvariant
@@ -74,7 +84,7 @@ classdef Harris < DetectorAPI
             else
                 RI = 'S';
             end
-            str = sprintf('HARRIS[RI(%s)-H(%s)-K(%s)-L(%s)-Lib(%s)]', RI, num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh), obj.lib_name);
+            str = sprintf('HARRIS[%s-%s-%s-%s-%s]', obj.lib_name, RI, num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh));
         end
         function str = toName(obj)
             if obj.rotInvariant

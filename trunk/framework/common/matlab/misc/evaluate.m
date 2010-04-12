@@ -7,6 +7,8 @@ function precision = evaluate(classifier, root, target)
     if nargin < 3
         target = EXPERIMENT_DIR;
     end
+    
+    force_recompute = 0;
 
     EXPERIMENT_DIR = target;    
     path_classifier = classifier.toFileName();    
@@ -15,8 +17,8 @@ function precision = evaluate(classifier, root, target)
     [status,message,messageid] = mkdir(dir);
         
     file = fullfile(dir,'results.mat');
-
-    if exist(file,'file') == 2
+    
+    if exist(file,'file') == 2 && ~force_recompute
         OUTPUT_LOG = 0;
         load(file);
     else
@@ -25,9 +27,9 @@ function precision = evaluate(classifier, root, target)
         write_log(sprintf('Log file for %s\n\n%s\n', path_classifier, classifier.toString()), fullfile(dir,'log.txt')); 
 
         % Train
-        file = fullfile(dir,'classifier.mat');   
+        file = fullfile(dir,'classifier.mat');
         tic;
-        if exist(file,'file') == 2
+        if exist(file,'file') == 2 && ~force_recompute
             load(file);
         else
             cross_validation = classifier.learn(fullfile(root, 'train'));
@@ -39,12 +41,8 @@ function precision = evaluate(classifier, root, target)
         % Test
         file = fullfile(dir,'results.mat');
         tic;
-        if exist(file,'file') == 2
-            load(file);
-        else
-            [Ipaths classes correct_label assigned_label score] = classifier.classify(fullfile(root, 'test'));    
-            save(file,'Ipaths','classes','correct_label','assigned_label','score');
-        end
+        [Ipaths classes correct_label assigned_label score] = classifier.classify(fullfile(root, 'test'));    
+        save(file,'Ipaths','classes','correct_label','assigned_label','score');
         t1 = toc;
 
         % Output computation time

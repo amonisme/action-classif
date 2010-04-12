@@ -3,8 +3,19 @@ classdef Sigmoid < KernelAPI
     properties (SetAccess = protected, GetAccess = protected)
         a
         b
+        param_cv    % remember which parameterter was cross-validated
     end
 
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if ~isfield(a, 'param_cv')
+                obj.param_cv = [1 1];
+            end
+        end 
+    end
+    
     methods        
         %------------------------------------------------------------------
         % Constructor   Kernel type: tanh(a * X.Y + b)
@@ -22,6 +33,15 @@ classdef Sigmoid < KernelAPI
             obj.a = a;
             obj.b = b;
             obj.lib_name = lib;
+            
+            obj.param_cv = [0 0];
+            if isempty(a)
+                obj.param_cv(1) = 1;    
+            end
+            if isempty(b)
+                obj.param_cv(2) = 1;    
+            end
+            
             if(strcmpi(lib, 'svmlight'))
                 obj.lib = 0;
             else
@@ -41,7 +61,17 @@ classdef Sigmoid < KernelAPI
             str = sprintf('Sigmoid kernel: tanh(%s * X.Y + %s)',num2str(obj.a), num2str(obj.b));
         end
         function str = toFileName(obj)
-            str = sprintf('Sig[A(%s)-B(%s)]',num2str(obj.a), num2str(obj.b));
+            if obj.param_cv(1)
+                a = '?';
+            else
+                a = num2str(obj.a);
+            end
+            if obj.param_cv(2)
+                b = '?';
+            else
+                b = num2str(obj.b);
+            end            
+            str = sprintf('Sig[%s-%s]',a,b);
         end
         function str = toName(obj)
             str = 'Sig';

@@ -75,13 +75,33 @@ classdef Channels < handle
             str = [chan_str{:}];
         end
         function str = toFileName(obj)
-            chan_str = cell(obj.number, 1);
-            for i=1:obj.n_detector
-                for j=1:obj.n_descriptor
-                    chan_str{(i-1)*obj.n_descriptor + j} = sprintf('(%s+%s)', obj.detectors{i}.toFileName(), obj.descriptors{j}.toFileName());
+            if obj.n_detector > 1
+                detect_str = cell(obj.n_detector, 1);
+                for i=1:obj.n_detector
+                    detect_str{i} = obj.detectors{i}.toFileName();
+                    if i<obj.n_detector
+                        detect_str{i} = [detect_str{i} '+'];
+                    end
                 end
+                detect_str = sprintf('(%s)', [detect_str{:}]);
+            else
+                detect_str = obj.detectors{1}.toFileName();
             end
-            str = [chan_str{:}];
+            
+            if obj.n_descriptor > 1
+                descrip_str = cell(obj.n_descriptor, 1);
+                for i=1:obj.n_descriptor
+                    descrip_str{i} = obj.descriptors{i}.toFileName();
+                    if i<obj.n_descriptor
+                        descrip_str{i} = [descrip_str{i} '+'];
+                    end
+                end 
+                descrip_str = sprintf('(%s)', [descrip_str{:}]);
+            else
+                descrip_str = obj.descriptors{1}.toFileName();
+            end
+                        
+            str = [detect_str 'x' descrip_str];
         end
     end
     

@@ -1,4 +1,4 @@
-function test_PYR(use_cluster)
+function test_PYR_Intersection(use_cluster)
     global USE_PARALLEL SHOW_BAR USE_CLUSTER;
     USE_PARALLEL = 1;
     SHOW_BAR = 0;
@@ -12,18 +12,30 @@ function test_PYR(use_cluster)
     channels{1} = Channels({MS_Dense()}, {SIFT(L2Trunc(), 'colorDescriptor')});
     channels{2} = Channels({MS_Dense()}, {SIFT(L2(), 'colorDescriptor')});
     
+    kernel = Intersection();
+    auto_weight = 0;   
+
     signature = cell(9,n_channels,3);
     for i = 1:n_channels
-        for j = 1:3
-            signature{1,i,j} = BOF(channels{i}, 256, L1(), j);
-            signature{2,i,j} = BOF(channels{i}, 256, L2(), j);
-            signature{3,i,j} = BOF(channels{i}, 256, None(), j);
-            signature{4,i,j} = BOF(channels{i}, 512, L1(), j);
-            signature{5,i,j} = BOF(channels{i}, 512, L2(), j);
-            signature{6,i,j} = BOF(channels{i}, 512, None(), j);
-            signature{7,i,j} = BOF(channels{i}, 1024, L1(), j);
-            signature{8,i,j} = BOF(channels{i}, 1024, L2(), j);
-            signature{9,i,j} = BOF(channels{i}, 1024, None(), j);
+        for L = 1:3
+            levels = (0:L)';
+            if auto_weight
+                w = zeros(size(levels));
+            else
+                w = 1./2.^(L-levels+1);
+                w(1) = 1/2^L;
+            end
+            grid = [2.^levels, 2.^levels, w];            
+            
+            signature{1,i,L} = BOF(channels{i}, 256, L1(), grid);
+            signature{2,i,L} = BOF(channels{i}, 256, L2(), grid);
+            signature{3,i,L} = BOF(channels{i}, 256, None(), grid);
+            signature{4,i,L} = BOF(channels{i}, 512, L1(), grid);
+            signature{5,i,L} = BOF(channels{i}, 512, L2(), grid);
+            signature{6,i,L} = BOF(channels{i}, 512, None(), grid);
+            signature{7,i,L} = BOF(channels{i}, 1024, L1(), grid);
+            signature{8,i,L} = BOF(channels{i}, 1024, L2(), grid);
+            signature{9,i,L} = BOF(channels{i}, 1024, None(), grid);
         end
     end
        
@@ -47,23 +59,23 @@ function test_PYR(use_cluster)
         USE_CLUSTER = 1;
         dir = '../../test_PYR';
         
-        % Cache signatures
+        % 1v1
         classifiers = cell(n_sig,3);        
         for i = 1:n_sig
-            classifiers{i,1} = SVM(Intersection(), signature{i}, strat{1}, [], 1, 5);           
+            classifiers{i,1} = SVM(kernel, signature{i}, strat{1}, [], 1, 5);           
             classifiers{i,2} = database;
             classifiers{i,3} = dir;              
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
         
-        % Cache signatures
+        % 1vA
         classifiers = cell(n_sig,3);        
         for i = 1:n_sig
-            classifiers{i,1} = SVM(Intersection(), signature{i}, strat{2}, [], 1, 5);           
+            classifiers{i,1} = SVM(kernel, signature{i}, strat{2}, [], 1, 5);           
             classifiers{i,2} = database;
             classifiers{i,3} = dir;              
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);        
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);        
     else   
         dir = 'baseline/test_PYR';
         [status,message,messageid] = mkdir(dir);
@@ -71,7 +83,7 @@ function test_PYR(use_cluster)
 
         for i = 1:n_sig
             for k=1:n_strat
-                classifier = SVM(Intersection(), signature{i}, strat{k}, [], 1, 5);           
+                classifier = SVM(kernel, signature{i}, strat{k}, [], 1, 5);           
                 try
                     evaluate(classifier, database, dir);
                 catch ME

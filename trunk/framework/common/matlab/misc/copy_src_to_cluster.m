@@ -1,5 +1,9 @@
-function copy_src_to_cluster()
+function copy_src_to_cluster(copy_libs)
     global CLUSTER_WORKING_DIR;
+    
+    if nargin < 1
+        copy_libs = 0;
+    end
 
     d = paths();
     d = [d './'];
@@ -36,6 +40,8 @@ function copy_src_to_cluster()
         system(sprintf('cp %s %s\n', fullfile(d{dirs(i)}, names{i}), CLUSTER_WORKING_DIR));
     end
     
-    system(sprintf('cp -R common/libs %s\n', fullfile(CLUSTER_WORKING_DIR,'..','libs')));
+    if copy_libs
+        system(sprintf('cp -Rf common/libs %s\n', fullfile(CLUSTER_WORKING_DIR,'..','libs')));
+    end
 end
 

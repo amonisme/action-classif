@@ -4,6 +4,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         C 	        % trade-off between training error and margin (if -1, then set to default [avg. x*x]^-1, set to [] for cross-validation)
         J	        % Cost-factor, by which training errors on positive examples outweight errors on negative examples (default 1)
         K           % K-fold cross-validation
+        param_cv    % remember which parameterter was cross-validated
         kernel
         precomputed_dist_file
         svm
@@ -12,7 +13,14 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         class_id
     end
         
-    methods (Static)
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = a;
+            if ~isfield(a, 'param_cv')
+                obj.param_cv = [1];
+            end
+        end            
         %------------------------------------------------------------------
         function svm = learn_parallel(info, args)
             tid = task_open();
@@ -108,6 +116,11 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             obj.J = J;
             obj.K = K;
             obj.kernel = kernel;
+            
+            obj.param_cv = [0];
+            if isempty(C)
+                obj.param_cv(1) = 1;
+            end
 
             if(strcmpi(strat, 'onevsone'))
                 obj.OneVsOne = 1;
@@ -288,6 +301,8 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                             vote(neg,j) = vote(neg,j) + 1;                       
 
                             scores(pos,i) = scores(pos,i) + s(pos);
+                            scores(neg,i) = scores(neg,i) + s(neg);
+                            scores(pos,j) = scores(pos,j) - s(pos);                            
                             scores(neg,j) = scores(neg,j) - s(neg);                         
                         end
                     end
@@ -331,6 +346,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         % Retrieves all the values to test for cross-validation
         % 'params' must be a cell of vectors.
         function params = get_params(obj)
+            
             [params do_cv] = obj.kernel.get_testing_params(obj.signature.train_sigs);
             
             if isempty(obj.C)
@@ -371,8 +387,8 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             else
                 strat = 'one VS all';
             end
-            if isempty(obj.C)
-                c = '';
+            if obj.param_cv(1)
+                c = '?';
             else
                 c = num2str(obj.C);
             end
@@ -384,12 +400,12 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             else
                 strat = '1vA';
             end
-            if isempty(obj.C)
+            if obj.param_cv(1)
                 c = '?';
             else
                 c = num2str(obj.C);
             end            
-            str = sprintf('SVM[S(%s)-C(%s)-J(%s)-K(%d)-Kernel(%s)]_%s', strat, c, num2str(obj.J), obj.K, obj.kernel.toFileName(), obj.signature.toFileName());
+            str = sprintf('SVM[%s-%s-%s-%d-%s]-%s', strat, c, num2str(obj.J), obj.K, obj.kernel.toFileName(), obj.signature.toFileName());
         end
         function str = toName(obj)
             if obj.OneVsOne

@@ -34,7 +34,7 @@ classdef L2Trunc < L2
             str = sprintf('L2 (norm = %s, truncation over %s)', num2str(obj.norm), num2str(obj.norm*obj.threshold));
         end
         function str = toFileName(obj)
-            str = sprintf('L2[N(%s)-T(%s)]', num2str(obj.norm), num2str(100*obj.threshold));
+            str = sprintf('L2T[%s-%s]', num2str(obj.norm), num2str(obj.threshold));
         end
         function str = toName(obj)
             str = 'L2T';

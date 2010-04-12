@@ -83,7 +83,7 @@ classdef KNN < NN
             str = [sprintf('Classifier: K-Nearest Neighbours (K = %d)\n', obj.K) obj.signature.toString()];
         end
         function str = toFileName(obj)
-            str = sprintf('KNN[K(%d)]_%s', obj.K, obj.signature.toFileName());
+            str = sprintf('KNN[%d]-%s', obj.K, obj.signature.toFileName());
         end
         function str = toName(obj)
             str = sprintf('KNN(%d)', obj.K);
