@@ -9,14 +9,14 @@ function test_KNN(use_cluster)
     
     % Channels   
     channels = {
-        Channels({Harris('S')},  {SIFT(L2(), 'colorDescriptor')}), ...
-        Channels({Harris('S')},  {SIFT(L2Trunc(), 'colorDescriptor')}), ...    
-        Channels({Harris('SR')}, {SIFT(L2(), 'colorDescriptor')}), ...
-        Channels({Harris('SR')}, {SIFT(L2Trunc(), 'colorDescriptor')}), ...    
-        Channels({Dense()},      {SIFT(L2(), 'colorDescriptor')}), ...
-        Channels({Dense()},      {SIFT(L2Trunc(), 'colorDescriptor')}), ...    
-        Channels({MS_Dense()},   {SIFT(L2(), 'colorDescriptor')}), ...
-        Channels({MS_Dense()},   {SIFT(L2Trunc(), 'colorDescriptor')}) ...
+        Channels({Harris('S')},  {SIFT(L2())}), ...
+        Channels({Harris('S')},  {SIFT(L2Trunc())}), ...    
+        Channels({Harris('SR')}, {SIFT(L2())}), ...
+        Channels({Harris('SR')}, {SIFT(L2Trunc())}), ...    
+        Channels({Dense()},      {SIFT(L2())}), ...
+        Channels({Dense()},      {SIFT(L2Trunc())}), ...    
+        Channels({MS_Dense()},   {SIFT(L2())}), ...
+        Channels({MS_Dense()},   {SIFT(L2Trunc())}) ...
     }';
     n_channels = size(channels,1);
          
@@ -57,7 +57,7 @@ function test_KNN(use_cluster)
             classifiers{i,2} = database;
             classifiers{i,3} = dir;
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
         
         % Cache Kmeans
         classifiers = cell(n_channels*n_sizes,3);
@@ -68,7 +68,7 @@ function test_KNN(use_cluster)
                 classifiers{(j-1)*n_channels + i,3} = dir;
             end
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
         
         % Cache signatures
         classifiers = cell(n_channels*n_sizes*n_norms_s,3);
@@ -81,7 +81,7 @@ function test_KNN(use_cluster)
                 end
             end
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
         
         % Full classify
         for k = 1:n_K
@@ -99,7 +99,7 @@ function test_KNN(use_cluster)
                 end
             end
         end    
-        run_in_parallel('evaluate_parallel',[],classifiers,[]);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
     else
         dir = 'baseline/test_KNN';
         [status,message,messageid] = mkdir(dir);

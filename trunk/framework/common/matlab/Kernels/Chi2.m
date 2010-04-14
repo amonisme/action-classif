@@ -12,7 +12,7 @@ classdef Chi2 < KernelAPI
             if ~isfield(a, 'param_cv')
                 obj.param_cv = [1];
             end
-        end 
+        end      
     end
     
     methods        

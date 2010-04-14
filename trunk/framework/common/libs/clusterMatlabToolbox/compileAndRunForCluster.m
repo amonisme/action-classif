@@ -1,5 +1,7 @@
 function []=compileAndRunForCluster(nameOfFunction, user, path,M, mem,libraries)
 
+job_number = 30;
+
 %==============================================================================
 % Test the arguments
 if ~strcmp('.m',nameOfFunction(end-1:end)),
@@ -147,7 +149,7 @@ fprintf(fid,'	if [ "$COUNT" -ge "$COUNTMIN" ] \n');
 fprintf(fid,'            then \n');
 fprintf(fid,'               if [ "$COUNT" -le "$COUNTMAX" ] \n');
 fprintf(fid,'               then \n');
-fprintf(fid,'                  while [ "$COUNTERJOBS" -ge "30" ]; do \n');
+fprintf(fid,'                  while [ "$COUNTERJOBS" -ge "%d" ]; do \n', job_number);
 fprintf(fid,'                     echo $COUNTERJOBS \n');
 fprintf(fid,'                     sleep 20 \n');
 fprintf(fid,'                     COUNTERJOBS=`$QSTAT | grep $USER | wc -l` \n');

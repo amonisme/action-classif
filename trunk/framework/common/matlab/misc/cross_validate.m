@@ -25,12 +25,13 @@ function [best_params results] = cross_validate(obj, K)
 
         % Do K-fold cross-validation
         common = struct('K', K, 'samples', obj.get_training_samples(), 'obj', obj');
+        
         if USE_PARALLEL
             results = run_in_parallel('K_cross_validate', common, full_params, 0, 0, pg, 0, 1);
         else
             results = K_cross_validate(common, full_params);
         end
-        
+
         best_params = full_params(floor(median(find(results == max(results)))),:);
        
         if length(n_pos) > 1

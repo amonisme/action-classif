@@ -67,9 +67,9 @@ classdef BOF < SignatureAPI
             end
             if ~isfield(a, 'L_Wchan_cv')
                 obj.L_Wchan_cv = ones(size(obj.L_Wchan,1),1);
-                if obj.L_Wchan(1,1) == 1/2^size(obj.L_Wchan,1);
-                    obj.L_Wchan_cv = zeros(size(obj.L_Wchan,1),1);
-                end
+            end            
+            if obj.L_Wchan(1,1) == 1/2^(size(obj.L_Wchan,1)-1);
+                obj.L_Wchan_cv = zeros(size(obj.L_Wchan,1),1);
             end            
         end        
         %------------------------------------------------------------------
@@ -101,7 +101,6 @@ classdef BOF < SignatureAPI
             global HASH_PATH USE_PARALLEL TEMP_DIR;
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s_%s.mat',HASH_PATH,descriptor.toFileName(),detector.toFileName()));
-            
             if exist(file,'file') == 2
                 load(file,'descr');
                 write_log(sprintf('Descriptors loaded from cache: %s.\n', file));
@@ -199,7 +198,7 @@ classdef BOF < SignatureAPI
                             obj.kmeans = @compute_kmeans_mex;
                         else
                             if(strcmpi(kmeans_lib, 'cpp'))
-                                obj.kmeans = @compute_kmeans_mex;
+                                obj.kmeans = @compute_kmeans_cpp;
                             else                            
                                 throw(MException('',['Unknown library for computing K-means: "' kmeans_lib '".\nPossible values are: "vlfeat", "vgg", "matlab", "mex" and "cpp".\n']));
                             end
@@ -213,6 +212,7 @@ classdef BOF < SignatureAPI
             end_index = cumsum(L(:,1).*L(:,2));
             beg_index = [0; end_index(1:(end-1))];
             obj.L_Wchan = repmat(L(:,3), 1, channels.number());
+            obj.L_Wchan_cv = L(:,3) == 0;
             obj.L = [L (beg_index*obj.K+1) (end_index*obj.K)];
             obj.channel_sig_size = K*n_cells;   % See Lazebnik, Spatial Pyramid Matching
             obj.total_sig_size = obj.channels.number()*obj.channel_sig_size;

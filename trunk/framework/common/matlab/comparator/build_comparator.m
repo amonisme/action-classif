@@ -3,11 +3,7 @@ function [precision accuracy names] = build_comparator(root)
         root = 'experiments';
     end
 
-    names = struct('detector', containers.Map(), ...
-                   'descriptor', containers.Map(), ...
-                   'signature', containers.Map(), ...
-                   'signorm', containers.Map(), ...
-                   'classifier', containers.Map());
+    names = {containers.Map(), containers.Map(), containers.Map(), containers.Map(), containers.Map()};
     
     precision = -1;
     accuracy =  -1;
@@ -44,7 +40,7 @@ function [names coord precision accuracy] = get_coord(classifier, names, precisi
     else
         name = sprintf('%s%s',detector_names{1},sprintf('+%s',detector_names{2:end}));
     end
-    [c precision accuracy] = get_index(names.detector, name, 1, precision, accuracy);
+    [c precision accuracy] = get_index(names, name, 1, precision, accuracy);
     coord(1) = c;
     
     n_descriptors = classifier.signature.channels.n_descriptor;
@@ -57,20 +53,21 @@ function [names coord precision accuracy] = get_coord(classifier, names, precisi
     else
         name = sprintf('%s%s',descriptor_names{1},sprintf('+%s',descriptor_names{2:end}));
     end
-    [c precision accuracy] = get_index(names.descriptor, name, 2, precision, accuracy);
+    [c precision accuracy] = get_index(names, name, 2, precision, accuracy);
     coord(2) = c;
     
-    [c precision accuracy] = get_index(names.signature, classifier.signature.toName(), 3, precision, accuracy);
+    [c precision accuracy] = get_index(names, classifier.signature.toName(), 3, precision, accuracy);
     coord(3) = c;
     
-    [c precision accuracy] = get_index(names.signorm, classifier.signature.norm.toName(), 4, precision, accuracy);
+    [c precision accuracy] = get_index(names, classifier.signature.norm.toName(), 4, precision, accuracy);
     coord(4) = c; 
     
-    [c precision accuracy] = get_index(names.classifier, classifier.toName(), 5, precision, accuracy);
+    [c precision accuracy] = get_index(names, classifier.toName(), 5, precision, accuracy);
     coord(5) = c;
 end
     
-function [coord precision accuracy] = get_index(map, name, d, precision, accuracy)
+function [coord precision accuracy] = get_index(map_array, name, d, precision, accuracy)
+    map = map_array{d};
     if isKey(map, name)
         coord = map(name);
     else
