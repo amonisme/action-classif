@@ -9,8 +9,8 @@ function test_PYR_Chi2(use_cluster)
     
     % Channels
     n_channels = 2; channels = cell(2,1);
-    channels{1} = Channels({MS_Dense()}, {SIFT(L2Trunc(), 'colorDescriptor')});
-    channels{2} = Channels({MS_Dense()}, {SIFT(L2(), 'colorDescriptor')});
+    channels{1} = Channels({MS_Dense()}, {SIFT(L2Trunc())});
+    channels{2} = Channels({MS_Dense()}, {SIFT(L2())});
     
     kernel = Chi2();
     auto_weight = 1;

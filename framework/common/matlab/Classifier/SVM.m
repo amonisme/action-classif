@@ -6,6 +6,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         K           % K-fold cross-validation
         param_cv    % remember which parameterter was cross-validated
         kernel
+        kernel_params
         precomputed_dist_file
         svm
         OneVsOne
@@ -15,10 +16,10 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         
     methods (Static = true)
         %------------------------------------------------------------------
-        function obj = loadobj(a)
-            obj = a;
-            if ~isfield(a, 'param_cv')
-                obj.param_cv = [1];
+        function lobj = loadobj(obj)
+            lobj = obj;
+            if ~isfield(obj, 'param_cv')
+                lobj.param_cv = [1];
             end
         end            
         %------------------------------------------------------------------
@@ -348,9 +349,9 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         function params = get_params(obj)
             
             [params do_cv] = obj.kernel.get_testing_params(obj.signature.train_sigs);
-            
+                       
             if isempty(obj.C)
-                params = [(1/mean(sum(obj.signature.train_sigs.*obj.signature.train_sigs,2)) * 2.^(-6:10))' params];
+                params = [(1/mean(sum(obj.signature.train_sigs.*obj.signature.train_sigs,2)) * 1.5.^(-6:6))' params];
             elseif do_cv
                 params = [obj.C params];
             else

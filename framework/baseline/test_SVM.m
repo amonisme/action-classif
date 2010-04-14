@@ -10,35 +10,43 @@ function test_SVM(use_cluster)
     
     % Channels
     n_channels = 2; channels = cell(2,1);
-    channels{1} = Channels({MS_Dense()}, {SIFT(L2Trunc(), 'colorDescriptor')});
-    channels{2} = Channels({MS_Dense()}, {SIFT(L2(), 'colorDescriptor')});
+    channels{1} = Channels({MS_Dense()}, {SIFT(L2Trunc())});
+    channels{2} = Channels({MS_Dense()}, {SIFT(L2())});
     
-    signature = cell(9,n_channels);
+    % Dictionnary sizes
+    sizes = [256 512 1024];
+    n_sizes = length(sizes);
+    
+    % Norms signatures
+    norms_s = {
+        L1(), ...
+        L2(), ... 
+        None() ...      
+    };    
+    n_norms_s = length(norms_s);
+    
+    signature = cell(n_channels, n_sizes, n_norms_s);
     for i = 1:n_channels
-        signature{1,i} = BOF(channels{i}, 256, L1());
-        signature{2,i} = BOF(channels{i}, 256, L2());
-        signature{3,i} = BOF(channels{i}, 256, None());
-        signature{4,i} = BOF(channels{i}, 512, L1());
-        signature{5,i} = BOF(channels{i}, 512, L2());
-        signature{6,i} = BOF(channels{i}, 512, None());
-        signature{7,i} = BOF(channels{i}, 1024, L1());
-        signature{8,i} = BOF(channels{i}, 1024, L2());
-        signature{9,i} = BOF(channels{i}, 1024, None());
+        for j = 1:n_sizes
+            for k = 1:n_norms_s
+                signature{i,j,k} = BOF(channels{i}, sizes(j), norms_s{k});
+            end
+        end
     end
-    
+        
     kernels = cell(4,1);
     kernels{1} = Linear();
     kernels{2} = Chi2();
     kernels{3} = RBF();
     kernels{4} = Intersection();
     
-    strat = cell(1,1);
+    strat = cell(2,1);
     strat{1} = 'OneVsOne';
-    %strat{2} = 'OneVsAll';  
+    strat{2} = 'OneVsAll';  
     
     n_sig = numel(signature);
-    n_ker = size(kernels, 1);
-    n_strat = size(strat,1);    
+    n_ker = length(kernels);
+    n_strat = length(strat);
     
     if USE_PARALLEL
         use_para = 'ON';
@@ -54,8 +62,8 @@ function test_SVM(use_cluster)
         dir = '../../test_SVM';
         
         % Cache dictionnary
-        classifiers = cell(n_sig,3);        
-        for i = 1:n_sig
+        classifiers = cell(n_channels*n_sizes,3);        
+        for i = 1:n_channels*n_sizes
             classifiers{i,1} = SVM(kernels{1}, signature{i}, strat{1}, [], 1, 5);           
             classifiers{i,2} = database;
             classifiers{i,3} = dir;              

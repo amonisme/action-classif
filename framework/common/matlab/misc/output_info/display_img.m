@@ -20,7 +20,7 @@ function display_img(N, dir, prefix, root)
     end
     
     fid = fopen(fullfile('experiments', file), 'w+');
-    fprintf(fid, '\\documentclass[10pt,a4paper]{article}\n\\usepackage{graphicx}\n\\usepackage[tight,footnotesize]{subfigure}\n\n\\title{%s}\n\n\\begin{document}\n\n\\maketitle\n\n', regexprep(classifier.toFileName(),'_', '\\_'));
+    fprintf(fid, '\\documentclass[10pt,a4paper]{article}\n\\usepackage{graphicx}\n\\usepackage{float}\n\\usepackage[tight,footnotesize]{subfigure}\n\n\\title{%s}\n\n\\begin{document}\n\n\\maketitle\n\n', regexprep(classifier.toFileName(),'_', '\\_'));
            
     fprintf(fid, regexprep(classifier.toString(),'\n', '\\\\\\\\\n'));
     
@@ -56,24 +56,24 @@ function display_img(N, dir, prefix, root)
         % Correctly classified images, highest score
         I = find(assigned == i & correct == i);
         n = min(length(I), N);
-        fprintf(fid,'\\begin{figure}[p]\n\\centering\n');
+        fprintf(fid,'\\begin{figure}[H]\n\\centering\n');
         for j = 1:n
-            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=2.5cm]{../%s}}\n', sc(I(j)), Ipath{I(j)});
+            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{../%s}}\n', sc(I(j)), Ipath{I(j)});
         end
         fprintf(fid,'\\caption{%s: Correctly classified images, highest score}\n\\end{figure}\n', classes{i});
         
         % Correctly classified images, smallest score
-        fprintf(fid,'\\begin{figure}[p]\n\\centering\n');
+        fprintf(fid,'\\begin{figure}[H]\n\\centering\n');
         for j = n:-1:1
-            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=2.5cm]{../%s}}\n', sc(I(end-j+1)), Ipath{I(end-j+1)});
+            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{../%s}}\n', sc(I(end-j+1)), Ipath{I(end-j+1)});
         end
         fprintf(fid,'\\caption{%s: Correctly classified images, smallest score}\n\\end{figure}\n', classes{i});
         
         % Misclassified images, highest score
         I = find(assigned == i & correct ~= i, N);
-        fprintf(fid,'\\begin{figure}[p]\n\\centering\n');
+        fprintf(fid,'\\begin{figure}[H]\n\\centering\n');
         for j = 1:length(I)
-            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=2.5cm]{../%s}}\n', sc(I(j)), Ipath{I(j)});                    
+            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{../%s}}\n', sc(I(j)), Ipath{I(j)});                    
         end
         fprintf(fid,'\\caption{%s: Misclassified images, highest score}\n\\end{figure}\n\\newpage', classes{i});
     end

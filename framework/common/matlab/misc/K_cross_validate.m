@@ -1,6 +1,6 @@
 function results = K_cross_validate(common, params)
     tid = task_open();
-    
+        
     % Compute folds
     n_samples = size(common.samples,1);
     folds = cell(common.K,1);
