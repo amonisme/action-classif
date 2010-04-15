@@ -1,13 +1,17 @@
 classdef BOF < SignatureAPI
     % Bag of features
-    properties % (SetAccess = protected, GetAccess = protected)
-        K          % for K-means
+    properties (SetAccess = protected, GetAccess = protected)
         L          % for spatial pyramid
         L_Wchan    % weight for each channel
         L_Wchan_cv % remember if weight estimation was performed automaticaly
         centers   
-        maxiter
         kmeans
+    end
+    
+    % These properties are kept for compatibily reasons
+    properties (SetAccess = protected, GetAccess = protected)
+        K         
+        maxiter
         kmeans_lib
     end
     
@@ -53,6 +57,9 @@ classdef BOF < SignatureAPI
         %------------------------------------------------------------------
         function obj = loadobj(a)
             obj = a;
+            if ~isa(obj.kmeans, 'Kmeans')
+                obj.kmeans = Kmeans(obj.K, obj.kmeans_lib, obj.maxiter);                
+            end
             if isempty(obj.L)
                 obj.L = [1 1 1];
             elseif isscalar(obj.L)
@@ -72,53 +79,7 @@ classdef BOF < SignatureAPI
                 obj.L_Wchan_cv = zeros(size(obj.L_Wchan,1),1);
             end            
         end        
-        %------------------------------------------------------------------
-        function feat = compute_features(detector, Ipaths, pg, offset, scale)
-            global HASH_PATH USE_PARALLEL TEMP_DIR;
-            
-            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,detector.toFileName()));
-            
-            if exist(file,'file') == 2
-                load(file,'feat');
-                write_log(sprintf('Features loaded from cache: %s.\n', file));
-            else    
-                if USE_PARALLEL 
-                    feat = run_in_parallel('Detector_run_parallel', detector, Ipaths, 0, 0, pg, offset, scale);
-                else
-                    n_img = size(Ipaths,1);
-                    feat = cell(n_img, 1);
-                    for k=1:n_img
-                        pg.progress(offset+scale*k/n_img);
-                        feat{k} = detector.get_features(Ipaths{k});
-                    end
-                end
-                save(file, 'feat');
-            end
-        end
-        
-        %------------------------------------------------------------------
-        function descr = compute_descriptors(detector, descriptor, Ipaths, feat, pg, offset, scale)
-            global HASH_PATH USE_PARALLEL TEMP_DIR;
-            
-            file = fullfile(TEMP_DIR, sprintf('%s_%s_%s.mat',HASH_PATH,descriptor.toFileName(),detector.toFileName()));
-            if exist(file,'file') == 2
-                load(file,'descr');
-                write_log(sprintf('Descriptors loaded from cache: %s.\n', file));
-            else    
-                if USE_PARALLEL
-                    descr = run_in_parallel('Descriptor_run_parallel', descriptor, horzcat(Ipaths,feat), 0, 0, pg, offset, scale);
-                else
-                    n_img = size(Ipaths,1);
-                    descr = cell(n_img, 1);
-                    for k=1:n_img
-                        pg.progress(offset+scale*k/n_img);
-                        descr{k} = descriptor.get_descriptors(Ipaths{k}, feat{k});
-                    end
-                end      
-                save(file, 'descr');
-            end
-        end     
-        
+         
         %------------------------------------------------------------------
         function sig = parallel_signatures(common, args)
             tid = task_open();
@@ -183,29 +144,7 @@ classdef BOF < SignatureAPI
             
             L(:,1:2) = floor(L(:,1:2));
             
-            obj.maxiter = maxiter;
-            obj.kmeans_lib = kmeans_lib;           
-            if(strcmpi(kmeans_lib, 'vlfeat'))
-                obj.kmeans = @compute_kmeans_vlfeat;
-            else
-                if(strcmpi(kmeans_lib, 'vgg'))
-                    obj.kmeans = @compute_kmeans_vgg;
-                else
-                    if(strcmpi(kmeans_lib, 'matlab'))
-                        obj.kmeans = @compute_kmeans_matlab;
-                    else
-                        if(strcmpi(kmeans_lib, 'mex'))
-                            obj.kmeans = @compute_kmeans_mex;
-                        else
-                            if(strcmpi(kmeans_lib, 'cpp'))
-                                obj.kmeans = @compute_kmeans_cpp;
-                            else                            
-                                throw(MException('',['Unknown library for computing K-means: "' kmeans_lib '".\nPossible values are: "vlfeat", "vgg", "matlab", "mex" and "cpp".\n']));
-                            end
-                        end
-                    end
-                end
-            end
+            obj.kmeans = Kmeans(K, kmeans_lib, maxiter);
             obj.channels = channels;
             obj.K = floor(K);
             n_cells = sum(L(:,1).*L(:,2));
@@ -264,17 +203,9 @@ classdef BOF < SignatureAPI
 
                     % Compute visual vocabulary
                     d = cat(1, descr{:});
-                    pg.setCaption(sprintf('%sComputing BOF... (found %d descriptors)',progress_text,size(d,1)));
-                    
-                    
+                    pg.setCaption(sprintf('%sComputing BOF... (found %d descriptors)',progress_text,size(d,1)));                                       
                     center_file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName(obj.channels.channel_id())));
-                    if exist(center_file,'file') == 2
-                        load(center_file);
-                    else
-                        c = obj.kmeans(d, obj.K, obj.maxiter);    
-                        save(center_file, 'c');
-                    end
-                    obj.centers{obj.channels.channel_id()} = c;
+                    obj.centers{obj.channels.channel_id()} = obj.kmeans.do_kmeans(d, center_file);
                     progress_value = progress_value + k_means_progress_frac;
 
                     % Compute signature for this channel
@@ -369,20 +300,20 @@ classdef BOF < SignatureAPI
         end
         function str = toString(obj)
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = [sprintf('Signature: Bag of features (K = %d, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.norm.toString(), obj.kmeans_lib) obj.channels.toString()];
+                str = [sprintf('Signature: Bag of features (K = %d, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.norm.toString(), obj.kmeans.get_lib()) obj.channels.toString()];
             else
-                str = [sprintf('Signature: Spatial pyramid (K = %d, L = %s, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.get_pyramid(), obj.norm.toString(), obj.kmeans_lib) obj.channels.toString()];
+                str = [sprintf('Signature: Spatial pyramid (K = %d, L = %s, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.get_pyramid(), obj.norm.toString(), obj.kmeans.get_lib()) obj.channels.toString()];
             end
         end
         function str = toFileName(obj)
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = sprintf('BOF[%s-%d-%s]-%s', obj.kmeans_lib, obj.K, obj.norm.toFileName(), obj.channels.toFileName());
+                str = sprintf('BOF[%s-%d-%s]-%s', obj.kmeans.get_lib(), obj.K, obj.norm.toFileName(), obj.channels.toFileName());
             else
-                str = sprintf('PYR[%s-%d-%s-%s]-%s', obj.kmeans_lib, obj.K, obj.get_pyramid(), obj.norm.toFileName(), obj.channels.toFileName());
+                str = sprintf('PYR[%s-%d-%s-%s]-%s', obj.kmeans.get_lib(), obj.K, obj.get_pyramid(), obj.norm.toFileName(), obj.channels.toFileName());
             end
         end
         function str = KmeanstoFileName(obj, numChannel)
-            str = sprintf('Kmeans[%s-%d-%s]-C(%d)-%s', obj.kmeans_lib, obj.K, obj.get_pyramid(), numChannel, obj.channels.toFileName());
+            str = sprintf('Kmeans[%s-%d]-C(%d)-%s', obj.kmeans.get_lib(), obj.K, numChannel, obj.channels.toFileName());
         end
         function str = toName(obj)
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
