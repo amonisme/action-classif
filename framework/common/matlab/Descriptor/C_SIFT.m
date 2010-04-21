@@ -19,6 +19,15 @@ classdef C_SIFT < DescriptorAPI
         end
     end
 
+    methods (Access = protected)
+        %------------------------------------------------------------------
+        % Returns descriptors of the image specified by Ipath given its
+        % feature points 'feat' (one per line)
+        function descr = compute_descriptors(obj, Ipath, feat)
+            descr = obj.impl_colorDescriptor(Ipath, feat);
+        end    
+    end    
+    
     methods
         %------------------------------------------------------------------
         % Constructor
@@ -38,13 +47,6 @@ classdef C_SIFT < DescriptorAPI
             else
                 throw(MException('',['Unknown library for computing C-SIFT descriptors: "' lib '".\nPossible value is: "cd" (for colorDescriptor).\n']));
             end
-        end
-        
-        %------------------------------------------------------------------
-        % Returns descriptors of the image specified by Ipath given its
-        % feature points 'feat' (one per line)
-        function descr = compute_descriptors(obj, Ipath, feat)
-            descr = obj.impl_colorDescriptor(Ipath, feat);
         end
         
         %------------------------------------------------------------------

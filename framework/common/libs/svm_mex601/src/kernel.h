@@ -36,7 +36,8 @@
 #ifndef KERNELH
 #define KERNELH
 
-double chi2_kernel(KERNEL_PARM *kernel_parm, SVECTOR *a, SVECTOR *b, char* file_dist);
+double gram_kernel(KERNEL_PARM *kernel_parm, SVECTOR *a, SVECTOR *b);
+double chi2_kernel(KERNEL_PARM *kernel_parm, SVECTOR *a, SVECTOR *b);
 double intersection_kernel(KERNEL_PARM *kernel_parm, SVECTOR *a, SVECTOR *b);
 
 /*****************************************************************************/
@@ -49,12 +50,9 @@ double custom_kernel(KERNEL_PARM *kernel_parm, SVECTOR *a, SVECTOR *b)
 {
 	switch(kernel_parm->custom[0])
 	{
-		case '0': 
-			if(kernel_parm->custom[1] == '1')
-				return chi2_kernel(kernel_parm, a, b, &kernel_parm->custom[2]);
-			else
-				return chi2_kernel(kernel_parm, a, b, NULL);
-		case '1': return intersection_kernel(kernel_parm, a, b);
+		case '0': return gram_kernel(kernel_parm, a, b);	
+		case '1': return chi2_kernel(kernel_parm, a, b);
+		case '2': return intersection_kernel(kernel_parm, a, b);
 		default:
 		#ifdef MATLAB_MEX
 			mexErrMsgTxt("Unknown personnal kernel function!");

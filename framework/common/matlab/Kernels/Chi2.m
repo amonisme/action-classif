@@ -18,15 +18,19 @@ classdef Chi2 < KernelAPI
     methods        
         %------------------------------------------------------------------
         % Constructor Kernel type: exp(-1/a*Chi2(X,Y)^2)
-        function obj = Chi2(a,lib)
+        function obj = Chi2(a,precompute,lib)
             if(nargin < 1)
                 a = [];
             end
             if(nargin < 2)
+                precompute = 0;
+            end
+            if(nargin < 3)
                 lib = 'svmlight';
             end
             
             obj.a = a;
+            obj.precompute = precompute;
             obj.lib_name = lib;
             
             obj.param_cv = [0];
@@ -44,16 +48,15 @@ classdef Chi2 < KernelAPI
         %------------------------------------------------------------------
         % Return a trained svm (labels are 1 or -1) (precomputed is [] or
         % the file containing the data.)
-        function svm = learn(obj, C, J, labels, sigs, precomputed)
-            if isempty(precomputed)
-                p = 0;
-                file = [];
-            else
-                p = 1;
-                file = sprintf('%s/%s', cd, precomputed);
-            end
-            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 4 -g %s -u0%d%s',num2str(C), num2str(J), num2str(1/obj.a), p, file));
+        function svm = lib_call_learn(obj, C, J, labels, sigs)
+            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 4 -g %s -u1',num2str(C), num2str(J), num2str(1/obj.a)));
         end
+        
+        %------------------------------------------------------------------
+        % Return scores provided a trained svm
+        function score = lib_call_classify(obj, svm, sigs)
+            [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);
+        end        
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
@@ -93,49 +96,103 @@ classdef Chi2 < KernelAPI
         end  
         
         %------------------------------------------------------------------
-        % Precompute distances or scalar products for cross-validation
-        % If precomputation not supported, returns [], otherwise, returns
-        % the path to file where results are saved
-        function file = precompute(obj, training_sigs)
-            file = [];
-%             global FILE_BUFFER_PATH;
-%             dist = obj.get_chi2_dist(training_sigs);
-%             for i=1:n_histo
-%                 dist(i,i) = sum(training_sigs(i,:)) * 2;
-%             end  
-% 
-%             % save the distances
-%             file = sprintf('%sdist.txt',FILE_BUFFER_PATH);
-%             fid = fopen(file, 'w+');
-%             fwrite(fid, size(dist, 1), 'int32');
-%             fwrite(fid, dist, 'double');
-%             fclose(fid);
-        end
+        % Precompute distances or scalar products into the gram matrix
+        % such that: gram_matrix(i+1,j+1) = <K(i)|K(j)>
+        %            gram_matrix(i,1) = <K(i)|0>
+        %            gram_matrix(1,j) = <0|K(j)>
+        function obj = precompute_gram_matrix(obj, sigs1, sigs2)
+            if nargin<3
+                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
+            
+                obj.gram_matrix = exp( - obj.get_chi2_dist(sigs1) / obj.a);                
+            else
+                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
+                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
+            
+                obj.gram_matrix = exp( - obj.get_chi2_dist(sigs1, sigs2) / obj.a);                
+            end            
+        end        
     end
     
-    methods (Static)
-        %------------------------------------------------------------------
-        % Return scores provided a trained svm
-        function score = classify(svm, sigs, precomputed)
-            [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);
-        end
-        
+    methods (Static)        
         %------------------------------------------------------------------
         % Internal method for pre-computing chi2 distance between each
         % histogram
-        function dist = get_chi2_dist(histo)
-            n_histo = size(histo, 1);
+        function dist = get_chi2_dist(sigs1, sigs2)
+            if nargin<2
+                sigs2 = sigs1;
+                is_symetric = 1;
+            else
+                is_symetric = 0;
+            end
+            
+            n1 = size(sigs1, 1);
+            n2 = size(sigs2, 1);
+            d  = size(sigs1, 2);
+            
             % precompute the chi2 distances
-            dist = zeros(n_histo);
-            for i=1:n_histo
-                for j=(i+1):n_histo
-                    nums = histo(i,:) - histo(j,:);
-                    dens = abs(histo(i,:) + histo(j,:));
-                    dens(dens(:,:) == 0) = 1;
-                    dist(i,j) = sum(nums.*nums./dens);
-                    dist(j,i) = dist(i,j);
+            dist = zeros(n1, n2);
+%             
+%             tic
+%             for k = 1:d
+%                 t = toc;
+%                 fprintf('%f\n', t*d/k); 
+%                 A = repmat(sigs1(:,k),1,n2);
+%                 B = repmat(sigs2(:,k)',n1,1);
+%                 N = A - B;
+%                 D = A + B + eps;
+%                 dist = dist + N.*N./D;
+%             end
+            
+%             sigs2sparse = cell(n2,1);
+%             for j=1:n2
+%                 sigs2sparse{j} = sparse(sigs2(j,:));
+%             end
+% 
+%             tic
+%             for i=1:n1
+%                 sigs1sparse = sparse(sigs1(i,:));
+%                 t = toc;
+%                 fprintf('%fs\n', t*n1/i);
+%                 if is_symetric
+%                     dist(i,i) = 0;
+%                     js = (i+1):n2;
+%                 else
+%                     js = 1:n2;
+%                 end
+%                 for j=js
+%                     S = sigs1sparse + sigs2sparse{j};
+%                     I = S ~= 0;
+%                     D = sigs1(i,I) - sigs2(j,I);
+%                     dist(i,j) = sum(D.*D ./ S(I));
+%                     if is_symetric
+%                         dist(j,i) = dist(i,j);
+%                     end
+%                 end
+%             end
+
+            for i=1:n1               
+                I = (sigs1(i,:) ~= 0);
+                rest = sum(abs(sigs2(:,~I)), 2);
+                s1 = sigs1(i,I);
+                s2 = sigs2(:,I);
+                
+                if is_symetric
+                    dist(i,i) = 0;
                 end
-            end                   
+
+                for j=1:n2
+                    if ~is_symetric || j > i 
+                        S = s1 + s2(j,:);
+                        D = s1 - s2(j,:);
+                        dist(i,j) = sum(D.*D ./ S) + rest(j);
+                        if is_symetric
+                            dist(j,i) = dist(i,j);
+                        end
+                    end
+                end
+            end    
+            
             dist = dist * 2;
         end        
     end  

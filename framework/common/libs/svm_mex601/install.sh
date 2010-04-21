@@ -32,11 +32,11 @@ cd $DIST/src
 
 echo Compiling
 cd ../bin
-/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexsvmlearn.c ../src/precomputed.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
+/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexsvmlearn.c ../src/gram_kernel.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
 
-/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexsvmclassify.c ../src/precomputed.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
+/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexsvmclassify.c ../src/gram_kernel.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
 
-/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexsinglekernel.c ../src/precomputed.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
+/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexsinglekernel.c ../src/gram_kernel.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
  
-/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexkernel.c ../src/precomputed.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
+/usr/matlab-2009a/bin/mex -O  -DMATLAB_MEX -I../src ../src/mexkernel.c ../src/gram_kernel.c ../src/chi2_kernel.c ../src/intersection_kernel.c ../src/global.c ../src/svm_learn.c ../src/svm_common.c ../src/svm_hideo.c ../src/mexcommon.c ../src/mem_clean.c
     

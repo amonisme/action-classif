@@ -58,6 +58,8 @@ function update_tests_results(root)
                     system(sprintf('mv "%s" "%s"', fullfile(root,directories{i}), d));
                 end
                 save(fullfile(d,'classifier.mat'), 'classifier');
+            else
+                save(classifier_file, 'classifier');
             end
         else
             system(sprintf('rm -rf "%s"',fullfile(root,directories{i})));

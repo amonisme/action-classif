@@ -52,16 +52,6 @@ classdef SIFT < DescriptorAPI
             end
         end
         
-        %------------------------------------------------------------------
-        % Returns descriptors of the image specified by Ipath given its
-        % feature points 'feat' (one per line)
-        function descr = compute_descriptors(obj, Ipath, feat)
-            if(obj.lib == 0)
-                descr = obj.impl_colorDescriptor(Ipath, feat);
-            else
-                descr = obj.impl_vlfeat(Ipath, feat);
-            end
-        end
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
@@ -73,6 +63,19 @@ classdef SIFT < DescriptorAPI
         end
         function str = toName(obj)
             str = sprintf('SIFT(%s)', obj.norm.toName());
+        end        
+    end
+    
+    methods (Access = protected)  
+        %------------------------------------------------------------------
+        % Returns descriptors of the image specified by Ipath given its
+        % feature points 'feat' (one per line)
+        function descr = compute_descriptors(obj, Ipath, feat)
+            if(obj.lib == 0)
+                descr = obj.impl_colorDescriptor(Ipath, feat);
+            else
+                descr = obj.impl_vlfeat(Ipath, feat);
+            end
         end
     end
 end
