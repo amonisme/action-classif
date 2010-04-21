@@ -14,7 +14,8 @@ function test_SVM(use_cluster)
     channels{2} = Channels({MS_Dense()}, {SIFT(L2())});
     
     % Dictionnary sizes
-    sizes = [256 512 1024];
+    %sizes = [256 512 1024];
+    sizes = [2048 4096 8192];
     n_sizes = length(sizes);
     
     % Norms signatures
@@ -68,7 +69,7 @@ function test_SVM(use_cluster)
             classifiers{i,2} = database;
             classifiers{i,3} = dir;              
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],4096);
               
         % Full test
         classifiers = cell(n_ker*n_strat*n_sig,3);   
@@ -81,7 +82,7 @@ function test_SVM(use_cluster)
                 end
             end
         end    
-        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],4096);
     else
         dir = 'baseline/test_SVM';
         [status,message,messageid] = mkdir(dir);

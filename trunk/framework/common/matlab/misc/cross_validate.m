@@ -4,7 +4,7 @@ function [best_params results] = cross_validate(obj, K)
     
     global USE_PARALLEL;
     
-    params = obj.get_params();
+    params = obj.CV_get_params(); 
 
     if ~isempty(params)
         n_params = length(params);
@@ -20,20 +20,20 @@ function [best_params results] = cross_validate(obj, K)
             n2 = size(full_params,1);
             full_params = [repmat(full_params, n1, 1) kron(params{i},ones(n2,1))];
         end
-
+        
         pg = ProgressBar('Training', 'Cross-validation...');
 
         % Do K-fold cross-validation
-        common = struct('K', K, 'samples', obj.get_training_samples(), 'obj', obj');
-        
         if USE_PARALLEL
-            results = run_in_parallel('K_cross_validate', common, full_params, 0, 0, pg, 0, 1);
+            common = struct('K', K, 'samples', obj.CV_get_training_samples(), 'obj', obj');
+            results = run_in_parallel('K_cross_validate_parallel', common, full_params, 0, 0, pg, 0, 1);
         else
-            results = K_cross_validate(common, full_params);
+            results = K_cross_validate(obj, K, obj.CV_get_training_samples(), full_params, pg);
         end
 
         best_params = full_params(floor(median(find(results == max(results)))),:);
        
+        results
         if length(n_pos) > 1
             results = reshape(results,n_pos');
         end

@@ -62,10 +62,6 @@ classdef Harris < DetectorAPI
         % Returns feature points of the image specified by Ipath 
         function feat = get_features(obj, Ipath)          
             feat = obj.impl_colorDescriptor(Ipath);
-            
-            if ~obj.rotInvariant
-                feat = obj.scale_only(feat);
-            end
         end
         
         %------------------------------------------------------------------

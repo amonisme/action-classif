@@ -4,12 +4,14 @@ classdef DetectorAPI
         rotInvariant   % 0 - scale invariant only, 1 - rotation and scale invariant
     end
     
-    methods (Static)
-        function feat = scale_only(feat)
-            feat(:, 4:5) = 0;
-        end        
+    methods
+        %------------------------------------------------------------------
+        % True iif the detector is rotation invariant
+        function ri = is_rotation_invariant(obj)
+            ri = obj.rotInvariant;
+        end
     end
-    
+       
     methods (Access = protected)
         %------------------------------------------------------------------
         % Constructor

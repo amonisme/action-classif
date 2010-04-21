@@ -6,20 +6,18 @@ classdef DescriptorAPI
   
     methods (Access = protected)
         %------------------------------------------------------------------
-        % Constructor
-        function obj = DescriptorAPI(norm)
-            obj.norm = norm;
-        end
-    end
-    
-    methods (Abstract)
-        %------------------------------------------------------------------
         % Returns descriptors of the image specified by Ipath given its
         % feature points 'feat' (one per line)
         descr = compute_descriptors(obj, Ipath, feat)
     end
-         
-    methods             
+            
+    methods        
+        %------------------------------------------------------------------
+        % Constructor
+        function obj = DescriptorAPI(norm)
+            obj.norm = norm;
+        end
+               
         %------------------------------------------------------------------
         % Returns descriptors of the image specified by Ipath given its
         % feature points 'feat' (one per line)

@@ -299,7 +299,6 @@ void norm1_with_cutoff(double *hist, int n, double cut_off_threshold)
 		hist[i] /= s;
 }
 
-//void mexFunction(int nlhs,mxArray* plhs[],int nrhs,const mxArray* prhs[])
 int main(int argc, char **argv)
 {
 	if(argc != 5)
@@ -307,14 +306,22 @@ int main(int argc, char **argv)
 		cerr << "Usage: [kmeans] feature-file ncluster maxiter output-file" << endl;
 		return 1;
 	}
-	// Reading input arguments
-	//double* data = mxGetPr(prhs[0]);
 
-	int dimension = 0;//128; //static_cast<int>(mxGetM(prhs[0]));
-	int ndata = 0;//2000000; //static_cast<int>(mxGetN(prhs[0]));
+	int dimension = 0;
+	int ndata = 0;
 	
+  //Load data
+	FILE *File = fopen(argv[1], "rb");
+	
+	fread(&dimension, sizeof(int), 1, File);
+	fread(&ndata, sizeof(int), 1, File);
+	
+	double *data = new double[ndata*dimension];
+	fread(data, sizeof(double), dimension*ndata, File);
+  fclose(File);	
+  
 	//get size of data matrix
-	{
+	/*{
 		ifstream fin(argv[1]);
 		string line, token;
 
@@ -328,44 +335,34 @@ int main(int argc, char **argv)
 	}
 
 	//Load data
-	double *data = new double[ndata*dimension];
 	{
-		//double *hist = new double[dimension];
+		double *hist = new double[dimension];
 		ifstream fin(argv[1]);
 		for(int i = 0; i < ndata; i++)
 		{
-			/*for(int j = 0; j < dimension; j++)
+			for(int j = 0; j < dimension; j++)
 				fin >> hist[j];
 
-			//norm1_with_cutoff(hist, dimension, 0.2);
+			norm1_with_cutoff(hist, dimension, 0.2);
 			norm2(hist, dimension);
 
 			for(int j = 0; j < dimension; j++)
-				data[i*dimension + j] = hist[j];*/
+				data[i*dimension + j] = hist[j];
 				
 			for(int j = 0; j < dimension; j++)
 				fin >> data[i*dimension + j];
+
 		}
-		//delete[] hist;
-	
-	}
+		delete[] hist;
+	}*/
 	
 //cout << "ndata=" << ndata <<", dimension=" << dimension << endl;	
 
-	int ncluster = atoi(argv[2]); //static_cast<int>(mxGetScalar(prhs[1]));
-	int maxiter = atoi(argv[3]); //static_cast<int>(mxGetScalar(prhs[2]));
+	int ncluster = atoi(argv[2]); 
+	int maxiter = atoi(argv[3]);
 	ofstream fout(argv[4]);
 
 	// Seting output arguments
-
-/*
-	plhs[0] = mxCreateDoubleMatrix(dimension,ncluster,mxREAL);
-	double* centers = mxGetPr(plhs[0]);
-	plhs[1] = mxCreateDoubleMatrix(1,ndata,mxREAL);
-	double* assign = mxGetPr(plhs[1]);
-	plhs[2] = mxCreateDoubleMatrix(1,1,mxREAL);
-	double* niter = mxGetPr(plhs[2]);
-*/
 	double *centers = new double[ncluster * dimension];
 	double *assign = new double[ndata];
 	
@@ -373,7 +370,12 @@ int main(int argc, char **argv)
 	KMEANS.set_out_data(centers,assign);
 
 	KMEANS.do_kmeans();
-	double niter = KMEANS.getNiter();
+	
+	File = fopen(argv[4], "wb+");
+	fwrite(centers, sizeof(double), dimension*ncluster, File);
+  fclose(File);	
+
+/*	double niter = KMEANS.getNiter();
 
 	for(int i = 0; i < ncluster; i++)
 	{
@@ -403,7 +405,7 @@ int main(int argc, char **argv)
 			dist += value*value;
 		}
 		meandist[ass] += sqrt(dist);
-	}
+	}*/
 /*	cout << "\nMean Dists:...\n";
 	for(int i = 0; i < ncluster; i++)
 		cout << meandist[i] / (clustersize[i] + 1e-10) << ' ';

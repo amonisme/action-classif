@@ -56,10 +56,19 @@ classdef SignatureAPI < handle
                 load(file,'descr');
                 write_log(sprintf('Descriptors loaded from cache: %s.\n', file));
             else    
+                n_img = size(Ipaths,1);
+                
+                if ~detector.is_rotation_invariant()
+                    for k=1:n_img
+                        f = feat{k};
+                        f(:,4:5) = 0;
+                        feat{k} = f;
+                    end
+                end
+                
                 if USE_PARALLEL
                     descr = run_in_parallel('Descriptor_run_parallel', descriptor, horzcat(Ipaths,feat), 0, 0, pg, offset, scale);
                 else
-                    n_img = size(Ipaths,1);
                     descr = cell(n_img, 1);
                     for k=1:n_img
                         pg.progress(offset+scale*k/n_img);

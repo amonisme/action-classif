@@ -58,6 +58,15 @@ function test_PYR_Chi2(use_cluster)
     if(use_cluster)
         USE_CLUSTER = 1;
         dir = '../../test_PYR';
+
+        % 1vA
+        classifiers = cell(n_sig,3);        
+        for i = 1:n_sig
+            classifiers{i,1} = SVM(kernel, signature{i}, strat{2}, [], 1, 5);           
+            classifiers{i,2} = database;
+            classifiers{i,3} = dir;              
+        end
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);        
         
         % 1v1
         classifiers = cell(n_sig,3);        
@@ -68,14 +77,6 @@ function test_PYR_Chi2(use_cluster)
         end
         run_in_parallel('evaluate_parallel',[],classifiers,[],0);
         
-        % 1vA
-        classifiers = cell(n_sig,3);        
-        for i = 1:n_sig
-            classifiers{i,1} = SVM(kernel, signature{i}, strat{2}, [], 1, 5);           
-            classifiers{i,2} = database;
-            classifiers{i,3} = dir;              
-        end
-        run_in_parallel('evaluate_parallel',[],classifiers,[],0);        
     else   
         dir = 'baseline/test_PYR';
         [status,message,messageid] = mkdir(dir);
