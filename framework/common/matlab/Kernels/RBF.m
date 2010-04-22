@@ -3,6 +3,7 @@ classdef RBF < KernelAPI
     properties (SetAccess = protected, GetAccess = protected)
         a
         param_cv    % remember which parameterter was cross-validated
+        dist        % remember distances for cross validation
     end
 
     methods (Static = true)
@@ -82,11 +83,9 @@ classdef RBF < KernelAPI
         
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
-        function [params do_cv] = get_testing_params(obj, training_sigs)
-            do_cv = false;
+        function params = get_params(obj)
             if isempty(obj.a)
-                val_a = mean(mean(dist2(training_sigs, training_sigs))) * (1.5.^(-3:3));
-                do_cv = true;
+                val_a = mean(mean(obj.dist)) * (1.5.^(-3:3));
             else
                 val_a = obj.a;
             end
@@ -99,15 +98,40 @@ classdef RBF < KernelAPI
         %            gram_matrix(i,1) = <K(i)|0>
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
-            sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-            sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-            
-            n1 = size(sigs1,1);
-            n2 = size(sigs2,1);
-            
-            D2 = repmat(sum(sigs1.^2,2),1,n2) - 2*sigs1*sigs2' + repmat(sum((sigs2').^2,1),n1,1);
-            obj.gram_matrix = exp( - D2 / obj.a);
+            if nargin < 2
+                obj.gram_matrix = exp( - obj.dist / obj.a);
+            else
+                if nargin < 3
+                    sigs2 = sigs1;
+                end   
+                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
+                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
+
+                n1 = size(sigs1,1);
+                n2 = size(sigs2,1);
+
+                D2 = repmat(sum(sigs1.^2,2),1,n2) - 2*sigs1*sigs2' + repmat(sum((sigs2).^2,2)',n1,1);
+                obj.gram_matrix = exp( - D2 / obj.a);
+            end
         end
+
+        %------------------------------------------------------------------
+        % Store the signatures
+        function prepare_cross_validation(obj, sigs)
+            prepare_cross_validation@KernelAPI(obj, sigs);
+            sigs = [zeros(1,size(sigs,2)); sigs];           
+            n = size(sigs,1);            
+            obj.dist = repmat(sum(sigs.^2,2),1,n) - 2*(sigs*sigs') + repmat(sum(sigs.^2,2)',n,1);
+        end      
+
+        %------------------------------------------------------------------
+        % Compute the gram matrix from stored signatures
+        function obj = gram_matrix_from_stored_sigs(obj)
+            if obj.precompute
+                obj.precompute_gram_matrix();
+                obj.gram_file = obj.disk_write_gram_matrix();            
+            end
+        end  
     end
 end
 

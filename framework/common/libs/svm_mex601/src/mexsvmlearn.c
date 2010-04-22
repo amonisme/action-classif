@@ -17,6 +17,7 @@
 #include "mexsvmlearn.h"
 #include "global.h"
 #include "mexcommon.h"
+#include "load_kernel.h"
 
 char docfile[200];           /* file with training examples */
 char modelfile[200];         /* file for resulting classifier */
@@ -116,7 +117,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 	* ********************************** */
 	store_model(&model, plhs);
 
-
+	free_kernel();
 	global_destroy( );	
 }
 

@@ -40,13 +40,17 @@ classdef Kmeans < handle
         %------------------------------------------------------------------
         function centers = do_kmeans(obj, points, file)  
             if nargin >= 3 && exist(file,'file') == 2
-                try
-                    load(file,'centers');
-                catch ME
-                    centers = obj.fun(points, obj.K, obj.maxiter);
-                    if nargin >= 3
+                load(file,'centers');
+                if exist('centers','var') ~= 1
+                    load(file,'c');
+                    if exist('c','var') == 1
+                        centers = c;
                         save(file, 'centers');
-                    end 
+                    end
+                end
+                if exist('centers','var') ~= 1
+                    centers = obj.fun(points, obj.K, obj.maxiter);
+                    save(file, 'centers');
                 end
             else
                 centers = obj.fun(points, obj.K, obj.maxiter);

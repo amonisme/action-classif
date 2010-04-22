@@ -14,8 +14,7 @@ function test_SVM(use_cluster)
     channels{2} = Channels({MS_Dense()}, {SIFT(L2())});
     
     % Dictionnary sizes
-    %sizes = [256 512 1024];
-    sizes = [2048 4096 8192];
+    sizes = [256 512 1024 2048 4096];
     n_sizes = length(sizes);
     
     % Norms signatures
@@ -35,11 +34,10 @@ function test_SVM(use_cluster)
         end
     end
         
-    kernels = cell(4,1);
-    kernels{1} = Linear();
-    kernels{2} = Chi2();
-    kernels{3} = RBF();
-    kernels{4} = Intersection();
+    kernels = {Linear(1), ...
+               Intersection(1), ...
+               Chi2([],1), ...
+               RBF([],1)};
     
     strat = cell(2,1);
     strat{1} = 'OneVsOne';
@@ -63,13 +61,13 @@ function test_SVM(use_cluster)
         dir = '../../test_SVM';
         
         % Cache dictionnary
-        classifiers = cell(n_channels*n_sizes,3);        
-        for i = 1:n_channels*n_sizes
-            classifiers{i,1} = SVM(kernels{1}, signature{i}, strat{1}, [], 1, 5);           
-            classifiers{i,2} = database;
-            classifiers{i,3} = dir;              
-        end
-        run_in_parallel('evaluate_parallel',[],classifiers,[],4096);
+%         classifiers = cell(n_channels*n_sizes,3);        
+%         for i = 1:n_channels*n_sizes
+%             classifiers{i,1} = SVM(kernels{1}, signature{i}, strat{1}, [], 1, 5);           
+%             classifiers{i,2} = database;
+%             classifiers{i,3} = dir;              
+%         end
+%         run_in_parallel('evaluate_parallel',[],classifiers,[],0);
               
         % Full test
         classifiers = cell(n_ker*n_strat*n_sig,3);   
@@ -82,7 +80,7 @@ function test_SVM(use_cluster)
                 end
             end
         end    
-        run_in_parallel('evaluate_parallel',[],classifiers,[],4096);
+        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
     else
         dir = 'baseline/test_SVM';
         [status,message,messageid] = mkdir(dir);

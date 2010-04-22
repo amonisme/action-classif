@@ -83,12 +83,12 @@ classdef SHAPEC < SignatureAPI
                 A = floor((pi-A)*num_A_bins/(2*pi)) + 1;
                 
                 % Build histogram
-                sig = zeros(1, n_centers*num_R_bins*num_A_bins);
+                sig = zeros(1, n_centers*num_R_bins*num_A_bins*n_centers);
                 for i = 1:num_R_bins
                     for j = 1:num_A_bins                    
                         I = (R == i) & (A == j);
-                        i1 = ((i-1)*num_A_bins+j-1)*n_centers+1;
-                        sig(i1:(i1+n_centers-1)) = sum(m(:, I), 2)';
+                        n = n_centers*(j - 1 + num_A_bins * (i - 1 + num_R_bins * (k - 1)));
+                        sig((n+1):(n+n_centers)) = sum(m(:, I), 2)';
                     end
                 end
                 

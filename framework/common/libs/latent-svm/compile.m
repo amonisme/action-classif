@@ -8,6 +8,6 @@
 % 1) multithreaded convolution using blas
 %!/usr/matlab-2009a/bin/mex -O fconvblas.cc -lmwblas -o fconv
 % 2) mulththreaded convolution without blas
-!/usr/matlab-2009a/bin/mex -O fconvMT.cc -o fconv
+%!/usr/matlab-2009a/bin/mex -O fconvMT.cc -o fconv
 % 3) basic convolution, very compatible
-% !/usr/matlab-2009a/bin/mex -O fconv.cc -o fconv
+!/usr/matlab-2009a/bin/mex -O fconv.cc -o fconv

@@ -39,10 +39,9 @@ double classify_example(MODEL *model, DOC *ex)
   register long i;
   register double dist = 0;
 
-/*  if((model->kernel_parm.kernel_type == LINEAR) && (model->lin_weights))
-	
-		   
+/*  if((model->kernel_parm.kernel_type == LINEAR) && (model->lin_weights))  
   dist=0;*/
+  
   for(i=1;i<model->sv_num;i++) {  
     dist+=kernel(&model->kernel_parm,model->supvec[i],ex)*model->alpha[i];
   }

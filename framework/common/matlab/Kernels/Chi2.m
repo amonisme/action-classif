@@ -3,6 +3,7 @@ classdef Chi2 < KernelAPI
     properties (SetAccess = protected, GetAccess = protected)
         a
         param_cv    % remember which parameterter was cross-validated
+        dist        % remember distances for cross validation
     end
 
     methods (Static = true)
@@ -83,12 +84,9 @@ classdef Chi2 < KernelAPI
               
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
-        function [params do_cv] = get_testing_params(obj, training_sigs)
-            do_cv = false;
+        function params = get_params(obj)
             if isempty(obj.a)
-                dist = obj.get_chi2_dist(training_sigs);
-                val_a = mean(mean(dist)) * (1.5.^(-3:3));
-                do_cv = true;
+                val_a = mean(mean(obj.dist)) * (1.5.^(-3:3));
             else
                 val_a = obj.a;
             end
@@ -102,16 +100,35 @@ classdef Chi2 < KernelAPI
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
             if nargin<3
-                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-            
-                obj.gram_matrix = exp( - obj.get_chi2_dist(sigs1) / obj.a);                
+                if nargin<2
+                    obj.gram_matrix = exp( - obj.dist / obj.a);
+                else
+                    sigs1 = [zeros(1,size(sigs1,2)); sigs1];
+                    obj.gram_matrix = exp( - obj.get_chi2_dist(sigs1) / obj.a);                
+                end
             else
                 sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-            
+                sigs2 = [zeros(1,size(sigs2,2)); sigs2];               
                 obj.gram_matrix = exp( - obj.get_chi2_dist(sigs1, sigs2) / obj.a);                
-            end            
-        end        
+            end  
+        end   
+        
+        %------------------------------------------------------------------
+        % Store the signatures
+        function prepare_cross_validation(obj, sigs)
+            prepare_cross_validation@KernelAPI(obj, sigs);
+            sigs = [zeros(1,size(sigs,2)); sigs];
+            obj.dist = obj.get_chi2_dist(sigs);
+        end      
+
+        %------------------------------------------------------------------
+        % Compute the gram matrix from stored signatures
+        function obj = gram_matrix_from_stored_sigs(obj)
+            if obj.precompute
+                obj.precompute_gram_matrix();
+                obj.gram_file = obj.disk_write_gram_matrix();            
+            end
+        end  
     end
     
     methods (Static)        
@@ -128,7 +145,6 @@ classdef Chi2 < KernelAPI
             
             n1 = size(sigs1, 1);
             n2 = size(sigs2, 1);
-            d  = size(sigs1, 2);
             
             % precompute the chi2 distances
             dist = zeros(n1, n2);

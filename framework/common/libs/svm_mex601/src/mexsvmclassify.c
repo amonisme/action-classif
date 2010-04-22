@@ -75,7 +75,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
 
   err[0] = incorrect / (double) rows;
 
-  
+	free_kernel();  
   global_destroy( );
 
 }
