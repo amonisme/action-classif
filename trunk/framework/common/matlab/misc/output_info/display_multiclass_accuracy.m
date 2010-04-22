@@ -21,7 +21,5 @@ function perf_total = display_multiclass_accuracy(classes, table)
         write_log(sprintf('%s: %.2f\n', classes{i}, perf_classes(i)));
     end
     write_log(sprintf('-------\nMulti-class accuracy: %.2f\n', perf_total));
-    
-   
 end
 

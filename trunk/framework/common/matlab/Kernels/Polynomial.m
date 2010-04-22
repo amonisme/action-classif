@@ -110,23 +110,21 @@ classdef Polynomial < KernelAPI
         
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
-        function [params do_cv] = get_testing_params(obj, training_sigs)
+        function params = get_params(obj)
             scal = [];
-            n_sigs = size(training_sigs, 1);
+            n_sigs = size(obj.sigs, 1);
             for i=1:n_sigs
                 n = n_sigs - i;
                 if n > 0
-                    s = training_sigs((i+1):end,:) .* repmat(training_sigs(i,:), n, 1);
+                    s = obj.sigs((i+1):end,:) .* repmat(obj.sigs(i,:), n, 1);
                     s = sum(s, 2);
                     scal = cat(1, scal, s);
                 end
             end       
-            do_cv = false;
             if isempty(obj.a)
                 m = 1/max(abs(scal));
                 scal = scal * m;
                 val_a = m * 2.^(-1:1);
-                do_cv = true;
             else
                 scal = scal * obj.a;
                 val_a = obj.a;
@@ -134,13 +132,11 @@ classdef Polynomial < KernelAPI
             if isempty(obj.b)
                 m = -mean(scal);
                 val_b = m + (-2:2);
-                do_cv = true;
             else
                 val_b = obj.b;
             end            
             if isempty(obj.c)
                 val_c = 2:4;
-                do_cv = true;
             else
                 val_c = obj.c;
             end
@@ -153,6 +149,9 @@ classdef Polynomial < KernelAPI
         %            gram_matrix(i,1) = <K(i)|0>
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
+            if nargin < 3
+                sigs2 = sigs1;
+            end            
             sigs1 = [zeros(1,size(sigs1,2)); sigs1];
             sigs2 = [zeros(1,size(sigs2,2)); sigs2];
             

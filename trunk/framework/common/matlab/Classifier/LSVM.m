@@ -62,7 +62,7 @@ classdef LSVM < ClassifierAPI
                   models = cell(n,1);
                   for i=1:n
                     models{i} = initmodel(spos{i});
-                    models{i} = train(name, models{i}, spos{i}, neg, 1, 1, 1, 1, 2^28);
+                    models{i} = train(name, models{i}, spos{i}, neg, 0, 0, 1, 1, 2^28);
                   end
                   save(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)), 'models');
                 end
@@ -102,8 +102,8 @@ classdef LSVM < ClassifierAPI
                   load(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)));
                 catch ME
                   % <rev 5>
-                  model = train(name, model, pos, neg, 0, 0, 1, 4, 2^30, true, 0.7);
-                  model = train(name, model, pos, neg, 0, 0, 4, 1, 2^30, true, 0.7, true, ...
+                  model = train(name, model, pos, neg, 0, 0, 1, 4, 2^28, true, 0.7);
+                  model = train(name, model, pos, neg, 0, 0, 4, 1, 2^28, true, 0.7, true, ...
                                 0.003*model.numcomponents, 2);                  
                   % </rev 5>
                             
@@ -136,14 +136,15 @@ classdef LSVM < ClassifierAPI
                 for j = 1:n_classes
                     boxes = detect(im, models{j}, -Inf); %models{j}.thresh);
                     if ~isempty(boxes)
-                      overlap = inter_box(person_box, boxes(:, 1:4));
-                      min_over = 0.6;
-                      while isempty(find(overlap>=min_over,1))
-                          isempty(find(overlap>=min_over,1))
-                          min_over = min_over - 0.1;
-                      end
-                      I = (overlap>=min_over);
-                      scores(i,j) = max(boxes(I,end));   
+%                       overlap = inter_box(person_box, boxes(:, 1:4));
+%                       min_over = 0.6;
+%                       while isempty(find(overlap>=min_over,1))
+%                           isempty(find(overlap>=min_over,1))
+%                           min_over = min_over - 0.1;
+%                       end
+%                       I = (overlap>=min_over);
+%                       scores(i,j) = max(boxes(I,end));   
+                      scores(i,j) = max(boxes(:,end));   
                     end
                 end            
                 task_progress(tid, i/n_img);
@@ -248,14 +249,15 @@ classdef LSVM < ClassifierAPI
                     for j = 1:n_classes
                         boxes = detect(im, obj.models{j}, -Inf); %models{j}.thresh);
                         if ~isempty(boxes)
-                          overlap = inter_box(person_box, boxes(:, 1:4));
-                          min_over = 0.6;
-                          while isempty(find(overlap>=min_over,1))
-                              isempty(find(overlap>=min_over,1))
-                              min_over = min_over - 0.1;
-                          end
-                          I = (overlap>=min_over);
-                          scores(i,j) = max(boxes(I,end));   
+%                           overlap = inter_box(person_box, boxes(:, 1:4));
+%                           min_over = 0.6;
+%                           while isempty(find(overlap>=min_over,1))
+%                               isempty(find(overlap>=min_over,1))
+%                               min_over = min_over - 0.1;
+%                           end
+%                           I = (overlap>=min_over);
+%                           scores(i,j) = max(boxes(I,end));   
+                          scores(i,j) = max(boxes(:,end));                          
                         end
                     end                
                     pg.progress(i/n_img);

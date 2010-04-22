@@ -1,5 +1,4 @@
 function results = K_cross_validate(obj, K, samples, params, pg)
- 
     % Compute folds
     n_samples = size(samples,1);
     folds = cell(K,1);
