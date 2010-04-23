@@ -1,46 +1,55 @@
-function stats = display_plots(X, Y, labelx, labely, graph_title, legends, do_regression)      
-    scale = 0.2;
-    xmin = +Inf;
-    xmax = -Inf;
-    ymin = +Inf;
-    ymax = -Inf;
-    
-    d = size(X,1);
-    for i=1:d
-        if ~isempty(legends)
-            scatter(X{i},Y{i},'DisplayName',legends{i});
-        else
-            scatter(X{i},Y{i});
-        end
-        hold on;
-        xmin = min(xmin,min(X{i}));
-        xmax = max(xmax,max(X{i}));
-        ymin = min(ymin,min(Y{i}));
-        ymax = max(ymax,max(Y{i}));            
+function display_plots(points, graph_title, labelx, labely, leg, show_stdev, do_regression)
+    if nargin < 6
+        show_stdev = 0;
+    end
+    if nargin < 7
+        do_regression = 0;
     end
     
+    MarkerSize = 10;
+    LineWidth = 2;
+    scale = 0.2;
+    
+    xmin = min(cat(1, points(:).X));
+    xmax = max(cat(1, points(:).X));
+    ymin = min(cat(1, points(:).Y));
+    ymax = max(cat(1, points(:).Y));
     dx = (xmax - xmin)*scale;
-    dy = (ymax - ymin)*scale;       
-        
-    axis([(xmin-dx) (xmax+dx) (ymin-dy) (ymax+dy)]); 
-    grid;
+    dy = (ymax - ymin)*scale;                      
+    
+    % Create figure
+    f = figure;
+    
+    % Ceate axes
+    a = axes('Parent', f, 'FontSize',14,'FontName','Helvetica', 'XLim', [(xmin-dx) (xmax+dx)] , 'YLim', [(ymin-dy) (ymax+dy)]);
+    box(a,'on');
+    hold(a,'all');
+
     xlabel(labelx);
     ylabel(labely);
-
-    if ~isempty(legends)
-        legend('show', 'Location', 'EastOutside');
+    title(graph_title);
+    grid;
+    
+    d = size(points,1);
+    for i=1:d
+        if show_stdev
+            errorbar(points(i).X,points(i).Y, points(i).stdev, points(i).marker, 'Color', points(i).color, 'LineWidth', LineWidth, 'MarkerSize', MarkerSize);
+        else
+            scatter(points(i).X, points(i).Y, MarkerSize*MarkerSize, points(i).color, points(i).marker, 'LineWidth', LineWidth);
+        end
     end
     
-    if nargin >= 3 && do_regression
-        X = cat(1,X{:});
-        Y = cat(1,Y{:});
+    if ~isempty(leg)
+        legend(a, leg.Strings, 'Location', leg.Location);
+    end
+    
+    if do_regression
+        X = cat(1,points(:).X);
+        Y = cat(1,points(:).Y);
         stats = regstats(Y, X);
         plot([0 100], stats.beta'*[1 1;0 100], 'Color', 'black'); 
-        title(sprintf('%s - Regression: Y = %.02f * X + %0.2f (mse = %0.2f)', graph_title, stats.beta(2), stats.beta(1), stats.mse));
-    else
-        title(graph_title);
     end
-    
-    hold off;
+
+    hold(a,'off');
 end
 
