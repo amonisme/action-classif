@@ -17,21 +17,12 @@ function [perf d] = list_tests(root, do_print)
     pg = ProgressBar('Listing results','Extracting performances...');
     for i = 1:n_dir
         pg.progress(i/n_dir);
-        accuracy_file = fullfile(root,directories{i},'accuracy.txt');
-        precision_file = fullfile(root,directories{i},'precision.txt');
-        if exist(accuracy_file,'file') == 2 && exist(precision_file,'file') == 2
+        
+        [p a] = get_prec_acc(root, directories{i});
+        if ~isempty(p) && ~isempty(a)
             current = current + 1;
-                      
-            fid = fopen(precision_file,'r');
-            p = fread(fid, 100, 'uint8=>char')';
-            fclose(fid);
-            perf(current,1) = str2double(p);
-            
-            fid = fopen(accuracy_file,'r');
-            p = fread(fid, 100, 'uint8=>char')';
-            fclose(fid);
-            perf(current,2) = str2double(p);
-            
+            perf(current,1) = p;
+            perf(current,2) = a;
             d{current} = directories{i};
         end
     end
