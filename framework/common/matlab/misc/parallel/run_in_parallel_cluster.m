@@ -36,9 +36,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     end
     
     % Run on cluster
-    main_file = sprintf('run_instance_on_cluster.m'); 
-    %system(sprintf('cp run_instance_on_cluster.m %s', main_file));
-    compileAndRunForCluster(main_file,CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
+    compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
     
     % Wait all tasks finishes.
     num_waiting = num_instances;

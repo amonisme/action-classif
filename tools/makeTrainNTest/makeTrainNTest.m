@@ -42,9 +42,12 @@ function copy_files(root_src, root_dest, classe, index)
         delete(fullfile(path, f(i).name));
     end
     
-    f = classe.files(index);
-    for i=1:size(f, 1)
-        copyfile(fullfile(path_src, f(i).name), fullfile(path, f(i).name));
+    files = classe.files(index);
+    for i=1:size(files, 1)
+        copyfile(fullfile(path_src, files(i).name), fullfile(path, files(i).name));
+        [d f] = fileparts(files(i).name);
+        f = sprintf('%s.info', f);
+        copyfile(fullfile(path_src, f), fullfile(path, f));
     end
 end
     

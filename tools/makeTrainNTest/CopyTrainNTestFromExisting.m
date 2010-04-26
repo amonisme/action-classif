@@ -40,6 +40,9 @@ function copy_files(root_src, root_dest, files)
         if exist(file, 'file') == 2          
             if ~isdir(file)
                 copyfile(file, fullfile(root_dest, files{i}));
+                [d f] = fileparts(files{i});
+                f = sprintf('%s.info', f);
+                copyfile(fullfile(root_src, f), fullfile(root_dest, f));                
             end
         else
             fprintf('Unknown file %s\n', file);

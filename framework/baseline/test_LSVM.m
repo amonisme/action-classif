@@ -2,7 +2,7 @@ function test_LSVM(n, use_cluster, database, dir)
     global USE_PARALLEL USE_CLUSTER SHOW_BAR;
     %set_cluster_config();
     
-    USE_PARALLEL = 1;
+    USE_PARALLEL = 0;
     SHOW_BAR = 1;
     
     if nargin < 2

@@ -15,12 +15,12 @@ function display_summary(root_BOF, root_PYR)
     
     l = struct('Strings', [], 'Location', 'NorthWest');
     l.Strings = {'Bag of words', 'Spatial pyramid'};
-    display_plots(points, 'BOF & Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %s', l, 0);
+    display_plots(points, 'BOF & Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %', l, 0);
     l = struct('Strings', [], 'Location', 'EastOutside');
     l.Strings = {'Linear',  ...
                  'RBF',  ...
                  'Intersection',  ...
                  'Chi2'};
-    display_plots(points_PYR, 'Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %s', [], 0);
+    display_plots(points_PYR, 'Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %', [], 0);
 end
 

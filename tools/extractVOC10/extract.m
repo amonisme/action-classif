@@ -47,6 +47,9 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                         xmax = xmax+dw;
                         ymin = ymin-dh;
                         ymax = ymax+dh; 
+                        
+                        bb = [xmin ymin xmax ymax]-1;
+                        
                         if(xmin<1) 
                             xmin = 1;
                         end
@@ -64,21 +67,19 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                         h = ymax-ymin+1;
                         max_dim = max([w h]);
                         
-                        if strcmp(files(i).name, 'action0678.jpg')
-                            max_dim
-                        end
                         if(max_dim < limit)
                             continue;
                         end
                             
                        if crop
-                           J = I(ymin:ymax, xmin:xmax, :);
-                       else
-                           J = I;
+                           I = I(ymin:ymax, xmin:xmax, :);
+                           bb = [0 0 (xmax-xmin) (ymax-ymin)];
                        end
                        if resize
-                           J = imresize(J, new_size/max_dim);
+                           I = imresize(I, new_size/max_dim);
+                           bb = bb * (new_size/max_dim);
                        end
+                       bb = floor(bb)+1;
                        
                        if(isfield(obj(j),'action'))
                            act = obj(j).action;
@@ -103,9 +104,20 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                                     num = [num struct('name',act(k).actionname,'id',1)];
                                     n = size(num,1);
                                 end
-                                [file errmsg] = sprintf('img%04d.jpg', num(n).id);
+                                if(isfield(obj(j),'truncated'))
+                                    trunc = obj(j).truncated;
+                                else
+                                    trunc = 0;
+                                end
+                                
+                                file = sprintf('img%04d.jpg', num(n).id);
+                                imwrite(I, fullfile(dirname, file), 'jpg');  
+                                
+                                file = sprintf('img%04d.info', num(n).id);
+                                info = [str2double(trunc) bb];
+                                save(fullfile(dirname, file), '-ascii', 'info');
+                                
                                 num(n).id = num(n).id + 1;
-                                imwrite(J, fullfile(dirname, file), 'jpg');                            
                            end
                        end
                     end
