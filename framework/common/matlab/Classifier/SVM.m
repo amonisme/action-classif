@@ -138,7 +138,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         %------------------------------------------------------------------
         % Learns from the training directory 'root', eventually do a cross
         % validation
-        function cv_res = learn(obj, root)
+        function [cv_res cv_dev] = learn(obj, root)
             [Ipaths labels] = get_labeled_files(root, 'Loading training set...\n');
             [class_ids names] = names2ids(labels);
             obj.class_names = names;
@@ -152,7 +152,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             ok = 0;
             if exist(file,'file') == 2
                 write_log(sprintf('Loading classifier from cache: %s.\n', file));
-                load(file,'svm', 'cv_res', 'best_params');
+                load(file,'svm', 'best_params', 'cv_res', 'cv_dev');
                 if exist('best_params', 'var') == 1
                   obj.svm = svm;
                   obj.C = best_params(1);
@@ -169,13 +169,13 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                 end
                 
                 % Precompute distance        
-                [best_params cv_res] = cross_validate(obj, obj.K);
+                [best_params cv_res cv_dev] = cross_validate(obj, obj.K);
                 obj.CV_set_params(best_params);
                 obj.learn_svm(obj.kernel.get_kernel_sigs(obj.signature.train_sigs), obj.class_id);                
                 write_log(sprintf('Best parameters:\nSVM C parameter = %f\nKernel parameter(s) = [%s]\n',best_params(1),sprintf('%.2f ',best_params(2:end))));   
                 
                 svm = obj.svm;
-                save(file,'svm', 'cv_res', 'best_params');               
+                save(file,'svm', 'best_params', 'cv_res', 'cv_dev');
             end
         end
         

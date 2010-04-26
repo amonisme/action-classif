@@ -1,4 +1,4 @@
-function test_PYR(use_cluster)
+function test_PYR(use_cluster, database)
     global USE_PARALLEL SHOW_BAR USE_CLUSTER;
     USE_PARALLEL = 1;
     SHOW_BAR = 0;
@@ -6,6 +6,9 @@ function test_PYR(use_cluster)
     if nargin < 1
         use_cluster = 0;
     end
+    if nargin < 2
+        database = '../../DataBaseCropped/';
+    end    
     
     % Channels
     n_channels = 2; channels = cell(2,1);
@@ -14,7 +17,7 @@ function test_PYR(use_cluster)
        
     auto_weight = 0;   
 
-    signature = cell(9,n_channels,3);
+    signature = cell(6,n_channels,3);
     for i = 1:n_channels
         for L = 1:3
             levels = (0:L)';
@@ -26,15 +29,21 @@ function test_PYR(use_cluster)
             end
             grid = [2.^levels, 2.^levels, w];            
             
-            signature{1,i,L} = BOF(channels{i}, 256, L1(), grid);
-            signature{2,i,L} = BOF(channels{i}, 256, L2(), grid);
-            signature{3,i,L} = BOF(channels{i}, 256, None(), grid);
-            signature{4,i,L} = BOF(channels{i}, 512, L1(), grid);
-            signature{5,i,L} = BOF(channels{i}, 512, L2(), grid);
-            signature{6,i,L} = BOF(channels{i}, 512, None(), grid);
-            signature{7,i,L} = BOF(channels{i}, 1024, L1(), grid);
-            signature{8,i,L} = BOF(channels{i}, 1024, L2(), grid);
-            signature{9,i,L} = BOF(channels{i}, 1024, None(), grid);
+%             signature{1,i,L} = BOF(channels{i}, 256, L1(), grid);
+%             signature{2,i,L} = BOF(channels{i}, 256, L2(), grid);
+%             signature{3,i,L} = BOF(channels{i}, 256, None(), grid);
+%             signature{4,i,L} = BOF(channels{i}, 512, L1(), grid);
+%             signature{5,i,L} = BOF(channels{i}, 512, L2(), grid);
+%             signature{6,i,L} = BOF(channels{i}, 512, None(), grid);
+%             signature{7,i,L} = BOF(channels{i}, 1024, L1(), grid);
+%             signature{8,i,L} = BOF(channels{i}, 1024, L2(), grid);
+%             signature{9,i,L} = BOF(channels{i}, 1024, None(), grid);
+            signature{1,i,L} = BOF(channels{i}, 2048, L1(), grid);
+            signature{2,i,L} = BOF(channels{i}, 2048, L2(), grid);
+            signature{3,i,L} = BOF(channels{i}, 2048, None(), grid);
+            signature{4,i,L} = BOF(channels{i}, 4096, L1(), grid);
+            signature{5,i,L} = BOF(channels{i}, 4096, L2(), grid);
+            signature{6,i,L} = BOF(channels{i}, 4096, None(), grid);            
         end
     end
        
@@ -44,8 +53,8 @@ function test_PYR(use_cluster)
                RBF([],1)};
     
     strat = cell(2,1);
-    strat{1} = 'OneVsOne';
-    strat{2} = 'OneVsAll';
+    strat{1} = 'OneVsAll';
+    strat{2} = 'OneVsOne';
     
     n_sig = numel(signature);
     n_kernels = numel(kernels);
@@ -58,33 +67,25 @@ function test_PYR(use_cluster)
     end
     fprintf('Found %d classifiers to test. Let''s go for the overnight computation!!!\nParallel computing is %s.\n\n', n_sig*n_strat*n_kernels, use_para);
     
-    database = '../../DataBase/';
-    
     if(use_cluster)
         USE_CLUSTER = 1;
         dir = '../../test_PYR';
         
-        % 1v1
-        classifiers = cell(n_sig*n_kernels,3); 
+        classifiers = cell(n_sig*n_kernels*2,3); 
         for i = 1:n_sig
             for j = 1:n_kernels
-                classifiers{(i-1)*n_kernels+j,1} = SVM(kernels{j}, signature{i}, strat{1}, [], 1, 5);           
-                classifiers{(i-1)*n_kernels+j,2} = database;
-                classifiers{(i-1)*n_kernels+j,3} = dir;              
+                % 1vA                
+                classifiers{((i-1)*n_kernels+j-1)*2+1,1} = SVM(kernels{j}, signature{i}, strat{1}, [], 1, 5);           
+                classifiers{((i-1)*n_kernels+j-1)*2+1,2} = database;
+                classifiers{((i-1)*n_kernels+j-1)*2+1,3} = dir;      
+            
+                % 1v1
+                classifiers{((i-1)*n_kernels+j-1)*2+2,1} = SVM(kernels{j}, signature{i}, strat{2}, [], 1, 5);           
+                classifiers{((i-1)*n_kernels+j-1)*2+2,2} = database;
+                classifiers{((i-1)*n_kernels+j-1)*2+2,3} = dir;     
             end
         end
-        run_in_parallel('evaluate_parallel',[],classifiers,[],0);
-        
-        % 1vA
-        classifiers = cell(n_sig*n_kernels,3);        
-        for i = 1:n_sig
-            for j = 1:n_kernels
-                classifiers{(i-1)*n_kernels+j,1} = SVM(kernels{j}, signature{i}, strat{2}, [], 1, 5);           
-                classifiers{(i-1)*n_kernels+j,2} = database;
-                classifiers{(i-1)*n_kernels+j,3} = dir;              
-            end
-        end
-        run_in_parallel('evaluate_parallel',[],classifiers,[],0);        
+        run_in_parallel('evaluate_parallel',[],classifiers,[],6000);      
     else   
         dir = 'baseline/test_PYR';
         [status,message,messageid] = mkdir(dir);

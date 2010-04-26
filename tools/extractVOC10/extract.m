@@ -1,14 +1,17 @@
-function extract(img_src, ann_src, img_dest, resize, new_size, limit, scale, skip_ambiguous)
-    if(nargin<4)
+function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scale, skip_ambiguous)
+    if(nargin<5)
         resize = 0;
     end
     if(nargin<6)
+        new_size = 300;
+    end    
+    if(nargin<7)
         limit = 150;
     end
-    if(nargin<7)
+    if(nargin<8)
         scale = 1.5;
     end
-    if(nargin<8)
+    if(nargin<9)
         skip_ambiguous = 1;
     end
     
@@ -60,12 +63,20 @@ function extract(img_src, ann_src, img_dest, resize, new_size, limit, scale, ski
                         w = xmax-xmin+1;
                         h = ymax-ymin+1;
                         max_dim = max([w h]);
+                        
+                        if strcmp(files(i).name, 'action0678.jpg')
+                            max_dim
+                        end
                         if(max_dim < limit)
                             continue;
                         end
                             
-                       J = I(ymin:ymax, xmin:xmax, :);
-                       if(resize)
+                       if crop
+                           J = I(ymin:ymax, xmin:xmax, :);
+                       else
+                           J = I;
+                       end
+                       if resize
                            J = imresize(J, new_size/max_dim);
                        end
                        

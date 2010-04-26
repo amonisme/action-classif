@@ -31,6 +31,8 @@ classdef SignatureAPI < handle
             
             if exist(file,'file') == 2
                 load(file,'feat');
+            end
+            if exist('descr', 'var') == 1
                 write_log(sprintf('Features loaded from cache: %s.\n', file));
             else    
                 if USE_PARALLEL 
@@ -54,7 +56,9 @@ classdef SignatureAPI < handle
             file = fullfile(TEMP_DIR, sprintf('%s_%s_%s.mat',HASH_PATH,descriptor.toFileName(),detector.toFileName()));
             if exist(file,'file') == 2
                 load(file,'descr');
-                write_log(sprintf('Descriptors loaded from cache: %s.\n', file));
+            end
+            if exist('descr', 'var') == 1
+                write_log(sprintf('Descriptors loaded from cache: %s.\n', file));                
             else    
                 n_img = size(Ipaths,1);
                 

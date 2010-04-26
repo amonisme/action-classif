@@ -14,7 +14,7 @@ classdef NN < ClassifierAPI
         
         %------------------------------------------------------------------
         % Learns from the training directory 'root'
-        function cross_validation = learn(obj, root)
+        function [cv_res cv_dev] = learn(obj, root)
             [Ipaths l] = get_labeled_files(root, 'Loading training set...\n');
             
             [class_id names] = names2ids(l);
@@ -22,7 +22,8 @@ classdef NN < ClassifierAPI
             obj.class_names = names;
             
             obj.signature.learn(Ipaths);
-            cross_validation = [];
+            cv_res = [];
+            cv_dev = [];
         end
         
         %------------------------------------------------------------------

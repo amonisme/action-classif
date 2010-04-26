@@ -32,9 +32,10 @@ function precision = evaluate(classifier, root, target)
         if exist(file,'file') == 2 && ~force_recompute
             load(file);
         else
-            cross_validation = classifier.learn(fullfile(root, 'train'));
+            [cv_res cv_dev] = classifier.learn(fullfile(root, 'train'));
             save(file, 'classifier');
-            save(fullfile(dir, 'cross_validation.txt'), 'cross_validation', '-ascii');        
+            save(fullfile(dir, 'cross_validation.txt'), 'cv_res', '-ascii');  
+            save(fullfile(dir, 'cv_std_deviation.txt'), 'cv_dev', '-ascii');  
         end
         t0 = toc;
 

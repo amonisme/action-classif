@@ -236,9 +236,12 @@ classdef BOF < SignatureAPI
         %------------------------------------------------------------------
         % Return the signature of the Images
         function sigs = get_signatures(obj, Ipaths, pg, offset, scale)
-            if nargin<5
+            if nargin<3
                 pg = ProgressBar('Computing signatures', '', true);
+                offset = 0;
+                scale = 1;
             end
+            
             n_channels = obj.channels.number;
             sigs = cell(1, n_channels);
            

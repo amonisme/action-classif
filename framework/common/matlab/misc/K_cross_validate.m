@@ -1,4 +1,4 @@
-function results = K_cross_validate(obj, K, samples, params, pg)
+function [results std_dev] = K_cross_validate(obj, K, samples, params, pg)
     % Compute folds
     n_samples = size(samples,1);
     folds = cell(K,1);
@@ -9,6 +9,7 @@ function results = K_cross_validate(obj, K, samples, params, pg)
     % Do cross-validation
     n_params = size(params, 1);
     results = zeros(n_params,1);
+    std_dev = zeros(n_params,1);
     for i=1:n_params
         pg.progress(i/n_params);              
         Kperf = zeros(K, 1);
@@ -22,5 +23,7 @@ function results = K_cross_validate(obj, K, samples, params, pg)
             Kperf(j) = obj.CV_validate(model, validate);
         end
         results(i) = mean(Kperf);
+        dev = Kperf-results(i);
+        std_dev(i) = sqrt(sum(dev.*dev) / (length(dev)-1));
     end   
 end
