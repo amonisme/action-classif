@@ -31,7 +31,7 @@ function test_BMVC(use_cluster)
     end
     
     if(use_cluster)
-        run_in_parallel('evaluate_parallel',[],classif,[],7000);
+        run_in_parallel('evaluate_parallel',[],classif,[],4096);
     else
         for i = 1:size(classif,1)
             evaluate(classif{i,1}, classif{i,2}, classif{i,3});

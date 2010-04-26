@@ -9,12 +9,12 @@ function test_BMVC_LSVM(use_cluster)
     K = 3;
     classif = cell(length(db)*K,3);
       
-    for i = 1:n_db
-        i0 = (i-1)*K;
-        for j = 1:K
-            classif(i0+j, 1) = LSVM(j);
-            classif{i0+j, 2} = db{i};
-            classif{i0+j, 3} = sprintf('%s_test_LSVM',db{i});
+    for j = K:-1:1    
+        for i = 1:n_db
+            i0 = (j-1)*n_db+i;
+            classif(i0, 1) = LSVM(j);
+            classif{i0, 2} = db{i};
+            classif{i0, 3} = sprintf('%s_test_LSVM',db{i});
         end
     end
     

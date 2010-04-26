@@ -11,6 +11,11 @@ function apply_offset(root, minI, offset)
                 if num >= minI
                     new_name = sprintf('img%04d.jpg', num+offset);
                     system(sprintf('cp %s %s', fullfile(root,d(i).name), fullfile(root,'tmp',new_name)));
+                    
+                    [dpart f] = fileparts(d(i).name);
+                    f = sprintf('%s.info', d(i).name);
+                    new_name = sprintf('img%04d.info', num+offset);
+                    system(sprintf('cp %s %s', fullfile(root,f), fullfile(root,'tmp',new_name)));
                 end
             end
         end

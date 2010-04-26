@@ -1,9 +1,8 @@
-function init_matlab(fbp,tid,iid)
+function init_matlab(fbp,tid,iid,hash)
     setup_path();
     init_global();
         
-    global TID IID;    
-    global FILE_BUFFER_PATH;
+    global TID IID FILE_BUFFER_PATH HASH_PATH;    
     
     if nargin == 0
         FILE_BUFFER_PATH = './';
@@ -14,9 +13,12 @@ function init_matlab(fbp,tid,iid)
         mkdir(FILE_BUFFER_PATH);
     end
 
-    if nargin == 3
+    if nargin >= 3
         TID = tid;
         IID = iid;        
+    end
+    if nargin >= 4
+        HASH_PATH = hash;
     end
     
     % For some reasons, if MATLAB never saw a class it may have trouble to

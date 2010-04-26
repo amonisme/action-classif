@@ -9,23 +9,56 @@ classdef LSVM < ClassifierAPI
     
     methods (Static)
         %------------------------------------------------------------------
-        function [pos, neg] = make_examples(Ipaths, class_ids, id)
+        function [pos, neg] = make_examples(Ipaths, flippedpos, class_ids, id)
             n_img = numel(Ipaths);
             
-            w = cell(n_img, 1);
-            h = cell(n_img, 1);
-            O = cell(n_img, 1);
+            w = zeros(n_img,1);
+            bb = zeros(n_img, 4);
+            trunc = zeros(n_img,1);            
             for i=1:n_img
                 info = imfinfo(Ipaths{i});
-                w{i} = info.Width;
-                h{i} = info.Height;
-                O{i} = 0;
+                w(i) = info.Width;
+                
+                [d f] = fileparts(Ipaths{i});
+                info = load(fullfile(d, sprintf('%s.info', f)), '-ascii');
+                trunc(i) = info(1);
+                bb(i,:)  = info(2:end);
+            end
+            trunc = logical(trunc);
+            
+            if flippedpos
+                p = find(class_ids == id);
+                n_pos = length(p);
+                pos = struct('im', cell(n_pos*2,1), 'flip', false, 'x1', 0, 'y1', 0, 'x2', 0, 'y2', 0);
+                for i = 1:n_pos
+                    x1 = bb(p(i),1);
+                    x2 = bb(p(i),3);
+                    pos(2*i-1).im = Ipaths{p(i)};
+                    pos(2*i-1).x1 = x1;
+                    pos(2*i-1).y1 = bb(p(i),2);
+                    pos(2*i-1).x2 = x2;
+                    pos(2*i-1).y2 = bb(p(i),4);
+                    pos(2*i-1).flip = false;
+                    pos(2*i-1).trunc = trunc(p(i));
+                    
+                    x1 = w(i) - bb(p(i),3) + 1;
+                    x2 = w(i) - bb(p(i),1) + 1;                    
+                    pos(2*i-0).im = Ipaths{p(i)};
+                    pos(2*i-0).x1 = x1;
+                    pos(2*i-0).y1 = bb(p(i),2);
+                    pos(2*i-0).x2 = x2;
+                    pos(2*i-0).y2 = bb(p(i),4);
+                    pos(2*i-0).flip = true;
+                    pos(2*i-0).trunc = trunc(p(i));
+                end
+            else
+                p = class_ids == id;
+                box = bb(p,:);
+                pos = struct('im', Ipaths(p), 'x1', {box(:,1)}, 'y1', {box(:,2)}, 'x2', {box(:,3)}, 'y2', {box(:,4)}, 'flip', false, 'trunc', {trunc(:)});
             end
             
-            p = class_ids == id;
-            pos = struct('im', Ipaths(p), 'x1', O(p), 'y1', O(p), 'x2', w(p), 'y2', h(p));
             n = class_ids ~= id;
-            neg = struct('im', Ipaths(n), 'x1', O(n), 'y1', O(n), 'x2', w(n), 'y2', h(n));            
+            neg = struct('im', Ipaths(n), 'flip', false);            
         end
         %------------------------------------------------------------------
         function models = train_model_parallel(common, index)
@@ -35,74 +68,151 @@ classdef LSVM < ClassifierAPI
             models = cell(n_index, 1);
             
             for k = 1:n_index
-                models{k} = LSVM.train_model(common.Ipaths, common.names{index(k)}, common.class_ids, common.n, index(k));
+                models{k} = LSVM.train_model(common.Ipaths, common.names{index(k)}, common.note, common.class_ids, common.n, index(k));
                 task_progress(tid, k/n_index);
             end
             
             task_close(tid);
         end
+
         %------------------------------------------------------------------
-        function model = train_model(Ipaths, name, class_ids, n, i)
+        function model = train_model(Ipaths, name, note, class_ids, n, i)
             global TEMP_DIR HASH_PATH;
             try
               load(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)));
             catch ME
-                [pos, neg] = LSVM.make_examples(Ipaths, class_ids, i);
-
+                [pos, neg] = LSVM.make_examples(Ipaths, true, class_ids, i);
                 if n>length(pos)
                     n = length(pos);
                 end
-                n_neg = min(length(neg), 200);
+                
+                % split data by aspect ratio into n groups
+                spos = split(name, pos, n);
 
-                spos = split(pos, n);
+                cachesize = 24000;
+                maxneg = min(length(neg), 200);
+
                 % train root filters using warped positives & random negatives
                 try
-                    load(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)));
-                catch ME
-                    models = cell(n,1);
-                    for i=1:n
-                        models{i} = initmodel(spos{i});
-                        models{i} = train(name, models{i}, spos{i}, neg, 1, 1, 1, 1, 2^28);
-                    end
-                    save(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)), 'models');
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit1', HASH_PATH, name)));
+                catch
+                  initrand();
+                  for i = 1:n
+                    % split data into two groups: left vs. right facing instances
+                    models{i} = initmodel(name, spos{i}, note, 'N');
+                    inds = lrsplit(models{i}, spos{i}, i);
+                    models{i} = train(name, models{i}, spos{i}(inds), neg, i, 1, 1, 1, ...
+                                      cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
+                  end
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit1', HASH_PATH, name)), 'models');
                 end
-                
-                % merge models and train using latent detections & hard negatives
+
+                % train root left vs. right facing root filters using latent detections
+                % and hard negatives
                 try
-                    load(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)));
-                catch ME
-                    model = mergemodels(models);
-                    model = train(name, model, pos, neg(1:n_neg), 0, 0, 2, 2, 2^28, true, 0.7);
-                    save(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)), 'model');                  
-                end                
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit2', HASH_PATH, name)));
+                catch
+                  initrand();
+                  for i = 1:n
+                    models{i} = lrmodel(models{i});
+                    models{i} = train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 4, 3, ...
+                                      cachesize, true, 0.7, false, ['lrsplit2_' num2str(i)]);
+                  end
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit2', HASH_PATH, name)), 'models');
+                end
+
+                % merge models and train using latent detections & hard negatives
+                try 
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_mix', HASH_PATH, name)));
+                catch
+                  initrand();
+                  model = mergemodels(models);
+                  model = train(name, model, pos, neg(1:maxneg), 0, 0, 1, 5, ...
+                                cachesize, true, 0.7, false, 'mix');
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_mix', HASH_PATH, name)), 'model');
+                end
 
                 % add parts and update models using latent detections & hard negatives.
                 try 
                   load(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)));
-                catch ME
-                    for i=1:n
-                        model = addparts(model, i, 6);
-                    end 
-                    % use more data mining iterations in the beginning
-                    model = train(name, model, pos, neg(1:n_neg), 0, 0, 1, 4, 2^30, true, 0.7);
-                    model = train(name, model, pos, neg(1:n_neg), 0, 0, 6, 2, 2^30, true, 0.7, true);
-                    save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
+                catch
+                  initrand();
+                  for i = 1:2:2*n
+                    model = model_addparts(model, model.start, i, i, 8, [6 6]);
+                  end
+                  model = train(cls, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
+                                cachesize, true, 0.7, false, 'parts_1');
+                  model = train(cls, model, pos, neg, 0, 0, 1, 5, ...
+                                cachesize, true, 0.7, true, 'parts_2');
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
                 end
 
-                % update models using full set of negatives.
-                try 
-                    load(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)));
-                catch ME
-                    model = train(name, model, pos, neg, 0, 0, 1, 3, 2^30, true, 0.7, true, ...
-                                    0.003*model.numcomponents, 2);
-                    save(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)), 'model');
-                end
-
-                % train bounding box prediction
-                model = trainbox(name, model, pos, 0.7);
-                save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');             
+                save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');
             end
         end
+        
+%         %------------------------------------------------------------------
+%         function model = train_model(Ipaths, name, class_ids, n, i)
+%             global TEMP_DIR HASH_PATH;
+%             try
+%               load(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)));
+%             catch ME
+%                 [pos, neg] = LSVM.make_examples(Ipaths, class_ids, i);
+% 
+%                 if n>length(pos)
+%                     n = length(pos);
+%                 end
+%                 n_neg = min(length(neg), 200);
+% 
+%                 spos = split(pos, n);
+%                 % train root filters using warped positives & random negatives
+%                 try
+%                     load(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)));
+%                 catch ME
+%                     models = cell(n,1);
+%                     for i=1:n
+%                         models{i} = initmodel(spos{i});
+%                         models{i} = train(name, models{i}, spos{i}, neg, 1, 1, 1, 1, 2^28);
+%                     end
+%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)), 'models');
+%                 end
+%                 
+%                 % merge models and train using latent detections & hard negatives
+%                 try
+%                     load(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)));
+%                 catch ME
+%                     model = mergemodels(models);
+%                     model = train(name, model, pos, neg(1:n_neg), 0, 0, 2, 2, 2^28, true, 0.7);
+%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)), 'model');                  
+%                 end                
+% 
+%                 % add parts and update models using latent detections & hard negatives.
+%                 try 
+%                   load(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)));
+%                 catch ME
+%                     for i=1:n
+%                         model = addparts(model, i, 6);
+%                     end 
+%                     % use more data mining iterations in the beginning
+%                     model = train(name, model, pos, neg(1:n_neg), 0, 0, 1, 4, 2^30, true, 0.7);
+%                     model = train(name, model, pos, neg(1:n_neg), 0, 0, 6, 2, 2^30, true, 0.7, true);
+%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
+%                 end
+% 
+%                 % update models using full set of negatives.
+%                 try 
+%                     load(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)));
+%                 catch ME
+%                     model = train(name, model, pos, neg, 0, 0, 1, 3, 2^30, true, 0.7, true, ...
+%                                     0.003*model.numcomponents, 2);
+%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)), 'model');
+%                 end
+% 
+%                 % train bounding box prediction
+%                 model = trainbox(name, model, pos, 0.7);
+%                 save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');             
+%             end
+%         end
         
         %------------------------------------------------------------------
 %         function model = train_model(Ipaths, name, class_ids, n, i)
@@ -235,14 +345,14 @@ classdef LSVM < ClassifierAPI
                 write_log(sprintf('Classifier loaded from cache: %s.\n', file));
             else
                 if USE_PARALLEL
-                    common = struct('Ipaths', [], 'names', [], 'class_ids', class_ids, 'n', obj.n_components);
+                    common = struct('Ipaths', [], 'names', [], 'note', obj.toFileName(), 'class_ids', class_ids, 'n', obj.n_components);
                     common.Ipaths = Ipaths;
                     common.names = obj.class_names;
                     lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, [1:n_classes]', 0, 0);
                 else
                     lsvm_models = cell(n_classes, 1);
                     for k = 1:n_classes
-                        lsvm_models{k} = LSVM.train_model(Ipaths, obj.class_names{k}, class_ids, obj.n_components, k);
+                        lsvm_models{k} = LSVM.train_model(Ipaths, obj.class_names{k}, obj.toFileName(), class_ids, obj.n_components, k);
                     end
                 end
                 save(file, 'lsvm_models');

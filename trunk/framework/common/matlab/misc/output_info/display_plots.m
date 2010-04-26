@@ -48,6 +48,7 @@ function display_plots(points, graph_title, labelx, labely, leg, show_stdev, do_
         Y = cat(1,points(:).Y);
         stats = regstats(Y, X);
         plot([0 100], stats.beta'*[1 1;0 100], 'Color', 'black'); 
+        fprintf('Regression equation: %0.2f X + %0.2f\n', stats.beta(2), stats.beta(1));
     end
 
     hold(a,'off');

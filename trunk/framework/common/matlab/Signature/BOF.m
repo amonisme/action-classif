@@ -203,10 +203,14 @@ classdef BOF < SignatureAPI
                     progress_value = progress_value + descrip_progress_frac;
 
                     % Compute visual vocabulary
-                    d = cat(1, descr{:});
-                    pg.setCaption(sprintf('%sComputing BOF... (found %d descriptors)',progress_text,size(d,1)));                                       
+                    num_descr = 0;
+                    for i = 1:size(descr,1)
+                        num_descr = num_descr + size(descr{i}, 1);
+                    end
+                    pg.setCaption(sprintf('%sComputing BOF... (found %d descriptors)',progress_text, num_descr));                                       
                     center_file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName(obj.channels.channel_id())));
-                    obj.centers{obj.channels.channel_id()} = obj.kmeans.do_kmeans(d, center_file);
+                    obj.prepare_kmeans(cat(1, descr{:})');
+                    obj.centers{obj.channels.channel_id()} = obj.kmeans.do_kmeans(center_file);
                     progress_value = progress_value + k_means_progress_frac;
 
                     % Compute signature for this channel
