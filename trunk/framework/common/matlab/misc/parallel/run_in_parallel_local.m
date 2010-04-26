@@ -6,7 +6,7 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
 	global TEMP_DIR HASH_PATH;
 
     if nargin < 4 || num_instances == 0
-        num_instances = 4; %maxNumCompThreads;
+        num_instances = 3; %maxNumCompThreads;
     end
     if nargin < 5
         debug = 0;

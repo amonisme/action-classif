@@ -10,7 +10,7 @@ function results = K_cross_validate_parallel(common, params)
 
     % Do cross-validation
     n_params = size(params, 1);
-    results = zeros(n_params,1);
+    results = zeros(n_params,2);
     for i=1:n_params
         task_progress(tid, i/n_params);              
         Kperf = zeros(common.K, 1);
@@ -23,7 +23,9 @@ function results = K_cross_validate_parallel(common, params)
             model = common.obj.CV_train(train);
             Kperf(j) = common.obj.CV_validate(model, validate);
         end
-        results(i) = mean(Kperf);
+        results(i,1) = mean(Kperf);
+        dev = Kperf-results(i,1);
+        results(i,2) = sqrt(sum(dev.*dev) / (length(dev)-1));
     end   
     
     task_close(tid);

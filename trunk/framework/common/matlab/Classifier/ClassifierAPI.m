@@ -16,7 +16,7 @@ classdef ClassifierAPI < handle
     methods (Abstract)        
         %------------------------------------------------------------------
         % Learns from the training directory 'root'
-        cross_validation = learn(obj, root)
+        [cv_res cv_dev] = learn(obj, root)
         
         %------------------------------------------------------------------
         % Classify the testing directory 'root'

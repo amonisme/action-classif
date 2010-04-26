@@ -1,16 +1,19 @@
-function test_LSVM(n, use_cluster)
+function test_LSVM(n, use_cluster, database, dir)
     global USE_PARALLEL USE_CLUSTER SHOW_BAR;
     %set_cluster_config();
     
-    USE_PARALLEL = 0;
+    USE_PARALLEL = 1;
     SHOW_BAR = 1;
     
     if nargin < 2
         use_cluster = 0;
     end
-   
-    database = '../../DataBase/';
-    dir = '../../test_LSVM_new';
+    if nargin < 3
+        database = '../../DataBaseCropped/';
+    end
+    if nargin < 4
+        dir = '../../test_LSVM_new';
+    end   
     
     if use_cluster
         USE_CLUSTER = 1;

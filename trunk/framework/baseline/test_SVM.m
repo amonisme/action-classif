@@ -1,10 +1,13 @@
-function test_SVM(use_cluster)
+function test_SVM(use_cluster, database)
     global USE_PARALLEL SHOW_BAR USE_CLUSTER;
     USE_PARALLEL = 1;
     SHOW_BAR = 0;
     
     if nargin < 1
         use_cluster = 0;
+    end
+    if nargin < 2
+        database = '../../DataBaseCropped/';
     end
     
     
@@ -53,8 +56,6 @@ function test_SVM(use_cluster)
         use_para = 'OFF';
     end
     fprintf('Found %d classifiers to test. Let''s go for the overnight computation!!!\nParallel computing is %s.\n\n', n_sig*n_ker*n_strat, use_para);
-    
-    database = '../../DataBase/';
     
     if use_cluster
         USE_CLUSTER = 1;

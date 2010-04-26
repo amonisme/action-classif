@@ -1,6 +1,6 @@
 function test_flipped()
     global USE_PARALLEL SHOW_BAR;
-    USE_PARALLEL = 1;
+    USE_PARALLEL = 0;
     SHOW_BAR = 1;   
     
     %SVM[1vA-?-1-5-Inter]-PYR[cpp-1024-1x1x0.25+2x2x0.25+4x4x0.5-L2[1]]-DEN
