@@ -1,5 +1,5 @@
-function display_summary(root_BOF, root_PYR)
-    [c1 c2 points_BOF points_PYR] = get_paper_BMVC_classif(root_BOF, root_PYR);
+function display_summary(root_BOF, root_PYR, case_C)
+    [c1 c2 points_BOF points_PYR] = get_paper_BMVC_classif(root_BOF, root_PYR, case_C);
      
     points = prepare_points_for_plot(2);
     points(1).X = cat(1, points_BOF(:).X);

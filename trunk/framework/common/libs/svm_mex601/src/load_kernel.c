@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "mex.h"
 
 #include "load_kernel.h"
 
@@ -13,9 +14,11 @@ int dimensionM = 0;
 void load_kernel_from_file(char *file)
 {
 	FILE *fid = fopen(file,"rb");
+	printf("%s\n", file);
 	fread(&dimensionN, sizeof(int), 1, fid);
 	fread(&dimensionM, sizeof(int), 1, fid);	
 	K = (double**)malloc(sizeof(double*)*dimensionN);
+	printf("%d %d %p\n", dimensionN, dimensionM, K);
 	int i;
 	for(i=0; i<dimensionN; i++)
 	{

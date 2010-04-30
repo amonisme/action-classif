@@ -40,28 +40,39 @@ classdef Kmeans < handle
                
         %------------------------------------------------------------------
         % prepare kmeans computation (one point per column)
-        function prepare_kmeans(obj, points)
+        function n = prepare_kmeans(obj, points)
             global FILE_BUFFER_PATH;
+            
+            n = 0;
+            for i=1:size(points,1)
+                n = n + size(points{i}, 1);
+            end
   
             switch obj.lib_id
                 case 0  % vlfeat
+                    points = cat(1,points{:})';
                     m = max(max(points));
                     obj.points = uint8(255/m*points);
                 case {1, 3}  % vgg & mex
-                    obj.points = points;
+                    obj.points = cat(1,points{:})';
                 case 2  % matlab
-                    obj.points = points';
+                    obj.points = cat(1,points{:});
                 case 4  % cpp             	
-                    file_in = fullfile(FILE_BUFFER_PATH,'input.txt'); % if modified, modifiy also line 133 
+                    file_in = fullfile(FILE_BUFFER_PATH,'input'); % if modified, modifiy also line 133 
 
-                    dimension = size(points, 1);
-                    n_data = size(points, 2);
-
+                    i = 1;
+                    while isempty(points{i})
+                        i = i+1;
+                    end
+                    dimension = size(points{i}, 2);
+                    
                     % Save data
                     fid = fopen(file_in, 'w+');
                     fwrite(fid, dimension, 'int32');
-                    fwrite(fid, n_data, 'int32');
-                    fwrite(fid, points, 'double');
+                    fwrite(fid, n, 'int32');
+                    for i=1:size(points,1)
+                        fwrite(fid, points{i}', 'single');
+                    end
                     fclose(fid);
                     
                     obj.points = dimension;
@@ -69,8 +80,8 @@ classdef Kmeans < handle
         end
         
         %------------------------------------------------------------------
-        function centers = do_kmeans(obj, file)
-            if nargin >= 3 && exist(file,'file') == 2
+        function centers = do_kmeans(obj, file)         
+            if nargin >= 2 && exist(file,'file') == 2
                 load(file,'centers');
                 if exist('centers','var') ~= 1
                     load(file,'c');
@@ -93,7 +104,7 @@ classdef Kmeans < handle
                 case 4  % cpp             	
                     centers = obj.cpp(obj.K, obj.maxiter);
                 end
-                if nargin >= 3
+                if nargin >= 2
                     save(file, 'centers');
                 end
             end
@@ -132,8 +143,8 @@ classdef Kmeans < handle
         function centers = cpp(obj, K, maxiter)
             global FILE_BUFFER_PATH LIB_DIR;
             
-            file_in = fullfile(FILE_BUFFER_PATH,'input.txt');
-            file_out = fullfile(FILE_BUFFER_PATH,'output.txt');
+            file_in = fullfile(FILE_BUFFER_PATH,'input');
+            file_out = fullfile(FILE_BUFFER_PATH,'output');
                         
             % Do kmeans
             cmd = fullfile(LIB_DIR, 'kmeans', sprintf('kmeans_cpp %s %d %d %s', file_in, K, maxiter, file_out));
@@ -141,7 +152,7 @@ classdef Kmeans < handle
             
             % Load data
             fid = fopen(file_out, 'r');
-            centers = fread(fid, K*obj.points, 'double');   % hack: obj.points is the dimension of the points
+            centers = fread(fid, K*obj.points, 'single');   % hack: obj.points is the dimension of the points
             fclose(fid);
             centers = reshape(centers, obj.points, K)';     % hack: obj.points is the dimension of the points
         end

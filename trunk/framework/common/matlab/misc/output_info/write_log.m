@@ -1,7 +1,7 @@
 function write_log(str, file)
     global OUTPUT_LOG;
     persistent fid;
-
+    
     if(nargin == 2)
         fid = fopen(file, 'w+');
     end

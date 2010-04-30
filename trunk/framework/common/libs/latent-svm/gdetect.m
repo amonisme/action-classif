@@ -86,17 +86,18 @@ S = S(ord);
                                     pyra.scales, X, Y, L, S);
 
 % sanity check overlap requirement
-if latent && ~isempty(dets)
-  clipdets = dets;
-  % clip detection window to image boundary
-  clipdets(:,1) = max(clipdets(:,1), 1);
-  clipdets(:,2) = max(clipdets(:,2), 1);
-  clipdets(:,3) = min(clipdets(:,3), pyra.imsize(2));
-  clipdets(:,4) = min(clipdets(:,4), pyra.imsize(1));
-  if boxoverlap(clipdets, bbox) < overlap
-    error('overlap requirement failed');
-  end
-end
+% if latent && ~isempty(dets)
+%   clipdets = dets;
+%   % clip detection window to image boundary
+%   clipdets(:,1) = max(clipdets(:,1), 1);
+%   clipdets(:,2) = max(clipdets(:,2), 1);
+%   clipdets(:,3) = min(clipdets(:,3), pyra.imsize(2));
+%   clipdets(:,4) = min(clipdets(:,4), pyra.imsize(1));
+% 
+%   if boxoverlap(clipdets, bbox) < overlap
+%     error('overlap requirement failed');
+%   end
+% end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

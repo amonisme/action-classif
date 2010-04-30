@@ -4,6 +4,7 @@ classdef Polynomial < KernelAPI
         a
         b
         c
+        scalar_prod
         param_cv    % remember which parameterter was cross-validated
     end
 
@@ -11,9 +12,9 @@ classdef Polynomial < KernelAPI
         %------------------------------------------------------------------
         function obj = loadobj(a)
             obj = a;
-            if ~isfield(a, 'param_cv')
-                obj.param_cv = [1 1 1];
-            end
+%             if ~isfield(a, 'param_cv')
+%                 obj.param_cv = [1 1 1];
+%             end
         end 
     end
     
@@ -21,21 +22,23 @@ classdef Polynomial < KernelAPI
         %------------------------------------------------------------------
         % Constructor   Kernel type: (a * X.Y + b)^c
         function obj = Polynomial(a,b,c,precompute,lib)
-            if(nargin < 1)
+            if nargin < 1
                 a = [];
             end
-            if(nargin < 2)
+            if nargin < 2
                 b = [];
             end            
-            if(nargin < 3)
+            if nargin < 3
                 c = [];
             end            
-            if(nargin < 4)
+            if nargin < 4
                 precompute = 0;
             end              
-            if(nargin < 5)
+            if nargin < 5
                 lib = 'svmlight';
             end
+           
+            obj = obj@KernelAPI(); 
             
             obj.a = a;
             obj.b = b;
@@ -76,7 +79,7 @@ classdef Polynomial < KernelAPI
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('Polynomial kernel: (%s * X.Y + %s)^%d',num2str(obj.a), num2str(obj.b), obj.c);
+            str = sprintf('Polynomial kernel: $(%s * X.Y + %s)^%d$',num2str(obj.a), num2str(obj.b), obj.c);
         end
         function str = toFileName(obj)
             if obj.param_cv(1)
@@ -102,41 +105,44 @@ classdef Polynomial < KernelAPI
         
         %------------------------------------------------------------------
         % Set parameters
-        function obj = set_params(obj, params)
-            obj.a = params(1);
-            obj.b = params(2);
-            obj.c = params(3);
+        function params = set_params(obj, params)
+            if ~obj.gram_train_ok || obj.a ~= params(1) || obj.b ~= params(2) || obj.c ~= params(3)
+                obj.a = params(1);
+                obj.b = params(2);
+                obj.c = params(3);
+                obj.gram_train_ok = 0;
+            end
+            params = params(4:end);
         end
         
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
-        function params = get_params(obj)
-            scal = [];
-            n_sigs = size(obj.sigs, 1);
-            for i=1:n_sigs
-                n = n_sigs - i;
-                if n > 0
-                    s = obj.sigs((i+1):end,:) .* repmat(obj.sigs(i,:), n, 1);
-                    s = sum(s, 2);
-                    scal = cat(1, scal, s);
-                end
-            end       
+        function params = get_params(obj, sigs)
+            sigs = [zeros(1,size(sigs,2)); sigs];
+            scal = sigs * sigs';
+            
+            if obj.precompute
+                obj.sigs = sigs;
+                obj.scalar_prod = scal;
+            end            
+            
+            maxi = max(max(scal));
+            avg  = mean(mean(scal));
+            
             if isempty(obj.a)
-                m = 1/max(abs(scal));
-                scal = scal * m;
-                val_a = m * 2.^(-1:1);
+                avg = avg / maxi;
+                val_a = (1/maxi) * 2.^(-1:1);
             else
-                scal = scal * obj.a;
+                avg = avg * obj.a;
                 val_a = obj.a;
             end
             if isempty(obj.b)
-                m = -mean(scal);
-                val_b = m + (-2:2);
+                val_b = (-2:2) - avg;
             else
                 val_b = obj.b;
             end            
             if isempty(obj.c)
-                val_c = 2:4;
+                val_c = 2:5;
             else
                 val_c = obj.c;
             end
@@ -149,13 +155,14 @@ classdef Polynomial < KernelAPI
         %            gram_matrix(i,1) = <K(i)|0>
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
-            if nargin < 3
-                sigs2 = sigs1;
-            end            
-            sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-            sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-            
-            obj.gram_matrix = (obj.a * (sigs1 * sigs2') + obj.b) .^ obj.c;
+            if nargin == 1
+                obj.gram_matrix = (obj.a * obj.scalar_prod + obj.b) .^ obj.c;
+            else
+                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
+                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
+
+                obj.gram_matrix = (obj.a * (sigs1 * sigs2') + obj.b) .^ obj.c;
+            end
         end
     end
 end

@@ -32,7 +32,7 @@ function [best_params results std_dev] = cross_validate(obj, K)
         end
         
         % Do K-fold cross-validation
-        if USE_PARALLEL
+        if USE_PARALLEL && 0
             common = struct('K', K, 'samples', obj.CV_get_training_samples(), 'obj', obj');
             results = run_in_parallel('K_cross_validate_parallel', common, full_params, 0, 0, pg, 0, 1);
             std_dev = results(:,2);

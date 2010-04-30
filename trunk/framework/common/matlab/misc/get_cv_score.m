@@ -14,7 +14,12 @@ function [cv_score cv_stdev] = get_cv_score(root, d)
     
     i = floor(median(find(cv_score == max(cv_score))));
     
-    cv_score = cv_score(i);
-    cv_stdev = cv_stdev(i);
+    if ~isnan(i)
+        cv_score = cv_score(i);
+        cv_stdev = cv_stdev(i);
+    else
+        cv_score = 0;
+        cv_stdev = -1;
+    end
 end
 

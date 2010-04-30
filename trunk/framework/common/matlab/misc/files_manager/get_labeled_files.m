@@ -21,7 +21,7 @@ function [Ipaths labels] = get_labeled_files(root, msg)
     end
     
     global HASH_PATH;
-    HASH_PATH = num2str(hash_path(Ipaths));
+    HASH_PATH = num2str(get_hash_path(Ipaths));
     if nargin > 1
         write_log(msg);
         display_classes_info(classes);

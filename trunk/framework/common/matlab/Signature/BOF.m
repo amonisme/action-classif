@@ -1,34 +1,29 @@
 classdef BOF < SignatureAPI
     % Bag of features
-    properties (SetAccess = protected, GetAccess = protected)
+    properties (SetAccess = protected)
         K     
-        L          % for spatial pyramid
-        L_Wchan    % weight for each channel
-        L_Wchan_cv % remember if weight estimation was performed automaticaly
+        L          % grids for spatial pyramid
+        L_cv
         centers   
         kmeans
+        zone           % if zone is not null, the features should be inside the 'zone'th  bounding box if zone>0
+                       %                                         or outside the '-zone'th bounding box if zone<0
+                       % For zone>0 pyramid is restricted to the bb
     end
-    
-    % These properties are kept for compatibily reasons
-    properties (SetAccess = protected, GetAccess = protected)    
-        maxiter
-        kmeans_lib
-    end
-    
+       
     methods (Access = protected)
         %------------------------------------------------------------------
-        function sigs = compute_signatures(obj, centers, feat, descr, Ipath, pg, offset, scale)
+        function sigs = compute_signatures(obj, feat, descr, Ipath, pg, offset, scale)
             global USE_PARALLEL;
            
             if USE_PARALLEL
-                sigs = run_in_parallel('BOF.parallel_signatures', struct('centers', centers, 'sig_size', obj.channel_sig_size, 'L', obj.L), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale);
+                sigs = run_in_parallel('BOF.parallel_signatures', struct('centers', obj.centers, 'sig_size', obj.sig_size, 'L', obj.L, 'zone', obj.zone), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale);
             else
                 n_img = size(Ipath, 1);
-                sigs = zeros(n_img, obj.channel_sig_size);
+                sigs = zeros(n_img, obj.sig_size);
                 for k=1:n_img
                     pg.progress(offset+scale*k/n_img);
-
-                    sigs(k, :) = obj.sig_from_feat_descr(obj.L, centers, feat{k}, descr{k}, Ipath{k});
+                    sigs(k, :) = obj.sig_from_feat_descr(obj.L, obj.centers, feat{k}, descr{k}, Ipath{k}, obj.zone);
                 end    
             end
             
@@ -47,38 +42,46 @@ classdef BOF < SignatureAPI
                 % Average distance
                 obj.L(z_index(k), 3) = 1 / (dist / (n_sigs*(n_sigs-1)/2));
                 sigs(:, obj.L(z_index(k),4):obj.L(z_index(k),5)) = s * obj.L(z_index(k), 3);
-            end
+            end         
 
             sigs = obj.norm.normalize(sigs);
         end   
     end
     
     methods (Static = true)
-        %------------------------------------------------------------------
-        function obj = loadobj(a)
-            obj = a;
-            if ~isa(obj.kmeans, 'Kmeans')
-                obj.kmeans = Kmeans(obj.K, obj.kmeans_lib, obj.maxiter);                
-            end
-            if isempty(obj.L)
-                obj.L = [1 1 1];
-            elseif isscalar(obj.L)
-                obj.L = floor(obj.L);
-                levels = (0:obj.L)';
-                grid = [2.^levels, 2.^levels, 1./2.^(obj.L-levels+1)];
-                grid(1,3) = 1/2^obj.L;
-                obj.L = grid;
-            end
-            if size(obj.L_Wchan,1) ~= size(obj.L,1)
-                obj.L_Wchan = repmat(obj.L(:,3), 1, obj.channels.number());
-            end
-            if ~isfield(a, 'L_Wchan_cv')
-                obj.L_Wchan_cv = ones(size(obj.L_Wchan,1),1);
-            end            
-            if obj.L_Wchan(1,1) == 1/2^(size(obj.L_Wchan,1)-1);
-                obj.L_Wchan_cv = zeros(size(obj.L_Wchan,1),1);
-            end            
-        end        
+%         %------------------------------------------------------------------
+%         function obj = loadobj(a)
+%             obj.K = a.K;
+%             obj.kmeans_lib = a.kmeans_lib;
+%             obj.maxiter = a.maxiter;
+%             obj.centers = a.centers;
+% 
+%             if isempty(a.kmeans_lib)
+%                 obj.kmeans_lib = 'cpp';
+%                 obj.maxiter = 200;
+%             end
+%             
+%             obj.kmeans = Kmeans(obj.K, obj.kmeans_lib, obj.maxiter);                
+%             
+%             if isempty(a.L)
+%                 obj.L = [1 1 1];
+%             elseif isscalar(a.L)
+%                 obj.L = floor(obj.L);
+%                 levels = (0:obj.L)';
+%                 grid = [2.^levels, 2.^levels, 1./2.^(obj.L-levels+1)];
+%                 grid(1,3) = 1/2^obj.L;
+%                 end_index = cumsum(grid(:,1).*grid(:,2));
+%                 beg_index = [0; end_index(1:(end-1))];
+%                 obj.L = [grid (beg_index*obj.K+1) (end_index*obj.K)]; 
+%             else
+%                 obj.L = a.L;
+%             end
+%             if ~isfield(a, 'L_cv')
+%                 obj.L_cv = zeros(size(obj.L,1),1);
+%             else
+%                 obj.L_cv = a.L_cv;
+%             end
+%         end
          
         %------------------------------------------------------------------
         function sig = parallel_signatures(common, args)
@@ -88,25 +91,36 @@ classdef BOF < SignatureAPI
             sig = zeros(n_img, common.sig_size);
             for k=1:n_img
                 task_progress(tid, k/n_img);
-                sig(k, :) = BOF.sig_from_feat_descr(common.L, common.centers, args(k).feat, args(k).descr, args(k).Ipath);
+                sig(k, :) = BOF.sig_from_feat_descr(common.L, common.centers, args(k).feat, args(k).descr, args(k).Ipath, common.zone);
             end  
             
             task_close(tid);
         end
-        
+
         %------------------------------------------------------------------
-        function sig = sig_from_feat_descr(L, centers, feat, descr, Ipath)
+        function sig = sig_from_feat_descr(L, centers, feat, descr, Ipath, zone)
             if size(descr, 1) == 0
-                sig = zeros(1,size(centers,1));
-            else
+                n_bin = sum(L(:,1).*L(:,2));
+                sig = zeros(1,size(centers,1)*n_bin);
+            else       
                 d = dist2(centers, descr);
                 m = (d == repmat(min(d), size(d,1), 1));  
                 
-                info = imfinfo(Ipath);
-                w = info.Width;
-                h = info.Height;                   
-                X = (feat(:,1)-1)/w;
-                Y = (feat(:,2)-1)/h;
+                if zone > 0 % We draw the grid only on the bounding box
+                    [d f] = fileparts(Ipath);
+                    f = fullfile(d, sprintf('%s.info', f));
+                    bb = load(f, '-ascii');
+                    w = bb(4)-bb(2)+1;
+                    h = bb(5)-bb(3)+1;
+                    X = (feat(:,1)-bb(2))/w;
+                    Y = (feat(:,2)-bb(3))/h;
+                else            % We draw the grid on the full image
+                    info = imfinfo(Ipath);
+                    w = info.Width;
+                    h = info.Height;                   
+                    X = (feat(:,1)-1)/w;
+                    Y = (feat(:,2)-1)/h;
+                end
                 
                 n_grid = size(L, 1);             
                 sig = cell(n_grid,1);
@@ -125,36 +139,40 @@ classdef BOF < SignatureAPI
                 end
                 sig = cat(1,sig{:})';
             end
-        end        
+        end  
     end
     
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = BOF(channels, K, norm, L, kmeans_lib, maxiter)
-            if nargin < 4 || isempty(L)
+        function obj = BOF(detector, descriptor, K, norm, L, zone, kmeans_lib, maxiter)
+            if nargin < 5 || isempty(L)
                 L = [1 1 1];
-            end              
-            if nargin < 5
+            end          
+            if nargin < 6
+                zone = 0;
+            end
+            if nargin < 7
                 kmeans_lib = 'cpp';
             end
-            if nargin < 6
+            if nargin < 8
                 maxiter = 200;
             end        
             
-            L(:,1:2) = floor(L(:,1:2));
-            
+            obj.detector = detector;
+            obj.descriptor = descriptor;
             obj.K = K;
-            obj.kmeans = Kmeans(K, kmeans_lib, maxiter);
-            obj.channels = channels;
+            obj.kmeans = Kmeans(obj.K, kmeans_lib, maxiter); 
+            obj.zone = zone;
+%             obj.kmeans_lib = kmeans_lib;
+%             obj.maxiter = maxiter;
+            
             n_cells = sum(L(:,1).*L(:,2));
             end_index = cumsum(L(:,1).*L(:,2));
             beg_index = [0; end_index(1:(end-1))];
-            obj.L_Wchan = repmat(L(:,3), 1, channels.number());
-            obj.L_Wchan_cv = L(:,3) == 0;
-            obj.L = [L (beg_index*obj.K+1) (end_index*obj.K)];
-            obj.channel_sig_size = K*n_cells;   % See Lazebnik, Spatial Pyramid Matching
-            obj.total_sig_size = obj.channels.number()*obj.channel_sig_size;
+            obj.L = [L (beg_index*K+1) (end_index*K)];
+            obj.L_cv = (L(:,3) == 0);
+            obj.sig_size = K*n_cells;
             obj.norm = norm;
         end
         
@@ -173,63 +191,41 @@ classdef BOF < SignatureAPI
                 write_log(sprintf('Loaded.\n'));
             else    
                 pg = ProgressBar('Learning training signatures', '');
-                n_channels = obj.channels.number;
-                obj.centers = cell(n_channels, 1);
-                sigs = cell(n_channels, 1);
+                progress_value = 0;
+ 
+                feature_progress_frac = 0.15;
+                descrip_progress_frac = 0.15;
+                k_means_progress_frac = 0.65;
+                sigs_progress_frac =    0.05;
 
-                obj.channels.init();
-                last_detector = 0;
+                % Compute feature points
+                pg.setCaption('Computing feature points...');
+                feat = obj.compute_features(obj.detector, Ipaths, pg, 0, feature_progress_frac);
+                progress_value = progress_value + feature_progress_frac;
 
-                feature_progress_frac = 0.15/obj.channels.number;
-                descrip_progress_frac = 0.15/obj.channels.number;
-                k_means_progress_frac = 0.65/obj.channels.number;
-                sigs_progress_frac =    0.05/obj.channels.number;
-
-                while(not(obj.channels.eoc()))
-                    progress_value = (obj.channels.channel_id()-1)/obj.channels.number;
-                    progress_text = sprintf('Channel %d on %d: ', obj.channels.channel_id(),obj.channels.number);
-
-                    if last_detector ~= obj.channels.get_detector_id()
-                        % Compute feature points
-                        pg.setCaption([progress_text 'Computing feature points...']);
-                        feat = obj.compute_features(obj.channels.get_detector(), Ipaths, pg, progress_value, feature_progress_frac);
-                        last_detector = obj.channels.get_detector_id();
-                        progress_value = progress_value + feature_progress_frac;
-                    end
-
-                    % Compute descriptors
-                    pg.setCaption([progress_text 'Computing descriptors...']);
-                    descr = obj.compute_descriptors(obj.channels.get_detector(), obj.channels.get_descriptor(), Ipaths, feat, pg, progress_value, descrip_progress_frac);           
-                    progress_value = progress_value + descrip_progress_frac;
-
-                    % Compute visual vocabulary
-                    num_descr = 0;
-                    for i = 1:size(descr,1)
-                        num_descr = num_descr + size(descr{i}, 1);
-                    end
-                    pg.setCaption(sprintf('%sComputing BOF... (found %d descriptors)',progress_text, num_descr));                                       
-                    center_file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName(obj.channels.channel_id())));
-                    obj.prepare_kmeans(cat(1, descr{:})');
-                    obj.centers{obj.channels.channel_id()} = obj.kmeans.do_kmeans(center_file);
-                    progress_value = progress_value + k_means_progress_frac;
-
-                    % Compute signature for this channel
-                    pg.setCaption([progress_text 'Computing signatures...']);
-                    obj.L(:,3) = obj.L_Wchan(:, obj.channels.channel_id());
-                    sigs{obj.channels.channel_id()} = obj.compute_signatures(obj.centers{obj.channels.channel_id()}, feat, descr, Ipaths, pg, progress_value, sigs_progress_frac);
-                    obj.L_Wchan(:, obj.channels.channel_id()) = obj.L(:,3);
-
-                    % Next channel
-                    obj.channels.next();
-                end
-
-                obj.train_sigs = cat(2, sigs{:});
-                % Each channel is already normalized, renormalize the
-                % overall in case of multi-channel
-                if obj.channels.number > 1
-                    obj.train_sigs = obj.norm.normalize(obj.train_sigs);
-                end
+                % Compute descriptors
+                pg.setCaption('Computing descriptors...');
+                descr = obj.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat, pg, progress_value, descrip_progress_frac);           
+                progress_value = progress_value + descrip_progress_frac;
+                                
+                % Filter features according to the bounding box
+                for i=1:length(Ipaths)
+                    [f d] = SignatureAPI.filter_by_zone(obj.zone, Ipaths{i}, feat{i}, descr{i});
+                    feat{i} = f;
+                    descr{i} = d;
+                end                
                 
+                % Compute visual vocabulary
+                n = obj.kmeans.prepare_kmeans(descr);
+                pg.setCaption(sprintf('Computing BOF... (found %d descriptors)', n));   
+                obj.centers = obj.kmeans.do_kmeans(...
+                    fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName())));
+                progress_value = progress_value + k_means_progress_frac;
+
+                % Compute signature
+                pg.setCaption('Computing signatures...');
+                obj.train_sigs = obj.compute_signatures(feat, descr, Ipaths, pg, progress_value, sigs_progress_frac);
+                               
                 train_sigs = obj.train_sigs;
                 centers = obj.centers;
                 save(file,'centers','train_sigs');
@@ -239,52 +235,51 @@ classdef BOF < SignatureAPI
         
         %------------------------------------------------------------------
         % Return the signature of the Images
-        function sigs = get_signatures(obj, Ipaths, pg, offset, scale)
-            if nargin<3
-                pg = ProgressBar('Computing signatures', '', true);
-                offset = 0;
-                scale = 1;
-            end
-            
-            n_channels = obj.channels.number;
-            sigs = cell(1, n_channels);
-           
-            obj.channels.init();
-            last_detector = 0;
-            
-            feature_progress_frac = scale*0.45/obj.channels.number;
-            descrip_progress_frac = scale*0.45/obj.channels.number;
-            sigs_progress_frac =    scale*0.10/obj.channels.number;
-            
-            while(~obj.channels.eoc())
-                progress_value = offset + scale*(obj.channels.channel_id()-1)/obj.channels.number;
-                progress_text = sprintf('Channel %d on %d: ', obj.channels.channel_id(),obj.channels.number);
+        function sigs = get_signatures(obj, Ipaths, pg, offset, scale)  
+            global HASH_PATH TEMP_DIR;
+            file = fullfile(TEMP_DIR, sprintf('%s_SIG-%s.mat',HASH_PATH,obj.toFileName()));
+
+            if exist(file,'file') == 2
+                write_log(sprintf('Loading signature from cache: %s.\n', file));
+                load(file,'sigs');
+            else    
                 
-                if last_detector ~= obj.channels.get_detector_id()
-                    % Compute feature points
-                    pg.setCaption([progress_text 'Computing feature points...']);
-                    feat = obj.compute_features(obj.channels.get_detector(), Ipaths, pg, progress_value, feature_progress_frac);
-                    last_detector = obj.channels.get_detector_id();
-                    progress_value = progress_value + feature_progress_frac;
+                if nargin<3
+                    pg = ProgressBar('Computing signatures', '', true);
+                    offset = 0;
+                    scale = 1;
                 end
 
+                feature_progress_frac = 0.20;
+                descrip_progress_frac = 0.65;
+                sigs_progress_frac =    0.15;            
+
+                % Compute feature points
+                pg.setCaption('Computing feature points...');
+                feat = obj.compute_features(obj.detector, Ipaths, pg, offset, feature_progress_frac*scale);
+                progress_value = feature_progress_frac;
+
                 % Compute descriptors
-                pg.setCaption([progress_text 'Computing descriptors...']);
-                descr = obj.compute_descriptors(obj.channels.get_detector(), obj.channels.get_descriptor(), Ipaths, feat, pg, progress_value, descrip_progress_frac); 
+                pg.setCaption('Computing descriptors...');
+                descr = obj.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat, pg, offset + progress_value*scale, descrip_progress_frac*scale);
                 progress_value = progress_value + descrip_progress_frac;
-               
-                % Compute signature for this channel
-                pg.setCaption([progress_text 'Computing signatures...']);
-                obj.L(:,3) = obj.L_Wchan(:, obj.channels.channel_id());
-                sigs{obj.channels.channel_id()} = obj.compute_signatures(obj.centers{obj.channels.channel_id()}, feat, descr, Ipaths, pg, progress_value, sigs_progress_frac);
+
+                % Filter features according to the bounding box
+                for i=1:length(Ipaths)
+                    [f d] = SignatureAPI.filter_by_zone(obj.zone, Ipaths{i}, feat{i}, descr{i});
+                    feat{i} = f;
+                    descr{i} = d;
+                end
+
+                % Compute signature
+                pg.setCaption('Computing signatures...');
+                sigs = obj.compute_signatures(feat, descr, Ipaths, pg, offset + progress_value*scale, sigs_progress_frac*scale);            
+
+                save(file,'sigs');
                 
-                % Next channel
-                obj.channels.next();
-            end
-            sigs = cat(2, sigs{:});            
-            
-            if nargin<5
-                pg.close();
+                if nargin<3
+                    pg.close();
+                end
             end
         end
         
@@ -294,7 +289,7 @@ classdef BOF < SignatureAPI
             n_grid = size(obj.L, 1);
             str = cell(1,n_grid);
             for i = 1:n_grid
-                if obj.L_Wchan_cv(i)
+                if obj.L_cv(i)
                     w = '?';
                 else
                     w = num2str(obj.L(i,3));
@@ -306,23 +301,31 @@ classdef BOF < SignatureAPI
             end
             str = cat(2, str{:});
         end
+        
         function str = toString(obj)
+            detect = obj.detector.toString();
+            descrp = obj.descriptor.toString();
+            n = obj.norm.toString();    
+            klib = obj.kmeans.get_lib();
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = [sprintf('Signature: Bag of features (K = %d, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.norm.toString(), obj.kmeans.get_lib()) obj.channels.toString()];
+                str = sprintf('Signature: Bag of features (K = %d, Zone = %d, histogram normalization: %s, K-means library: %s) of:\n$~~~~~~~~$%s of %s\n', obj.K, obj.zone, n, klib, descrp, detect);
             else
-                str = [sprintf('Signature: Spatial pyramid (K = %d, L = %s, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.get_pyramid(), obj.norm.toString(), obj.kmeans.get_lib()) obj.channels.toString()];
+                str = sprintf('Signature: Spatial pyramid (K = %d, Zone = %d, L = %s, histogram normalization: %s, K-means library: %s) of\n$~~~~~~~~$%s of %s\n', obj.K, obj.zone, obj.get_pyramid(), n, klib, descrp, detect);
             end
         end
+        
         function str = toFileName(obj)
+            klib = obj.kmeans.get_lib();
+            detect = obj.detector.toFileName();
+            descrp = obj.descriptor.toFileName();
+            n = obj.norm.toFileName();            
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = sprintf('BOF[%s-%d-%s]-%s', obj.kmeans.get_lib(), obj.K, obj.norm.toFileName(), obj.channels.toFileName());
+                str = sprintf('BOF[%s-%d-%d-%s-%s-%s]', klib, obj.K, obj.zone, n, descrp, detect);
             else
-                str = sprintf('PYR[%s-%d-%s-%s]-%s', obj.kmeans.get_lib(), obj.K, obj.get_pyramid(), obj.norm.toFileName(), obj.channels.toFileName());
+                str = sprintf('PYR[%s-%d-%d-%s-%s-%s-%s]', klib, obj.K, obj.zone, obj.get_pyramid(), n, descrp, detect);
             end
         end
-        function str = KmeanstoFileName(obj, numChannel)
-            str = sprintf('Kmeans[%s-%d]-C(%d)-%s', obj.kmeans.get_lib(), obj.K, numChannel, obj.channels.toFileName());
-        end
+        
         function str = toName(obj)
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
                 str = sprintf('BOF(%d)', obj.K);
@@ -330,6 +333,31 @@ classdef BOF < SignatureAPI
                 str = sprintf('PYR(%s)-BOF(%d)', obj.get_pyramid(), obj.K);
             end
         end
+
+        function str = KmeanstoFileName(obj)
+            klib = obj.kmeans.get_lib();            
+            detect = obj.detector.toFileName();
+            descrp = obj.descriptor.toFileName();              
+            str = sprintf('Kmeans[%s-%d-%d-%s-%s]', klib, obj.K, obj.zone, descrp, detect);
+        end   
+        
+        function obj = save_to_temp(obj)
+            global TEMP_DIR HASH_PATH;
+            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
+            
+            if ~exist(file, 'file') == 2
+                centers = obj.center;
+                train_sigs = obj.train_sigs;
+                save(file,'centers','train_sigs');
+            end
+            
+            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName()));
+            
+            if ~exist(file, 'file') == 2
+                centers = obj.center;
+                save(file,'centers');
+            end
+        end        
     end
 end
 

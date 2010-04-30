@@ -2,7 +2,7 @@ classdef MS_Dense < Dense
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = MS_Dense(spacing, scale, num_scale, lib)
+        function obj = MS_Dense(spacing, scale, num_scale, lib)          
             if(nargin < 1)
                 spacing = 12;
             end
@@ -11,7 +11,7 @@ classdef MS_Dense < Dense
             end
             if(nargin < 3)
                 num_scale = 10;
-            end
+            end             
             if(nargin < 4)
                 lib = 'mylib';
             end
@@ -22,7 +22,7 @@ classdef MS_Dense < Dense
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('DENSE[spacing = %s%d, library: %s]', sprintf('%d-',obj.spacing(1:(end-1))), obj.spacing(end), obj.lib_name);
+            str = sprintf('DENSE[Spacing = %s%d, Library: %s]', sprintf('%d-',obj.spacing(1:(end-1))), obj.spacing(end), obj.lib_name);
         end
         function str = toFileName(obj)
             offset = obj.spacing - obj.spacing(1);

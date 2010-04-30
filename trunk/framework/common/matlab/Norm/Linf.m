@@ -9,7 +9,7 @@ classdef Linf < NormAPI
         %------------------------------------------------------------------
         % Norm L1
         function A = normalize(obj, A)
-            m = repmat(max(abs(A), [], 2),1,size(A,2));
+            m = repmat(max(abs(A), [], 2)+eps,1,size(A,2));
             A = obj.norm*A./m;
         end
 

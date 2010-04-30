@@ -4,12 +4,14 @@ classdef Intersection < KernelAPI
         %------------------------------------------------------------------
         % Constructor Kernel type: sum_i(min(Xi, Yi))
         function obj = Intersection(precompute,lib)
-            if(nargin < 1)
+            if nargin < 1
                 precompute = 0;
             end                 
-            if(nargin < 2)
+            if nargin < 2
                 lib = 'svmlight';
             end
+
+            obj = obj@KernelAPI(); 
             
             obj.precompute = precompute;
             obj.lib_name = lib;
@@ -36,7 +38,7 @@ classdef Intersection < KernelAPI
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('Intersection kernel: sum_i(min(Xi, Yi))');
+            str = sprintf('Intersection kernel: $sum_i(min(X_i, Y_i))$');
         end
         function str = toFileName(obj)
             str = 'Inter';
@@ -47,13 +49,18 @@ classdef Intersection < KernelAPI
         
         %------------------------------------------------------------------
         % Set parameters
-        function obj = set_params(obj, params)
+        function params = set_params(obj, params)
         end
               
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
-        function params = get_params(obj)
-            params = {};           
+        function params = get_params(obj, sigs)
+            params = {};
+            if obj.precompute
+                obj.precompute_gram_matrix(sigs, sigs);
+                sigs = [zeros(1,size(sigs,2)); sigs];
+                obj.sigs = sigs;                
+            end        
         end  
         
         %------------------------------------------------------------------
@@ -62,19 +69,18 @@ classdef Intersection < KernelAPI
         %            gram_matrix(i,1) = <K(i)|0>
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
-            if nargin < 3
-                sigs2 = sigs1;
-            end            
-            sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-            sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-            
-            n1 = size(sigs1,1);
-            n2 = size(sigs2,1);
-            
-            obj.gram_matrix = zeros(n1,n2);
-            for i=1:n2
-                c = min(sigs1, repmat(sigs2(i,:), n1, 1));
-                obj.gram_matrix(:,i) = sum(c,2);
+            if nargin > 1
+                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
+                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
+
+                n1 = size(sigs1,1);
+                n2 = size(sigs2,1);
+
+                obj.gram_matrix = zeros(n1,n2);
+                for i=1:n2
+                    c = min(sigs1, repmat(sigs2(i,:), n1, 1));
+                    obj.gram_matrix(:,i) = sum(c,2);
+                end
             end
         end
     end
