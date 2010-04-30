@@ -1,27 +1,27 @@
 classdef SVM < ClassifierAPI & CrossValidateAPI
     % Support Vector Machine Classifier
 
-    properties
+    properties (SetAccess = protected)
+        signature   % Signature module
         C 	        % trade-off between training error and margin (if -1, then set to default [avg. x*x]^-1, set to [] for cross-validation)
         J	        % Cost-factor, by which training errors on positive examples outweight errors on negative examples (default 1)
         K           % K-fold cross-validation
         param_cv    % remember which parameterter was cross-validated
-        kernel_params
+        OneVsOne    % 1 - 1vs1  // 0 - 1vsA
+        kernel        
         svm
-        OneVsOne        
-        kernel
         class_names
         class_id
     end
         
     methods (Static = true)
         %------------------------------------------------------------------
-        function lobj = loadobj(obj)
-            lobj = obj;
-            if ~isfield(obj, 'param_cv')
-                lobj.param_cv = [1];
-            end
-        end            
+%         function lobj = loadobj(obj)
+%             lobj = obj;
+%             if ~isfield(obj, 'param_cv')
+%                 lobj.param_cv = [1];
+%             end
+%         end            
         %------------------------------------------------------------------
         function svm = learn_parallel(info, args)
             tid = task_open();
@@ -98,7 +98,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = SVM(kernel, signature, strat, C, J, K)
+        function obj = SVM(signatures, kernels, strat, C, J, K)
             if(nargin < 3)
                 strat = 'OneVsAll';
             end
@@ -112,11 +112,19 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             	K = 5;
             end
             
-            obj = obj@ClassifierAPI(signature);
-	        obj.C = C;
+            if length(kernels) ~= 1  && length(kernels) ~= length(signatures)
+                throw(MException('','In case of multi-kernels, there should be as many kernels as signatures.\n'));
+            end            
+            
+            if length(kernels) == 1            
+                obj.kernel = kernels{1};
+            else
+                obj.kernel = MultiKernel(signatures, kernels);
+            end
+            obj.signature = signatures;
+            obj.C = C;
             obj.J = J;
             obj.K = K;
-            obj.kernel = kernel;
             
             obj.param_cv = [0];
             if isempty(C)
@@ -139,13 +147,18 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         % Learns from the training directory 'root', eventually do a cross
         % validation
         function [cv_res cv_dev] = learn(obj, root)
+            global HASH_PATH TEMP_DIR;
+            
             [Ipaths labels] = get_labeled_files(root, 'Loading training set...\n');
             [class_ids names] = names2ids(labels);
             obj.class_names = names;
             obj.class_id = class_ids;
-            obj.signature.learn(Ipaths); 
-                       
-            global HASH_PATH TEMP_DIR;
+            
+            write_log('Learn signatures...\n');
+            n_sigs = length(obj.signature);
+            for i = 1:n_sigs
+                obj.signature{i}.learn(Ipaths);
+            end
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
             
@@ -165,17 +178,35 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             end
             if ~ok             
                 if obj.C == -1
-                    obj.C = 1/mean(sum(obj.signature.train_sigs.*obj.signature.train_sigs,2));
+                    n_sigs = length(obj.signature);
+                    sigs = obj.signature{1}.train_sigs;
+                    for i = 2:n_sigs
+                        sigs = [sigs obj.signature{i}.train_sigs];
+                    end
+                    obj.C = 1/mean(sum(sigs.*sigs,2));
+                    clear sigs;
                 end
                 
                 % Precompute distance        
                 [best_params cv_res cv_dev] = cross_validate(obj, obj.K);
                 obj.CV_set_params(best_params);
-                obj.learn_svm(obj.kernel.get_kernel_sigs(obj.signature.train_sigs), obj.class_id);                
-                write_log(sprintf('Best parameters:\nSVM C parameter = %f\nKernel parameter(s) = [%s]\n',best_params(1),sprintf('%.2f ',best_params(2:end))));   
+                n_sigs = length(obj.signature);
+                sigs = cell(n_sigs, 1);
+                for i = 1:n_sigs
+                    sigs{i} = obj.signature{i}.train_sigs;
+                end     
+
+                if ~isa(obj.kernel, 'MultiKernel')
+                    sigs = cat(2,sigs{:});
+                end
+            
+                obj.learn_svm(obj.kernel.get_kernel_sigs(sigs), obj.class_id);                
+                              
+                write_log(sprintf('Best parameters:\nSVM C parameter = %f\n',obj.C));
+                write_log(sprintf('Kernel parameter(s) = [%s]\n',sprintf('%.2f ',best_params(2:end))));   
                 
                 svm = obj.svm;
-                save(file,'svm', 'best_params', 'cv_res', 'cv_dev');
+                save(file,'svm', 'best_params', 'cv_res', 'cv_dev');                
             end
         end
         
@@ -253,21 +284,37 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                  do_pg = 1;
             end
             if do_pg
-                pg = ProgressBar('Classifying', 'Computing signatures...');
+                pg = ProgressBar('Classifying', '');
             else
                 pg = -1;
             end
                         
             if nargin < 3
                 [Ipaths l] = get_labeled_files(Ipaths, 'Loading testing set...\n');
-                correct_label = names2ids(l, classes);    
-                sigs = obj.signature.get_signatures(Ipaths, pg, 0, 0.7);
-                obj.kernel.compute_gram_matrix(obj.signature.train_sigs, sigs);
+                correct_label = names2ids(l, classes); 
+                
+                n_sigs = length(obj.signature);
+                sigs = cell(n_sigs, 1);
+                for i = 1:n_sigs
+                    sigs{i} = obj.signature{i}.get_signatures(Ipaths, pg, 0.7/n_sigs*(i-1), 0.7/n_sigs);
+                end                
+                
+                if ~isa(obj.kernel, 'MultiKernel')
+                    train_sigs = obj.signature{1}.train_sigs;
+                    for i = 2:n_sigs
+                        train_sigs = [train_sigs obj.signature{i}.train_sigs];
+                    end 
+                    sigs = cat(2,sigs{:});
+                    obj.kernel.compute_gram_matrix(train_sigs, sigs);                    
+                else                                       
+                    obj.kernel.compute_gram_matrix(obj.signature, sigs);
+                end
+                
                 sigs = obj.kernel.get_kernel_sigs(sigs);
             else
                 sigs = Ipaths;
             end
-            
+                       
             n_img = size(sigs, 1);
             n_models = size(obj.svm, 1);
             
@@ -350,7 +397,17 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         %------------------------------------------------------------------
         % Retrieves the training samples used for K-fold
         function samples = CV_get_training_samples(obj)
-            cv_sigs = obj.kernel.get_kernel_sigs(obj.signature.train_sigs);
+            n_sigs = length(obj.signature);
+            sigs = cell(n_sigs, 1);
+            for i = 1:n_sigs
+                sigs{i} = obj.signature{i}.train_sigs;
+            end     
+            
+            if ~isa(obj.kernel, 'MultiKernel')
+                sigs = cat(2,sigs{:});
+            end
+            cv_sigs = obj.kernel.get_kernel_sigs(sigs);
+
             samples = [obj.class_id cv_sigs];
         end
         
@@ -371,11 +428,20 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         % Retrieves all the values to test for cross-validation
         % 'params' must be a cell of vectors.
         function params = CV_get_params(obj)
+            sigs = obj.signature{1}.train_sigs;
+            for i = 2:length(obj.signature)
+                sigs = [sigs obj.signature{i}.train_sigs];
+            end
             
-            params = obj.kernel.CV_get_params(obj.signature.train_sigs);
+            if ~isa(obj.kernel, 'MultiKernel')
+                params = obj.kernel.get_params(sigs);
+            else
+                params = obj.kernel.get_params(obj.signature);
+            end
                        
             if isempty(obj.C)
-                params = [(1/mean(sum(obj.signature.train_sigs.*obj.signature.train_sigs,2)) * 1.5.^(-6:6))'; params];
+                p = 1/mean(sum(sigs.*sigs,2));
+                params = [(p * 1.5.^(-6:6))'; params];
             else
                 params = [obj.C; params];
             end
@@ -385,7 +451,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         % Set C and kernel parameters        
         function obj = CV_set_params(obj, params)
             obj.C = params(1);
-            obj.kernel.CV_set_params(params(2:end));
+            obj.kernel.set_params(params(2:end));
         end
         
         %------------------------------------------------------------------
@@ -401,8 +467,16 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             else
                 c = num2str(obj.C);
             end
-            str = [sprintf('Classifier: SVM %s (C = %s, J = %s), %s, %d-fold cross-validation\n',strat, c, num2str(obj.J),obj.kernel.toString(), obj.K) obj.signature.toString()];
+
+            n_sigs = length(obj.signature);
+            if n_sigs > 1
+                str_ker = obj.kernel.toString();
+            else
+                str_ker = sprintf('%s\n$~~~~$%s', obj.kernel.toString(), obj.signature{1}.toString());
+            end          
+            str = sprintf('Classifier: SVM %s (C = %s, J = %s) %d-fold cross-validation\n%s',strat, c, num2str(obj.J), obj.K, str_ker);
         end
+        
         function str = toFileName(obj)
             if obj.OneVsOne
                 strat = '1v1';
@@ -414,8 +488,15 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             else
                 c = num2str(obj.C);
             end            
-            str = sprintf('SVM[%s-%s-%s-%d-%s]-%s', strat, c, num2str(obj.J), obj.K, obj.kernel.toFileName(), obj.signature.toFileName());
+            
+            if isa(obj.kernel, 'MultiKernel')
+                str_ker = obj.kernel.toFileName();
+            else
+                str_ker = sprintf('%s-%s', obj.kernel.toFileName(), obj.signature{1}.toFileName());
+            end
+            str = sprintf('SVM[%s-%s-%s-%d]-%s', strat, c, num2str(obj.J), obj.K, str_ker);  
         end
+        
         function str = toName(obj)
             if obj.OneVsOne
                 strat = '1v1';
@@ -423,6 +504,13 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                 strat = '1vA';
             end
             str = sprintf('SVM(%s)-%s', obj.kernel.toName(), strat);
-        end        
+        end     
+
+        function obj = save_to_temp(obj)           
+            n_sigs = size(obj.signature);
+            for i = 1:n_sigs
+                obj.signature{i}.save_to_temp();
+            end
+        end
     end
 end

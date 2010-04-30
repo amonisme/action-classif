@@ -18,7 +18,7 @@ function copy_src_to_cluster(copy_libs)
         I = zeros(length(f), 1);        
         for j = 1:length(f)
             [directory filename ext]  = fileparts(f(j).name);
-            I(j) = isempty(find(strcmp(ext, {'.m~' '.c' '.c~' '.cpp' '.cpp~' '.h' '.h~' '.jpg' '.zip' '.cc' '.cc~' '.mat' '.tc' '.tc~' '.txt' '.txt~' '.log' '.log~' '.asv' '.htm' '.html' '' '.py'}), 1));
+            I(j) = isempty(find(strcmp(ext, {'.m~' '.c' '.c~' '.cpp' '.cpp~' '.h' '.h~' '.jpg' '.zip' '.cc' '.cc~' '.mat' '.tc' '.tc~' '.txt' '.txt~' '.log' '.log~' '.asv' '.htm' '.html' '' '.py' '.pdf'}), 1));
         end
         f = f(logical(I));
         files{i,1} = {f(:).name}';

@@ -18,11 +18,15 @@ classdef LSVM < ClassifierAPI
             for i=1:n_img
                 info = imfinfo(Ipaths{i});
                 w(i) = info.Width;
+                h = info.Height;
                 
                 [d f] = fileparts(Ipaths{i});
                 info = load(fullfile(d, sprintf('%s.info', f)), '-ascii');
                 trunc(i) = info(1);
-                bb(i,:)  = info(2:end);
+                bb(i,1)  = max(1,info(2));
+                bb(i,2)  = max(1,info(3));
+                bb(i,3)  = min(w(i), info(4));
+                bb(i,4)  = min(h, info(5));                
             end
             trunc = logical(trunc);
             
@@ -63,7 +67,7 @@ classdef LSVM < ClassifierAPI
         %------------------------------------------------------------------
         function models = train_model_parallel(common, index)
             tid = task_open();
-                        
+
             n_index = length(index);
             models = cell(n_index, 1);
             
@@ -79,7 +83,7 @@ classdef LSVM < ClassifierAPI
         function model = train_model(Ipaths, name, note, class_ids, n, i)
             global TEMP_DIR HASH_PATH;
             try
-              load(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)));
+              load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_final', HASH_PATH, name, n)));
             catch ME
                 [pos, neg] = LSVM.make_examples(Ipaths, true, class_ids, i);
                 if n>length(pos)
@@ -94,7 +98,7 @@ classdef LSVM < ClassifierAPI
 
                 % train root filters using warped positives & random negatives
                 try
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit1', HASH_PATH, name)));
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit1', HASH_PATH, name, n)));
                 catch
                   initrand();
                   for i = 1:n
@@ -104,13 +108,13 @@ classdef LSVM < ClassifierAPI
                     models{i} = train(name, models{i}, spos{i}(inds), neg, i, 1, 1, 1, ...
                                       cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
                   end
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit1', HASH_PATH, name)), 'models');
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit1', HASH_PATH, name, n)), 'models');
                 end
 
                 % train root left vs. right facing root filters using latent detections
                 % and hard negatives
                 try
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit2', HASH_PATH, name)));
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit2', HASH_PATH, name, n)));
                 catch
                   initrand();
                   for i = 1:n
@@ -118,36 +122,36 @@ classdef LSVM < ClassifierAPI
                     models{i} = train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 4, 3, ...
                                       cachesize, true, 0.7, false, ['lrsplit2_' num2str(i)]);
                   end
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_lrsplit2', HASH_PATH, name)), 'models');
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit2', HASH_PATH, name, n)), 'models');
                 end
 
                 % merge models and train using latent detections & hard negatives
                 try 
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_mix', HASH_PATH, name)));
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_mix', HASH_PATH, name, n)));
                 catch
                   initrand();
                   model = mergemodels(models);
                   model = train(name, model, pos, neg(1:maxneg), 0, 0, 1, 5, ...
                                 cachesize, true, 0.7, false, 'mix');
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_mix', HASH_PATH, name)), 'model');
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_mix', HASH_PATH, name, n)), 'model');
                 end
 
                 % add parts and update models using latent detections & hard negatives.
                 try 
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)));
+                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_parts', HASH_PATH, name, n)));
                 catch
                   initrand();
                   for i = 1:2:2*n
                     model = model_addparts(model, model.start, i, i, 8, [6 6]);
                   end
-                  model = train(cls, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
+                  model = train(name, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
                                 cachesize, true, 0.7, false, 'parts_1');
-                  model = train(cls, model, pos, neg, 0, 0, 1, 5, ...
+                  model = train(name, model, pos, neg, 0, 0, 1, 5, ...
                                 cachesize, true, 0.7, true, 'parts_2');
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
+                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_parts', HASH_PATH, name, n)), 'model');
                 end
 
-                save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');
+                save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_final', HASH_PATH, name, n)), 'model');
             end
         end
         
@@ -323,7 +327,7 @@ classdef LSVM < ClassifierAPI
         %------------------------------------------------------------------
         % Constructor
         function obj = LSVM(n_components)
-            obj = obj@ClassifierAPI([]);
+            obj = obj@ClassifierAPI();
             obj.n_components = n_components;
         end
         
@@ -468,6 +472,13 @@ classdef LSVM < ClassifierAPI
         end
         function str = toName(obj)
             str = sprintf('LSVM(%d)', obj.n_components);
+        end
+        function obj = save_to_temp(obj)
+            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
+            if ~existe(file,'file') == 2                
+                lsvm_models = obj.models;
+                save(file, 'lsvm_models');
+            end
         end
     end    
 end

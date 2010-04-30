@@ -28,7 +28,7 @@ classdef DetectorAPI
         end
     end
     
-    methods (Abstract)
+    methods
         %------------------------------------------------------------------
         % Returns features of the image specified by Ipath (one per line)
         % Format: X Y scale angle 0
@@ -39,5 +39,22 @@ classdef DetectorAPI
         str = toString(obj)
         str = toFileName(obj)
         str = toName(obj)
+    end    
+    
+    methods (Static)
+        %------------------------------------------------------------------
+        % Run in parallel
+        function feat = run_parallel(detector, Ipath)
+            tid = task_open();
+
+            n_img = size(Ipath, 1);
+            feat = cell(n_img, 1);
+            for i=1:n_img
+                task_progress(tid, i/n_img);
+                feat{i} = detector.get_features(Ipath{i});
+            end
+
+            task_close(tid);
+        end
     end
 end

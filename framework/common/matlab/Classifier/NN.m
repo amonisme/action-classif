@@ -1,6 +1,7 @@
 classdef NN < ClassifierAPI
-   
-    properties (SetAccess = protected, GetAccess = protected)
+    
+    properties (SetAccess = protected)
+        signature   % Signature module        
         class_names
         labels      % Id of the class for each training image
     end
@@ -83,6 +84,9 @@ classdef NN < ClassifierAPI
         end
         function str = toName(obj)
             str = 'NN';
+        end
+        function obj = save_to_temp(obj)
+            obj.signature.save_to_temp();
         end
     end
 end

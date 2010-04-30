@@ -1,18 +1,6 @@
 classdef ClassifierAPI < handle
     % Classifier interface
     
-    properties
-        signature   % Signature module
-    end
-    
-    methods
-        %------------------------------------------------------------------
-        % Constructor
-        function obj = ClassifierAPI(signature)
-            obj.signature = signature;
-        end
-    end
-    
     methods (Abstract)        
         %------------------------------------------------------------------
         % Learns from the training directory 'root'
@@ -27,6 +15,7 @@ classdef ClassifierAPI < handle
         str = toString(obj)
         str = toFileName(obj)
         str = toName(obj)
+        obj = save_to_temp(obj)
     end
     
 end

@@ -23,7 +23,7 @@ void checkParameters(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 void mexFunction(int nlhs, mxArray *plhs[],
 		  int nrhs, const mxArray *prhs[])
 {
-
+	printf("inside mexsvmclassify\n"); fflush(stdout);
   
   DOC **docs; /* hold a test example */
   double *target; /* hold labels */

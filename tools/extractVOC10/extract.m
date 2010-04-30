@@ -48,7 +48,7 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                         ymin = ymin-dh;
                         ymax = ymax+dh; 
                         
-                        bb = [xmin ymin xmax ymax]-1;
+                        bb = [xmin ymin xmax ymax]-0.5;
                         
                         if(xmin<1) 
                             xmin = 1;
@@ -72,11 +72,13 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                         end
                             
                        if crop
-                           I = I(ymin:ymax, xmin:xmax, :);
-                           bb = [0 0 (xmax-xmin) (ymax-ymin)];
+                           J = I(ymin:ymax, xmin:xmax, :);
+                           bb = [0 0 (xmax-xmin) (ymax-ymin)]+0.5;
+                       else
+                           J = I;
                        end
                        if resize
-                           I = imresize(I, new_size/max_dim);
+                           J = imresize(J, new_size/max_dim);
                            bb = bb * (new_size/max_dim);
                        end
                        bb = floor(bb)+1;
@@ -111,7 +113,7 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                                 end
                                 
                                 file = sprintf('img%04d.jpg', num(n).id);
-                                imwrite(I, fullfile(dirname, file), 'jpg');  
+                                imwrite(J, fullfile(dirname, file), 'jpg');  
                                 
                                 file = sprintf('img%04d.info', num(n).id);
                                 info = [str2double(trunc) bb];

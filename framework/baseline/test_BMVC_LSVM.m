@@ -1,21 +1,27 @@
-function test_BMVC_LSVM(use_cluster)
+function test_BMVC_LSVM(db_id, use_cluster)
     if nargin < 1
         use_cluster = 0;
     end
-
-    db = {'../../DataBaseCropped' '../../DataBaseNoCrop' '../../DataBaseNoCropResize'};
-    n_db = length(db);
+    
+    db = {'../../DataBaseCropped', ...
+          '../../DataBaseNoCrop', ...
+          '../../DataBaseNoCropResize', ...
+          '../../DBGupta', ...
+          '../../DBGuptaResize'};      
+    dir = {'../../DataBaseCropped_test_LSVM', ...
+           '../../DataBaseNoCrop_test_LSVM', ...
+           '../../DataBaseNoCropResize_test_LSVM', ...
+           '../../DBGupta_test_LSVM', ...
+           '../../DBGuptaResize_test_LSVM'};
     
     K = 3;
-    classif = cell(length(db)*K,3);
+    classif = cell(K,3);
       
-    for j = K:-1:1    
-        for i = 1:n_db
-            i0 = (j-1)*n_db+i;
-            classif(i0, 1) = LSVM(j);
-            classif{i0, 2} = db{i};
-            classif{i0, 3} = sprintf('%s_test_LSVM',db{i});
-        end
+    for i = K:-1:1    
+        i0 = K-i+1;
+        classif{i0, 1} = LSVM(i);
+        classif{i0, 2} = db{db_id};
+        classif{i0, 3} = dir{db_id};
     end
     
     if(use_cluster)

@@ -11,7 +11,7 @@ using namespace std;
 class kmeans
 {
 	private:
-		double* data;
+		float* data;
 		int dimension;
 		int ndata;
 
@@ -19,16 +19,16 @@ class kmeans
 		int maxiter;
 		int niter;
 
-		double* centers;
-		double* assign;
+		float* centers;
+		float* assign;
 
-		double* new_centers;
+		float* new_centers;
 		int* cluster_count;
 		int gcd(int,int);
 	public:
 		// data , dim , ndata , ncluster , maxiter
-		kmeans(double*,int,int,int,int);
-		void set_out_data(double*,double*);
+		kmeans(float*,int,int,int,int);
+		void set_out_data(float*,float*);
 		int getNiter();
 
 		void initialize();
@@ -54,18 +54,18 @@ int kmeans::gcd(int num1,int num2)
 	}
 }
 
-kmeans::kmeans(double* ptr,int value1,int value2,int value3,int value4)
+kmeans::kmeans(float* ptr,int value1,int value2,int value3,int value4)
 {
 	data = ptr;
 	dimension = value1;
 	ndata = value2;
 	ncluster = value3;
 	maxiter = value4;
-	new_centers = new double[dimension * ncluster];
+	new_centers = new float[dimension * ncluster];
 	cluster_count = new int[ncluster];
 }
 
-void kmeans::set_out_data(double* ptr1,double* ptr2)
+void kmeans::set_out_data(float* ptr1,float* ptr2)
 {
 	centers = ptr1;
 	assign = ptr2;
@@ -78,10 +78,10 @@ void kmeans::initialize()
 //	if(hasEmptyFeatureVector())
 //		cout << "Empty feature vector detected!" << endl;
 	srand(time(NULL));
-	int index1 = static_cast<int>(ndata*static_cast<double>(rand())/RAND_MAX);
+	int index1 = static_cast<int>(ndata*static_cast<float>(rand())/RAND_MAX);
 	int index2;
 	do{
-		index2 = static_cast<int>(ndata*static_cast<double>(rand())/RAND_MAX);
+		index2 = static_cast<int>(ndata*static_cast<float>(rand())/RAND_MAX);
 	}while(gcd(index1,index2) != 1);
 	for(int i=0;i<ncluster;i++)
 	{
@@ -102,7 +102,7 @@ bool kmeans::hasEmptyFeatureVector()
 	bool return_value = false;
 	for(int i=0;i<ndata;i++)
 	{
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int j=0;j<dimension;j++)
 		{
 			sum += centers[i * dimension + j];
@@ -121,7 +121,7 @@ bool kmeans::hasEmptyClusterCenter()
 	bool return_value = false;
 	for(int i=0;i<ncluster;i++)
 	{
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int j=0;j<dimension;j++)
 		{
 			sum += centers[i * dimension + j];
@@ -140,7 +140,7 @@ void kmeans::do_kmeans()
 	initialize();
 	niter = 0;
 	do{
-		//cout << "Iteration #" << niter + 1 << endl;
+		cout << "Iteration #" << niter + 1 << endl;
 		clear_new_centers();
 		find_new_centers();
 		niter++;
@@ -163,7 +163,7 @@ void kmeans::find_new_centers()
    	*/
 	for(int i=0;i<ndata;i++)
 	{
-		double min_distance;
+		float min_distance;
 		int min_index;
 		int temp_min_index;
 		if(assign[i] == -1)
@@ -181,7 +181,7 @@ void kmeans::find_new_centers()
 			min_distance = 0.0;
 			for(int k=0;k<dimension;k++)
 			{
-				double value = data[i*dimension + k]-centers[min_index*dimension + k];
+				float value = data[i*dimension + k]-centers[min_index*dimension + k];
 				min_distance += value*value;
 			}
 		}
@@ -189,10 +189,10 @@ void kmeans::find_new_centers()
 		{
 			if( j != temp_min_index )
 			{
-				double c_distance = 0.0;
+				float c_distance = 0.0;
 				for(int k=0;k<dimension;k++)
 				{
-					double value = data[i*dimension + k] - centers[j*dimension + k];
+					float value = data[i*dimension + k] - centers[j*dimension + k];
 					c_distance += value*value;
 					if(c_distance >= min_distance)
 						break;
@@ -204,7 +204,7 @@ void kmeans::find_new_centers()
 				}
 			}
 		}
-		assign[i] = static_cast<double>(min_index);
+		assign[i] = static_cast<float>(min_index);
 		cluster_count[min_index] ++;
 		for(int j=0;j<dimension;j++)
 			new_centers[min_index*dimension + j] += data[i*dimension + j];
@@ -213,32 +213,25 @@ void kmeans::find_new_centers()
 	for(int i=0;i<ncluster;i++)
 	{
 		if(cluster_count[i] != 0)
-		{
 			for(int j=0;j<dimension;j++)
-			{
-				new_centers[i*dimension + j] /= static_cast<double>(cluster_count[i]);
-//				cluster_count[i] = 0;
-			}
-		}
+				new_centers[i*dimension + j] /= static_cast<float>(cluster_count[i]);
 		else
-		{
 			cout << "Empty Cluster Detected !" << endl;
-		}
 	}
 }
 
 bool kmeans::hasConverged()
 {
-	double distance = 0.0;
-	double epsilon = 1e-3;
+	float distance = 0.0;
+	float epsilon = 1e-3;
 	bool abort = false;
 	for(int i=0;i<ncluster;i++)
 	{
-		double cdistance = 0.0;
+		float cdistance = 0.0;
 		for(int j=0;j<dimension;j++)
 		{
 //			cout << centers[ i* dimension + j ] << "\t" << new_centers[i*dimension +j] << endl;
-			double value = centers[i*dimension + j] - new_centers[i*dimension + j];
+			float value = centers[i*dimension + j] - new_centers[i*dimension + j];
 			cdistance += value*value;
 		}
 //		cout << cdistance << endl;
@@ -269,18 +262,18 @@ int kmeans::getNiter()
 	return niter;
 }
 
-void norm2(double *hist, int n)
+void norm2(float *hist, int n)
 {
-	double s = 1e-10;
+	float s = 1e-10;
 	for(int i = 0; i < n; i++)
 		s += hist[i]*hist[i];
 	s = sqrt(s);
 	for(int i = 0; i < n; i++)
 		hist[i] /= s;
 }
-void norm1_with_cutoff(double *hist, int n, double cut_off_threshold)
+void norm1_with_cutoff(float *hist, int n, float cut_off_threshold)
 {
-	double s = 1e-10;
+	float s = 1e-10;
 	for(int i = 0; i < n; i++)
 		s += hist[i];
 	for(int i = 0; i < n; i++)
@@ -316,8 +309,8 @@ int main(int argc, char **argv)
 	fread(&dimension, sizeof(int), 1, File);
 	fread(&ndata, sizeof(int), 1, File);
 	
-	double *data = new double[ndata*dimension];
-	fread(data, sizeof(double), dimension*ndata, File);
+	float *data = new float[ndata*dimension];
+	fread(data, sizeof(float), dimension*ndata, File);
   fclose(File);	
   
 	//get size of data matrix
@@ -336,7 +329,7 @@ int main(int argc, char **argv)
 
 	//Load data
 	{
-		double *hist = new double[dimension];
+		float *hist = new float[dimension];
 		ifstream fin(argv[1]);
 		for(int i = 0; i < ndata; i++)
 		{
@@ -363,8 +356,8 @@ int main(int argc, char **argv)
 	ofstream fout(argv[4]);
 
 	// Seting output arguments
-	double *centers = new double[ncluster * dimension];
-	double *assign = new double[ndata];
+	float *centers = new float[ncluster * dimension];
+	float *assign = new float[ndata];
 	
 	kmeans KMEANS(data,dimension,ndata,ncluster,maxiter);
 	KMEANS.set_out_data(centers,assign);
@@ -372,10 +365,10 @@ int main(int argc, char **argv)
 	KMEANS.do_kmeans();
 	
 	File = fopen(argv[4], "wb+");
-	fwrite(centers, sizeof(double), dimension*ncluster, File);
+	fwrite(centers, sizeof(float), dimension*ncluster, File);
   fclose(File);	
 
-/*	double niter = KMEANS.getNiter();
+/*	float niter = KMEANS.getNiter();
 
 	for(int i = 0; i < ncluster; i++)
 	{
@@ -388,7 +381,7 @@ int main(int argc, char **argv)
 	}
 	
 	int *clustersize = new int[ncluster];
-	double *meandist = new double[ncluster];
+	float *meandist = new float[ncluster];
 	for(int i = 0; i < ncluster; i++)
 	{
 		clustersize[i] = 0;
@@ -398,10 +391,10 @@ int main(int argc, char **argv)
 	{
 		int ass = (int)assign[i];
 		clustersize[ass] ++;
-		double dist = 0.0;
+		float dist = 0.0;
 		for(int j = 0; j < dimension; j++)
 		{
-			double value = data[i*dimension + j] - centers[ass*dimension + j];
+			float value = data[i*dimension + j] - centers[ass*dimension + j];
 			dist += value*value;
 		}
 		meandist[ass] += sqrt(dist);

@@ -31,7 +31,7 @@ classdef Harris < DetectorAPI
         function obj = Harris(rotInvariant, harrisTh, harrisK, laplaceTh, lib)
             if(nargin < 1)
                 rotInvariant = 'S';
-            end
+            end      
             if(nargin < 2)
                 harrisTh = 1e-9;
             end
@@ -60,7 +60,7 @@ classdef Harris < DetectorAPI
         
         %------------------------------------------------------------------
         % Returns feature points of the image specified by Ipath 
-        function feat = get_features(obj, Ipath)          
+        function feat = get_features(obj, Ipath)
             feat = obj.impl_colorDescriptor(Ipath);
         end
         
@@ -72,7 +72,7 @@ classdef Harris < DetectorAPI
             else
                 RI = 'S';
             end
-            str = sprintf('HARRIS[Invariant type = %s, threshold = %s, K = %s, Laplace threshold = %s, library: %s]', RI, num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh), obj.lib_name);
+            str = sprintf('HARRIS[Invariant type = %s, Threshold = %s, K = %s, Laplace threshold = %s, Library: %s]', RI, num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh), obj.lib_name);
         end
         function str = toFileName(obj)
             if obj.rotInvariant

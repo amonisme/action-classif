@@ -1,4 +1,4 @@
-function hash = hash_path(Ipaths, count_dir)
+function hash = get_hash_path(Ipaths, count_dir)
     if nargin < 2
         count_dir = 1;
     end

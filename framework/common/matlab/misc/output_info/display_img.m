@@ -21,6 +21,10 @@ function display_img(N, dir, prefix, root, is_LSVM)
     else
         file = sprintf('%s.tex', prefix);
     end
+
+    if ~isdir('experiments');
+        mkdir('experiments');
+    end
     
     fid = fopen(fullfile('experiments', file), 'w+');
     fprintf(fid, '\\documentclass[10pt,a4paper]{article}\n\\usepackage{graphicx}\n\\usepackage{float}\n\\usepackage[tight,footnotesize]{subfigure}\n\n\\title{%s}\n\n\\begin{document}\n\n\\maketitle\n\n', regexprep(classifier.toFileName(),'_', '\\_'));

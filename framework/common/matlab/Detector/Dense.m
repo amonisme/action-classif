@@ -6,17 +6,17 @@ classdef Dense < DetectorAPI
         lib_name
     end
     
-    methods (Static = true)
-        %------------------------------------------------------------------
-        function obj = loadobj(a)
-            obj = a;
-            if obj.lib == 0
-                obj.lib_name = 'mylib';
-            elseif obj.lib == 1
-                obj.lib_name = 'cd';                   
-            end
-        end    
-    end    
+%     methods (Static = true)
+%         %------------------------------------------------------------------
+%         function obj = loadobj(a)
+%             obj = a;
+%             if obj.lib == 0
+%                 obj.lib_name = 'mylib';
+%             elseif obj.lib == 1
+%                 obj.lib_name = 'cd';                   
+%             end
+%         end    
+%     end    
     methods (Access = protected)
         %------------------------------------------------------------------
         function feat = impl_mylib(obj, Ipath)
@@ -82,15 +82,15 @@ classdef Dense < DetectorAPI
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = Dense(spacing, lib)
+        function obj = Dense(spacing, lib)     
             if(nargin < 1)
                 spacing = 12;
-            end
+            end            
             if(nargin < 2)
                 lib = 'mylib';
             end
             
-            obj = obj@DetectorAPI('S'); 
+            obj = obj@DetectorAPI('S');
             obj.lib_name = lib;
             obj.spacing = spacing;
             
@@ -107,18 +107,18 @@ classdef Dense < DetectorAPI
         
         %------------------------------------------------------------------
         % Returns feature points of the image specified by Ipath 
-        function feat = get_features(obj, Ipath)          
+        function feat = get_features(obj, Ipath)
             if obj.lib == 0
                 feat = obj.impl_mylib(Ipath);
             else
                 feat = obj.impl_colordescriptor(Ipath);
-            end
+            end      
         end
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('DENSE[spacing = %d, library: %s]', obj.spacing, obj.lib_name);
+            str = sprintf('DENSE[Spacing = %d, Library: %s]', obj.spacing, obj.lib_name);
         end
         function str = toFileName(obj)
             str = sprintf('DENSE[%s-%d]', obj.lib_name, obj.spacing);

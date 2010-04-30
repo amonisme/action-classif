@@ -1,6 +1,6 @@
 classdef KNN < NN
    
-    properties (SetAccess = protected, GetAccess = protected)
+    properties (SetAccess = protected)
         K
     end
     
@@ -88,7 +88,7 @@ classdef KNN < NN
         end
         function str = toName(obj)
             str = sprintf('KNN(%d)', obj.K);
-        end
+        end        
     end
     
 end

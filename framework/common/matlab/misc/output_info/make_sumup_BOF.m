@@ -1,4 +1,4 @@
-function [classif points] = make_sumup_BOF(root, sizes, kernels)
+function [classif points] = make_sumup_BOF(root, sizes, kernels, case_C, concatenate)
     n_sizes = length(sizes);
     n_ker = length(kernels);
 
@@ -7,7 +7,18 @@ function [classif points] = make_sumup_BOF(root, sizes, kernels)
     
     for i = 1:n_sizes
         for j = 1:n_ker
-            classif{i,j} = SVM(kernels(j).kernel, BOF(Channels({MS_Dense()}, {SIFT(L2Trunc())}), sizes(i).size, kernels(j).norm), 'OneVsAll', [], 1, 5);
+            if case_C
+                if concatenate
+                    k = {kernels(j).kernel};
+                else
+                    k = {kernels(j).kernel{1} kernels(j).kernel{2}};
+                end
+                classif{i,j} = SVM({BOF(MS_Dense(), SIFT(L2Trunc()), sizes(i).size, kernels(j).norm, [], 1), ...
+                                    BOF(MS_Dense(), SIFT(L2Trunc()), sizes(i).size, kernels(j).norm, [],-1)}, ...
+                                    k, 'OneVsAll', [], 1, 5);
+            else                              
+                classif{i,j} = SVM({BOF(MS_Dense(), SIFT(L2Trunc()), sizes(i).size, kernels(j).norm)},{kernels(j).kernel}, 'OneVsAll', [], 1, 5);
+            end
             if ~isempty(root)
                 d =  classif{i,j}.toFileName();
                 [cv_score cv_stdev] = get_cv_score(root, d);
