@@ -153,7 +153,7 @@ classdef BOF < SignatureAPI
                 zone = 0;
             end
             if nargin < 7
-                kmeans_lib = 'cpp';
+                kmeans_lib = 'c';
             end
             if nargin < 8
                 maxiter = 200;

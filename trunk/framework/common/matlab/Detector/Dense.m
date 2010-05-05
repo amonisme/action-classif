@@ -87,14 +87,14 @@ classdef Dense < DetectorAPI
                 spacing = 12;
             end            
             if(nargin < 2)
-                lib = 'mylib';
+                lib = 'my';
             end
             
             obj = obj@DetectorAPI('S');
             obj.lib_name = lib;
             obj.spacing = spacing;
             
-            if(strcmpi(lib, 'mylib'))
+            if(strcmpi(lib, 'my'))
                 obj.lib = 0;
             else
                 if(strcmpi(lib, 'cd'))

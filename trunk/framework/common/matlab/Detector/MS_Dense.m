@@ -13,7 +13,7 @@ classdef MS_Dense < Dense
                 num_scale = 10;
             end             
             if(nargin < 4)
-                lib = 'mylib';
+                lib = 'my';
             end
             
             obj = obj@Dense(floor(spacing*(scale).^(0:(num_scale-1)))',lib);

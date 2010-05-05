@@ -1,8 +1,8 @@
-function init_matlab(fbp,tid,iid,hash)
+function init_matlab(fbp,tid,iid,hash,temp_dir,lib_dir)
     setup_path();
     init_global();
         
-    global TID IID FILE_BUFFER_PATH HASH_PATH;    
+    global TID IID FILE_BUFFER_PATH HASH_PATH TEMP_DIR LIB_DIR;    
     
     if nargin == 0
         FILE_BUFFER_PATH = './';
@@ -20,6 +20,13 @@ function init_matlab(fbp,tid,iid,hash)
     if nargin >= 4
         HASH_PATH = hash;
     end
+    if nargin >= 5
+        TEMP_DIR = temp_dir;
+    end
+    if nargin >= 6
+        LIB_DIR = lib_dir;
+    end
+    
     
     % For some reasons, if MATLAB never saw a class it may have trouble to
     % load a structure with a field pointing to this class althought it is

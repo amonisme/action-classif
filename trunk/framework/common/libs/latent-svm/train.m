@@ -52,13 +52,13 @@ maxnum = max(length(pos)*10, maxnum+length(pos));
 bytelimit = 1.5*2^31;
 
 globals;
-hdrfile = [tmpdir name '.hdr'];
-datfile = [tmpdir name '.dat'];
-modfile = [tmpdir name '.mod'];
-inffile = [tmpdir name '.inf'];
-lobfile = [tmpdir name '.lob'];
-cmpfile = [tmpdir name '.cmp'];
-objfile = [tmpdir name '.obj'];
+hdrfile = fullfile(tmpdir, [name '.hdr']);
+datfile = fullfile(tmpdir, [name '.dat']);
+modfile = fullfile(tmpdir, [name '.mod']);
+inffile = fullfile(tmpdir, [name '.inf']);
+lobfile = fullfile(tmpdir, [name '.lob']);
+cmpfile = fullfile(tmpdir, [name '.cmp']);
+objfile = fullfile(tmpdir, [name '.obj']);
 
 labelsize = 5;  % [label id level x y]
 negpos = 0;     % last position in data mining

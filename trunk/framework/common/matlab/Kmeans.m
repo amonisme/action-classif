@@ -15,22 +15,22 @@ classdef Kmeans < handle
             obj.lib = library;
             obj.maxiter = maxiter;
             
-            if(strcmpi(library, 'vlfeat'))
+            if(strcmpi(library, 'vl'))
                 obj.lib_id = 0;
             else
                 if(strcmpi(library, 'vgg'))
                     obj.lib_id = 1;
                 else
-                    if(strcmpi(library, 'matlab'))
+                    if(strcmpi(library, 'ml'))
                         obj.lib_id = 2;
                     else
                         if(strcmpi(library, 'mex'))
                             obj.lib_id = 3;
                         else
-                            if(strcmpi(library, 'cpp'))
+                            if(strcmpi(library, 'c'))
                                 obj.lib_id = 4;
                             else                            
-                                throw(MException('',['Unknown library for computing K-means: "' library '".\nPossible values are: "vlfeat", "vgg", "matlab", "mex" and "cpp".\n']));
+                                throw(MException('',['Unknown library for computing K-means: "' library '".\nPossible values are: "vl", "vgg", "ml", "mex" and "c".\n']));
                             end
                         end
                     end

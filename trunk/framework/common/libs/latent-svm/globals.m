@@ -1,4 +1,5 @@
 % Set up global variables used throughout the code
+global TEMP_DIR FILE_BUFFER_PATH;
 
 % setup svm mex for context rescoring (if it's installed)
 if exist('./svm_mex601') > 0
@@ -15,7 +16,10 @@ else
 end
 
 % directory for caching models, intermediate data, and results
-cachedir = ['/var/tmp/rbg/YOURPATH/' VOCyear '/'];
+cachedir = TEMP_DIR;
+if cachedir(end) ~= '/'
+    cachedir = [cachedir '/'];
+end
 
 if exist(cachedir) == 0
   unix(['mkdir -p ' cachedir]);
@@ -25,7 +29,10 @@ if exist(cachedir) == 0
 end
 
 % directory for LARGE temporary files created during training
-tmpdir = ['/var/tmp/rbg/YOURPATH/dat/' VOCyear '/'];
+tmpdir = FILE_BUFFER_PATH;
+if tmpdir(end) ~= '/'
+    tmpdir = [tmpdir '/'];
+end
 
 if exist(tmpdir) == 0
   unix(['mkdir -p ' tmpdir]);
