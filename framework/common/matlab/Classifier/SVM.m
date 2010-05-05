@@ -467,13 +467,20 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             else
                 c = num2str(obj.C);
             end
-
-            n_sigs = length(obj.signature);
-            if n_sigs > 1
+          
+            if isa(obj.kernel, 'MultiKernel')
                 str_ker = obj.kernel.toString();
             else
-                str_ker = sprintf('%s\n$~~~~$%s', obj.kernel.toString(), obj.signature{1}.toString());
-            end          
+                n_sigs = length(obj.signature); 
+                str = cell(1, n_sigs);
+                for i=1:n_sigs
+                    str{i} = obj.signature{i}.toString();
+                    str{i} = sprintf('$~~~~$%s\n', str{i});
+                end
+                str = cat(2,str{:});            
+                str_ker = sprintf('%s:\n%s', obj.kernel.toString(), str);
+            end
+            
             str = sprintf('Classifier: SVM %s (C = %s, J = %s) %d-fold cross-validation\n%s',strat, c, num2str(obj.J), obj.K, str_ker);
         end
         
@@ -492,7 +499,20 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             if isa(obj.kernel, 'MultiKernel')
                 str_ker = obj.kernel.toFileName();
             else
-                str_ker = sprintf('%s-%s', obj.kernel.toFileName(), obj.signature{1}.toFileName());
+                n_sigs = length(obj.signature);                 
+                if n_sigs == 1
+                    str_ker = sprintf('%s-%s', obj.kernel.toFileName(), obj.signature{1}.toFileName());
+                else
+                    str = cell(1, n_sigs);
+                    for i=1:n_sigs
+                        str{i} = obj.signature{i}.toFileName();
+                        if i ~= 1
+                            str{i} = ['-' str{i}];
+                        end
+                    end
+                    str = cat(2,str{:});            
+                    str_ker = sprintf('%s-(%s)', obj.kernel.toFileName(), str);
+                end
             end
             str = sprintf('SVM[%s-%s-%s-%d]-%s', strat, c, num2str(obj.J), obj.K, str_ker);  
         end

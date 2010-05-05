@@ -1,6 +1,6 @@
 function []=compileAndRunForCluster(nameOfFunction, user, path,M, mem,libraries)
 
-job_number = 45;
+job_number = 35;
 
 %==============================================================================
 % Test the arguments

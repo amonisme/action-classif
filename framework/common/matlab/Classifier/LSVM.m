@@ -4,7 +4,9 @@ classdef LSVM < ClassifierAPI
     properties
         class_names
         models
-        n_components  % number of component in the mixture model      
+        n_components  % number of component in the mixture model  
+        n_parts       % number of parts
+        overlap_th    % force detection to overlap the annotated bounding box
     end
     
     methods (Static)
@@ -16,17 +18,10 @@ classdef LSVM < ClassifierAPI
             bb = zeros(n_img, 4);
             trunc = zeros(n_img,1);            
             for i=1:n_img
-                info = imfinfo(Ipaths{i});
-                w(i) = info.Width;
-                h = info.Height;
-                
-                [d f] = fileparts(Ipaths{i});
-                info = load(fullfile(d, sprintf('%s.info', f)), '-ascii');
-                trunc(i) = info(1);
-                bb(i,1)  = max(1,info(2));
-                bb(i,2)  = max(1,info(3));
-                bb(i,3)  = min(w(i), info(4));
-                bb(i,4)  = min(h, info(5));                
+                [bb_not_cropped bb width] = get_bb_info(Ipaths{i});
+                w(i) = width;
+                trunc(i) = bb(1);
+                bb = bb(2:end);
             end
             trunc = logical(trunc);
             
@@ -34,7 +29,7 @@ classdef LSVM < ClassifierAPI
                 p = find(class_ids == id);
                 n_pos = length(p);
                 pos = struct('im', cell(n_pos*2,1), 'flip', false, 'x1', 0, 'y1', 0, 'x2', 0, 'y2', 0);
-                for i = 1:n_pos
+                for i = 1:n_pos                   
                     x1 = bb(p(i),1);
                     x2 = bb(p(i),3);
                     pos(2*i-1).im = Ipaths{p(i)};
@@ -45,8 +40,8 @@ classdef LSVM < ClassifierAPI
                     pos(2*i-1).flip = false;
                     pos(2*i-1).trunc = trunc(p(i));
                     
-                    x1 = w(i) - bb(p(i),3) + 1;
-                    x2 = w(i) - bb(p(i),1) + 1;                    
+                    x1 = w(p(i)) - bb(p(i),3) + 1;
+                    x2 = w(p(i)) - bb(p(i),1) + 1;                    
                     pos(2*i-0).im = Ipaths{p(i)};
                     pos(2*i-0).x1 = x1;
                     pos(2*i-0).y1 = bb(p(i),2);
@@ -72,7 +67,7 @@ classdef LSVM < ClassifierAPI
             models = cell(n_index, 1);
             
             for k = 1:n_index
-                models{k} = LSVM.train_model(common.Ipaths, common.names{index(k)}, common.note, common.class_ids, common.n, index(k));
+                models{k} = LSVM.train_model(common.Ipaths, common.names{index(k)}, common.note, common.class_ids, common.n_compo, common.n_parts, index(k));
                 task_progress(tid, k/n_index);
             end
             
@@ -80,217 +75,106 @@ classdef LSVM < ClassifierAPI
         end
 
         %------------------------------------------------------------------
-        function model = train_model(Ipaths, name, note, class_ids, n, i)
-            global TEMP_DIR HASH_PATH;
+        function model = train_model(Ipaths, name, note, class_ids, n_compo, n_parts, i)
+            globals;
             try
-              load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_final', HASH_PATH, name, n)));
+              load([cachedir name '_final']);
             catch ME
                 [pos, neg] = LSVM.make_examples(Ipaths, true, class_ids, i);
-                if n>length(pos)
-                    n = length(pos);
+                if n_compo>length(pos)
+                    n_compo = length(pos);
                 end
                 
                 % split data by aspect ratio into n groups
-                spos = split(name, pos, n);
+                spos = split(name, pos, n_compo);
 
                 cachesize = 24000;
                 maxneg = min(length(neg), 200);
 
                 % train root filters using warped positives & random negatives
                 try
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit1', HASH_PATH, name, n)));
+                  load(fullfile([cachedir name '_lrsplit1']));
                 catch
                   initrand();
-                  for i = 1:n
+                  for i = 1:n_compo
                     % split data into two groups: left vs. right facing instances
                     models{i} = initmodel(name, spos{i}, note, 'N');
                     inds = lrsplit(models{i}, spos{i}, i);
                     models{i} = train(name, models{i}, spos{i}(inds), neg, i, 1, 1, 1, ...
                                       cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
                   end
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit1', HASH_PATH, name, n)), 'models');
+                  save([cachedir name '_lrsplit1'], 'models');
                 end
 
                 % train root left vs. right facing root filters using latent detections
                 % and hard negatives
                 try
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit2', HASH_PATH, name, n)));
+                  load([cachedir name '_lrsplit2']);
                 catch
                   initrand();
-                  for i = 1:n
+                  for i = 1:n_compo
                     models{i} = lrmodel(models{i});
                     models{i} = train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 4, 3, ...
                                       cachesize, true, 0.7, false, ['lrsplit2_' num2str(i)]);
                   end
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_lrsplit2', HASH_PATH, name, n)), 'models');
+                  save([cachedir name '_lrsplit2'], 'models');
                 end
 
                 % merge models and train using latent detections & hard negatives
                 try 
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_mix', HASH_PATH, name, n)));
+                  load([cachedir name '_mix']);
                 catch
                   initrand();
                   model = mergemodels(models);
                   model = train(name, model, pos, neg(1:maxneg), 0, 0, 1, 5, ...
                                 cachesize, true, 0.7, false, 'mix');
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_mix', HASH_PATH, name, n)), 'model');
+                  save([cachedir name '_mix'], 'model');
                 end
 
                 % add parts and update models using latent detections & hard negatives.
                 try 
-                  load(fullfile(TEMP_DIR, sprintf('%s_%s_%d_parts', HASH_PATH, name, n)));
+                  load([cachedir name '_parts']);
                 catch
                   initrand();
-                  for i = 1:2:2*n
-                    model = model_addparts(model, model.start, i, i, 8, [6 6]);
+                  for i = 1:2:2*n_compo
+                    model = model_addparts(model, model.start, i, i, n_parts, [6 6]);
                   end
                   model = train(name, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
                                 cachesize, true, 0.7, false, 'parts_1');
                   model = train(name, model, pos, neg, 0, 0, 1, 5, ...
                                 cachesize, true, 0.7, true, 'parts_2');
-                  save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_parts', HASH_PATH, name, n)), 'model');
+                  save([cachedir name '_parts'], 'model');
                 end
 
-                save(fullfile(TEMP_DIR, sprintf('%s_%s_%d_final', HASH_PATH, name, n)), 'model');
+                save([cachedir name '_final'], 'model');
             end
         end
         
-%         %------------------------------------------------------------------
-%         function model = train_model(Ipaths, name, class_ids, n, i)
-%             global TEMP_DIR HASH_PATH;
-%             try
-%               load(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)));
-%             catch ME
-%                 [pos, neg] = LSVM.make_examples(Ipaths, class_ids, i);
-% 
-%                 if n>length(pos)
-%                     n = length(pos);
-%                 end
-%                 n_neg = min(length(neg), 200);
-% 
-%                 spos = split(pos, n);
-%                 % train root filters using warped positives & random negatives
-%                 try
-%                     load(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)));
-%                 catch ME
-%                     models = cell(n,1);
-%                     for i=1:n
-%                         models{i} = initmodel(spos{i});
-%                         models{i} = train(name, models{i}, spos{i}, neg, 1, 1, 1, 1, 2^28);
-%                     end
-%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)), 'models');
-%                 end
-%                 
-%                 % merge models and train using latent detections & hard negatives
-%                 try
-%                     load(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)));
-%                 catch ME
-%                     model = mergemodels(models);
-%                     model = train(name, model, pos, neg(1:n_neg), 0, 0, 2, 2, 2^28, true, 0.7);
-%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_hard', HASH_PATH, name)), 'model');                  
-%                 end                
-% 
-%                 % add parts and update models using latent detections & hard negatives.
-%                 try 
-%                   load(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)));
-%                 catch ME
-%                     for i=1:n
-%                         model = addparts(model, i, 6);
-%                     end 
-%                     % use more data mining iterations in the beginning
-%                     model = train(name, model, pos, neg(1:n_neg), 0, 0, 1, 4, 2^30, true, 0.7);
-%                     model = train(name, model, pos, neg(1:n_neg), 0, 0, 6, 2, 2^30, true, 0.7, true);
-%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_parts', HASH_PATH, name)), 'model');
-%                 end
-% 
-%                 % update models using full set of negatives.
-%                 try 
-%                     load(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)));
-%                 catch ME
-%                     model = train(name, model, pos, neg, 0, 0, 1, 3, 2^30, true, 0.7, true, ...
-%                                     0.003*model.numcomponents, 2);
-%                     save(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)), 'model');
-%                 end
-% 
-%                 % train bounding box prediction
-%                 model = trainbox(name, model, pos, 0.7);
-%                 save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');             
-%             end
-%         end
-        
         %------------------------------------------------------------------
-%         function model = train_model(Ipaths, name, class_ids, n, i)
-%             global TEMP_DIR HASH_PATH;
-%             try
-%               load(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)));
-%             catch ME
-%                 [pos, neg] = LSVM.make_examples(Ipaths, class_ids, i);
-% 
-%                 if n>length(pos)
-%                     n = length(pos);
-%                 end
-%                 n_neg = min(length(neg), 200);
-% 
-%                 spos = split(pos, n);
-%                 % train root filters using warped positives & random negatives
-%                 try
-%                   load(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)));
-%                 catch ME
-%                   models = cell(n,1);
-%                   for i=1:n
-%                     models{i} = initmodel(spos{i});
-%                     models{i} = train(name, models{i}, spos{i}, neg, 1, 0, 1, 1, 2^28);
-%                   end
-%                   save(fullfile(TEMP_DIR, sprintf('%s_%s_random', HASH_PATH, name)), 'models');
-%                 end
-% 
-%                 model = mergemodels(models);
-%                 for i=1:n
-%                   model = addparts(model, i, 6);
-%                 end    
-% 
-%                 % update models using full set of negatives.
-%                 try 
-%                   load(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)));
-%                 catch ME
-%                   model = train(name, model, pos, neg, 1, 0, 1, 4, 2^28, true, 0.7);
-%                   model = train(name, model, pos, neg, 1, 0, 4, 1, 2^28, true, 0.7, true, ...
-%                                 0.003*model.numcomponents, 2);                  
-% 
-%                   save(fullfile(TEMP_DIR, sprintf('%s_%s_mine', HASH_PATH, name)), 'model');
-%                 end
-% 
-%                 % train bounding box prediction
-%                 model = trainbox(name, model, pos, 0.7);
-%                 save(fullfile(TEMP_DIR, sprintf('%s_%s_final', HASH_PATH, name)), 'model');
-%             end
-%         end        
-        
-        %------------------------------------------------------------------
-        function scores = classify_parallel(Ipaths, models)
+        function scores = classify_parallel(common, models)
             tid = task_open();
                         
-            n_img = length(Ipaths);
+            n_img = length(common.Ipaths);
             n_classes = length(models);
             scores = ones(n_img,n_classes)*(-Inf);
             
-            bb_scale = 1.5;
-            for i = 1:n_img;
-                im = imread(Ipaths{i});
-                [h w d] = size(im);
-                person_box = [w/2*(1-1/bb_scale) h/2*(1-1/bb_scale) w/2*(1+1/bb_scale) h/2*(1+1/bb_scale)];
+            for i = 1:n_img
+                im = imread(common.Ipaths{i});                
+                [bb_not_cropped person_box] = get_bb_info(common.Ipaths{i});
+                person_box = person_box(2:end);                
+                
                 for j = 1:n_classes
-                    boxes = detect(im, models{j}, -Inf); %models{j}.thresh);
+                    [dets, boxes] = imgdetect(im, models{j}, -Inf); %models{j}.thresh);
                     if ~isempty(boxes)
-%                       overlap = inter_box(person_box, boxes(:, 1:4));
-%                       min_over = 0.6;
-%                       while isempty(find(overlap>=min_over,1))
-%                           isempty(find(overlap>=min_over,1))
-%                           min_over = min_over - 0.1;
-%                       end
-%                       I = (overlap>=min_over);
-%                       scores(i,j) = max(boxes(I,end));   
-                      scores(i,j) = max(boxes(:,end));   
+                        boxes = reduceboxes(models{j}, boxes);
+                        [dets boxes] = clipboxes(im, dets, boxes);
+
+                        overlap = inter_box(person_box, dets(:, 1:4));
+                        I = overlap > common.overlap_th;
+                        boxes = boxes(I,end);
+                        if ~isempty(boxes)
+                            scores(i,j) = max(boxes);
+                        end
                     end
                 end            
                 task_progress(tid, i/n_img);
@@ -326,9 +210,15 @@ classdef LSVM < ClassifierAPI
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = LSVM(n_components)
+        function obj = LSVM(n_compo, n_parts, overlap_th)
+            if nargin < 3
+                overlap_th = 0.7;
+            end    
+            
             obj = obj@ClassifierAPI();
-            obj.n_components = n_components;
+            obj.n_components = n_compo;
+            obj.n_parts = n_parts;
+            obj.overlap_th = overlap_th;
         end
         
         %------------------------------------------------------------------
@@ -340,23 +230,27 @@ classdef LSVM < ClassifierAPI
             obj.class_names = names;
             
             n_classes = length(obj.class_names);
+            names = cell(n_classes,1);
+            for i = 1:n_classes
+                names{i} = sprintf('%s_%s_%d_%d', HASH_PATH, obj.class_names{i}, obj.n_components, obj.n_parts);
+            end
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat', HASH_PATH, obj.toFileName()));
-
+            
             if exist(file, 'file') == 2
                 load(file, 'lsvm_models');                
                 obj.models = lsvm_models;
                 write_log(sprintf('Classifier loaded from cache: %s.\n', file));
             else
-                if USE_PARALLEL
-                    common = struct('Ipaths', [], 'names', [], 'note', obj.toFileName(), 'class_ids', class_ids, 'n', obj.n_components);
+                if USE_PARALLEL && 0
+                    common = struct('Ipaths', [], 'names', [], 'note', obj.toFileName(), 'class_ids', class_ids, 'n_compo', obj.n_components, 'n_parts', obj.n_parts);
                     common.Ipaths = Ipaths;
-                    common.names = obj.class_names;
-                    lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, [1:n_classes]', 0, 0);
+                    common.names = names;
+                    lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, (1:n_classes)', [], 0);
                 else
                     lsvm_models = cell(n_classes, 1);
                     for k = 1:n_classes
-                        lsvm_models{k} = LSVM.train_model(Ipaths, obj.class_names{k}, obj.toFileName(), class_ids, obj.n_components, k);
+                        lsvm_models{k} = LSVM.train_model(Ipaths, names{k}, obj.toFileName(), class_ids, obj.n_components, obj.n_parts, k);
                     end
                 end
                 save(file, 'lsvm_models');
@@ -384,29 +278,30 @@ classdef LSVM < ClassifierAPI
             pg = ProgressBar('Classifying', 'Computing bounding boxes...');
              
             if USE_PARALLEL
-                scores = run_in_parallel('LSVM.classify_parallel', Ipaths, obj.models, 0, 0, pg, 0, 1)';
+                common = struct('Ipaths', [], 'overlap_th', obj.overlap_th);
+                common.Ipaths = Ipaths;
+                scores = run_in_parallel('LSVM.classify_parallel', common, obj.models, [], 0, pg, 0, 1)';
             else
                 scores = ones(n_img,n_classes)*(-Inf); 
-                bb_scale = 1.5;
-                for i = 1:n_img;
+                for i = 1:n_img
                     im = imread(Ipaths{i});
-                    [h w d] = size(im);
+                    [bb_not_cropped person_box] = get_bb_info(Ipaths{i});
+                    person_box = person_box(2:end);   
                     
-                    person_box = [w/2*(1-1/bb_scale) h/2*(1-1/bb_scale) w/2*(1+1/bb_scale) h/2*(1+1/bb_scale)];
                     for j = 1:n_classes
-                        boxes = detect(im, obj.models{j}, -Inf); %models{j}.thresh);
+                        [dets, boxes] = imgdetect(im, obj.models{j}, -Inf); %models{j}.thresh);
                         if ~isempty(boxes)
-%                           overlap = inter_box(person_box, boxes(:, 1:4));
-%                           min_over = 0.6;
-%                           while isempty(find(overlap>=min_over,1))
-%                               isempty(find(overlap>=min_over,1))
-%                               min_over = min_over - 0.1;
-%                           end
-%                           I = (overlap>=min_over);
-%                           scores(i,j) = max(boxes(I,end));   
-                          scores(i,j) = max(boxes(:,end));                          
+                            boxes = reduceboxes(obj.models{j}, boxes);
+                            [dets boxes] = clipboxes(im, dets, boxes);
+                          
+                            overlap = inter_box(person_box, dets(:, 1:4));
+                            I = overlap > obj.overlap_th;
+                            boxes = boxes(I,end);
+                            if ~isempty(boxes)
+                                scores(i,j) = max(boxes);
+                            end
                         end
-                    end                
+                    end
                     pg.progress(i/n_img);
                 end    
             end
@@ -465,13 +360,13 @@ classdef LSVM < ClassifierAPI
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('LSVM (%d components)', obj.n_components);
+            str = sprintf('LSVM (%d components, %d parts, BB overlap = %s)', obj.n_components, obj.n_parts, num2str(obj.overlap_th));
         end
         function str = toFileName(obj)
-            str = sprintf('LSVM[%d]', obj.n_components);
+            str = sprintf('LSVM[%d-%d-%s]', obj.n_components, obj.n_parts, num2str(obj.overlap_th));
         end
         function str = toName(obj)
-            str = sprintf('LSVM(%d)', obj.n_components);
+            str = sprintf('LSVM(%d-%d)', obj.n_components, obj.n_parts);
         end
         function obj = save_to_temp(obj)
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));

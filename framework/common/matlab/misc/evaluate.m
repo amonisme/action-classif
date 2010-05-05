@@ -31,11 +31,11 @@ function precision = evaluate(classifier, root, target)
         tic;
         if exist(file,'file') == 2 && ~force_recompute
             load(file);
+            write_log(sprintf('Classifier loaded from file %s\n',file)); 
         else
             [cv_res cv_dev] = classifier.learn(fullfile(root, 'train'));
             save(file, 'classifier');
-            save(fullfile(dir, 'cross_validation.txt'), 'cv_res', '-ascii');  
-            save(fullfile(dir, 'cv_std_deviation.txt'), 'cv_dev', '-ascii');  
+            save(fullfile(dir, 'cv_log.mat'), 'cv_res', 'cv_dev');  
         end
         t0 = toc;
 

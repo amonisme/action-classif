@@ -11,20 +11,23 @@ function run_instance_on_cluster(tid, iid, hash, fun)
     IID = iid;    
     HASH_PATH = hash;
     
-    if ~isdir(fullfile('/local', CLUSTER_USER))
-        mkdir(fullfile('/local', CLUSTER_USER));
+    file = fullfile('/local', CLUSTER_USER);
+    if ~isdir(file)
+        mkdir(file);
     end
-    if ~isdir(fullfile('/local', CLUSTER_USER, TID))
-        mkdir(fullfile('/local', CLUSTER_USER, TID));
+    file = fullfile('/local', CLUSTER_USER, TID);
+    if ~isdir(file)
+        mkdir(file);
     end    
-    if ~isdir(fullfile('/local', CLUSTER_USER, TID, num2str(IID)))
-        mkdir(fullfile('/local', CLUSTER_USER, TID, num2str(IID)));
+    file = fullfile('/local', CLUSTER_USER, TID, num2str(IID));
+    if ~isdir(file)
+        mkdir(file);
     end        
-    FILE_BUFFER_PATH = fullfile('/local', CLUSTER_USER, TID, num2str(IID));
+    FILE_BUFFER_PATH = file;
 
     eval(sprintf('init_script(@%s)', fun));
     
-    rmdir(fullfile('/local', CLUSTER_USER, TID, num2str(IID)), 's');
+    rmdir(file, 's');
     rmdir(fullfile('/local', CLUSTER_USER, TID));
 end
 

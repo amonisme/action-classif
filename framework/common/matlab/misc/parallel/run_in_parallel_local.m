@@ -6,7 +6,7 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
 	global TEMP_DIR HASH_PATH;
 
     if nargin < 4 || num_instances == 0
-        num_instances = 3; %maxNumCompThreads;
+        num_instances = maxNumCompThreads;
     end
     if nargin < 5
         debug = 0;
@@ -83,7 +83,7 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
             pg.progress(pg_offset + pg_scale * pgr);
         end
         
-        t = timer('StartDelay', 1, 'TimerFcn', @stopTimer);
+        t = timer('StartDelay', 8, 'TimerFcn', @stopTimer);
         start(t);
         wait(t);
     end
