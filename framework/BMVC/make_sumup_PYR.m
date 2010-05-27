@@ -33,8 +33,8 @@ function [classif points] = make_sumup_PYR(root, sizes, kernels, L, case_C, conc
             if ~isempty(root)
                 d =  classif{i,j}.toFileName();
                 [cv_score cv_stdev] = get_cv_score(root, d);
-                points((i-1)*n_ker+j).X = 100 - get_prec_acc(root, d);
-                points((i-1)*n_ker+j).Y = 100 - cv_score;
+                points((i-1)*n_ker+j).X = get_prec_acc(root, d);
+                points((i-1)*n_ker+j).Y = cv_score;
                 points((i-1)*n_ker+j).stdev = cv_stdev;            
                 eval(sprintf('points((i-1)*n_ker+j).%s = %s;', sizes(i).property, sizes(i).prop_val));
                 eval(sprintf('points((i-1)*n_ker+j).%s = %s;', kernels(j).property, kernels(j).prop_val));

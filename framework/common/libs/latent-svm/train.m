@@ -130,7 +130,7 @@ for t = 1:iter
       end
       if t > 1 && pos_loss(t,2) > pos_loss(t,1)
         fprintf('warning: pos loss went up\n');
-        keyboard;
+        %keyboard;
       end
       % stop if relabeling doesn't reduce the positive loss by much
       if (t > 1) && (pos_loss(t,2)/pos_loss(t,1) > 0.999)

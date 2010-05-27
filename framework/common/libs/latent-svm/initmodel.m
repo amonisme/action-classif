@@ -18,7 +18,7 @@ aspect = exp(xx(I));
 
 % pick 20 percentile area
 areas = sort(h.*w);
-area = areas(floor(length(areas) * 0.2));
+area = areas(ceil(length(areas) * 0.2));
 area = max(min(area, 5000), 3000);
 
 % pick dimensions

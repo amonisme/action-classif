@@ -1,4 +1,4 @@
-function [best_params results std_dev] = cross_validate(obj, K)
+function [params best_params prec sd_prec acc sd_acc] = cross_validate(obj, K)
     % Compute K-fold cross validation
     % obj should be a class derived from CrossValidateAPI
     
@@ -35,21 +35,34 @@ function [best_params results std_dev] = cross_validate(obj, K)
         if USE_PARALLEL && 0
             common = struct('K', K, 'samples', obj.CV_get_training_samples(), 'obj', obj');
             results = run_in_parallel('K_cross_validate_parallel', common, full_params, 0, 0, pg, 0, 1);
-            std_dev = results(:,2);
-            results = results(:,1);
+            perf = results(:,1:2);
+            std_dev = results(:,3:4);            
         else
-            [results std_dev] = K_cross_validate(obj, K, obj.CV_get_training_samples(), full_params, pg);
+            [perf std_dev] = K_cross_validate(obj, K, obj.CV_get_training_samples(), full_params, pg);
         end
 
-        best_params = full_params(floor(median(find(results == max(results)))),:);
+        optimize_with = perf(:,1);  % optimize precision
+        %optimize_with = perf(:,2); % optimize accuracy
+        
+        best_params = full_params(floor(median(find(optimize_with == max(optimize_with)))),:);
        
+        prec = perf(:,1);
+        acc  = perf(:,2);
+        sd_prec = std_dev(:,1);
+        sd_acc  = std_dev(:,2);
+        
         if length(n_pos) > 1
-            results = reshape(results,n_pos');
-            std_dev = reshape(std_dev,n_pos');
+            prec = reshape(prec,n_pos');
+            acc  = reshape(acc,n_pos');
+            sd_prec = reshape(sd_prec,n_pos');
+            sd_acc  = reshape(sd_acc,n_pos');
         end  
     else
         best_params = params;
-        results = [];
+        prec = [];
+        sd_prec = [];
+        acc = [];
+        sd_acc = [];
     end
     pg.close();    
 end

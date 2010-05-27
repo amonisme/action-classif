@@ -241,8 +241,7 @@ bool kmeans::hasConverged()
 			abort = true;
 			break;
 		}
-	}
-//	cout << distance << endl;
+	}	cout << "Distance: " << distance << endl;
 	if(!abort)
 		return true;
 	else

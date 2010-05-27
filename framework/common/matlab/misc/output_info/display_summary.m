@@ -28,15 +28,17 @@ function display_summary(dir_save, prefix, root_BOF, root_PYR, case_C, no_cv, co
     
     l = struct('Strings', [], 'Location', 'NorthWest');
     l.Strings = {'Bag of words', 'Spatial pyramid'};
-    display_plots(points, 'BOF & Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %', l, 0);
-    print('-dpdf', fullfile(dir_save, [prefix 'error_BOF_PYR.pdf']));
+    %display_plots(points, 'BOF & Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %', l, 0);
+    display_plots(points, '', 'Test mAP in %', 'Validation mAP in %', l, 0);
+    print('-depsc', fullfile(dir_save, [prefix 'error_BOF_PYR.eps']));
     
     l = struct('Strings', [], 'Location', 'EastOutside');
     l.Strings = {'Linear',  ...
                  'RBF',  ...
                  'Intersection',  ...
                  'Chi2'};
-    display_plots(points_PYR, 'Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %', [], 0);
-    print('-dpdf', fullfile(dir_save, [prefix 'error_PYR.pdf']));
+    %display_plots(points_PYR, 'Spatial Pyramid perfomances for various kernels & dictionnary size', 'Test error in %', 'Validation error in %', [], 0);
+    display_plots(points_PYR, '', 'Test mAP in %', 'Validation mAP in %', [], 0);
+    print('-depsc', fullfile(dir_save, [prefix 'error_PYR.eps']));
 end
 

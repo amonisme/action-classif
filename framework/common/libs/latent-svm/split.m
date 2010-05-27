@@ -20,6 +20,9 @@ end
 
 aspects = h ./ w;
 for i=1:n
+  if b(i) == b(i+1)
+      b(i+1) = b(i+1) + eps;
+  end
   I = find((aspects >= b(i)) .* (aspects < b(i+1)));
   spos{i} = pos(I);
 end

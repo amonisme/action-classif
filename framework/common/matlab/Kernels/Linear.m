@@ -1,15 +1,11 @@
 classdef Linear < KernelAPI
     
-    properties (SetAccess = protected, GetAccess = protected)
-        scalar_prod
-    end
-    
     methods        
         %------------------------------------------------------------------
         % Constructor
         function obj = Linear(precompute,lib)
             if nargin < 1
-                precompute = 0;
+                precompute = 1;
             end              
             if nargin < 2
                 lib = 'svmlight';
@@ -29,15 +25,15 @@ classdef Linear < KernelAPI
         %------------------------------------------------------------------
         % Return a trained svm (labels are 1 or -1)
         function svm = lib_call_learn(obj, C, J, labels, sigs)
-            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 0',num2str(C), num2str(J)));
+            svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 0',num2str(C), num2str(J)));
             svm.b = -svm.b;
-            svm.W = sum(repmat(svm.a, 1, size(sigs, 2)) .* sigs)';
+            svm.W = sum(repmat(svm.a', size(sigs, 1), 1) .* sigs,2)';
         end
         
         %------------------------------------------------------------------
         % Return scores provided a trained svm
         function score = lib_call_classify(obj, svm, sigs)
-            score = sigs*svm.W+svm.b;
+            score = (svm.W*sigs+svm.b)';
         end        
                
         %------------------------------------------------------------------
@@ -62,9 +58,7 @@ classdef Linear < KernelAPI
         function params = get_params(obj, sigs)
             params = {};
             if obj.precompute
-                obj.precompute_gram_matrix(sigs, sigs);
-                sigs = [zeros(1,size(sigs,2)); sigs];                
-                obj.sigs = sigs;
+                obj.precompute_gram_matrix(sigs, sigs);                
             end
         end      
         
@@ -75,10 +69,11 @@ classdef Linear < KernelAPI
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
             if nargin > 1
-                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-
-                obj.gram_matrix = sigs1 * sigs2';
+                n1 = size(sigs1,2);
+                n2 = size(sigs2,2);
+                
+                obj.gram_matrix = zeros(n1+1,n2+1);                
+                obj.gram_matrix(2:end, 2:end) = sigs1' * sigs2;
             end
         end
     end

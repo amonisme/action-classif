@@ -52,6 +52,7 @@ mcrPath=defaultMCRpath;
 jobsFile=[execPath '/jobsSentToQSubFor_' nameOfFunction(1:end-2) '.txt'];
 
 if exist(fullfile(execPath, nameOfFunction(1:end-2)), 'file') ~= 2
+    fprintf('Running compiler now!');
 	eval(['mcc -m ' nameOfFunction ' -d ' execPath ' -a ./']);
 end
 

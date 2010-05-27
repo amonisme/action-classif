@@ -1,4 +1,4 @@
-function precision = evaluate(classifier, root, target)
+function precision = evaluate(classifier, root, db_name, target)
     global OUTPUT_LOG EXPERIMENT_DIR;    
 
     if nargin < 2
@@ -33,7 +33,7 @@ function precision = evaluate(classifier, root, target)
             load(file);
             write_log(sprintf('Classifier loaded from file %s\n',file)); 
         else
-            [cv_res cv_dev] = classifier.learn(fullfile(root, 'train'));
+            [cv_res cv_dev] = classifier.learn(fullfile(root, sprintf('%s.train.mat', db_name)));
             save(file, 'classifier');
             save(fullfile(dir, 'cv_log.mat'), 'cv_res', 'cv_dev');  
         end
@@ -42,8 +42,8 @@ function precision = evaluate(classifier, root, target)
         % Test
         file = fullfile(dir,'results.mat');
         tic;
-        [Ipaths classes correct_label assigned_label score] = classifier.classify(fullfile(root, 'test'));    
-        save(file,'Ipaths','classes','correct_label','assigned_label','score');
+        [Ipaths classes subclasses map_sub2sup correct_label assigned_label score] = classifier.classify(fullfile(root, sprintf('%s.test.mat', db_name)));    
+        save(file,'Ipaths','classes','subclasses','map_sub2sup','correct_label','assigned_label','score');
         t1 = toc;
 
         % Output computation time
@@ -53,9 +53,20 @@ function precision = evaluate(classifier, root, target)
     end
     
     % Output results
+    if ~isempty(map_sub2sup)        
+        fprintf('Results for subclasses:\n');    
+    end
     table = confusion_table(correct_label,assigned_label);  
-    accuracy = display_multiclass_accuracy(classes, table);
-    precision = display_precision_recall(classes, correct_label, score); 
+    accuracy = display_multiclass_accuracy(subclasses, table);
+    precision = display_precision_recall(subclasses, correct_label, score); 
+    
+    if ~isempty(map_sub2sup)
+        fprintf('Results for classes:\n');
+        [new_score new_correct_label new_assigned_label] = convert2supclasses(map_sub2sup, score, correct_label, assigned_label);
+        new_table = confusion_table(new_correct_label,new_assigned_label);  
+        accuracy = display_multiclass_accuracy(classes, new_table);
+        precision = display_precision_recall(classes, new_correct_label, new_score); 
+    end
     
     OUTPUT_LOG = 0;
 

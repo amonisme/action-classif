@@ -1,10 +1,6 @@
-function hash = get_hash_path(Ipaths, count_dir)
-    if nargin < 2
-        count_dir = 1;
-    end
-    
-    i1 = Ipaths{1};
-    
+function hash = get_hash_path(Ipaths, DB)
+    count_dir = (nargin >= 2);
+
     for i = 1:length(Ipaths)
         [dir file] = fileparts(Ipaths{i});
         Ipaths{i} = file;
@@ -18,9 +14,9 @@ function hash = get_hash_path(Ipaths, count_dir)
         hash = mod(hash*uint32(p(i)),prime);
     end
     
-    if count_dir
-        [d db] = fileparts(fileparts(fileparts(fileparts(i1))));
-        db = uint32(db);
+    if count_dir        
+        [d f] = fileparts(DB);
+        db = uint32(f);
         for i=1:length(db)
             hash = mod(hash*db(i),prime); 
         end

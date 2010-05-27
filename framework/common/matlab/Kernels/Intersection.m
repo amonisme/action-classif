@@ -5,7 +5,7 @@ classdef Intersection < KernelAPI
         % Constructor Kernel type: sum_i(min(Xi, Yi))
         function obj = Intersection(precompute,lib)
             if nargin < 1
-                precompute = 0;
+                precompute = 1;
             end                 
             if nargin < 2
                 lib = 'svmlight';
@@ -26,13 +26,13 @@ classdef Intersection < KernelAPI
         % Return a trained svm (labels are 1 or -1) (precomputed is [] or
         % the file containing the data.)
         function svm = lib_call_learn(obj, C, J, labels, sigs)
-            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 4 -u2',num2str(C), num2str(J)));
+            svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 4 -u2',num2str(C), num2str(J)));
         end
         
         %------------------------------------------------------------------
         % Return scores provided a trained svm
         function score = lib_call_classify(obj, svm, sigs)
-            [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);
+            [err score] = svmclassify(sigs', zeros(size(sigs,2),1), svm);
         end 
         
         %------------------------------------------------------------------
@@ -57,9 +57,7 @@ classdef Intersection < KernelAPI
         function params = get_params(obj, sigs)
             params = {};
             if obj.precompute
-                obj.precompute_gram_matrix(sigs, sigs);
-                sigs = [zeros(1,size(sigs,2)); sigs];
-                obj.sigs = sigs;                
+                obj.precompute_gram_matrix(sigs, sigs);                                          
             end        
         end  
         
@@ -68,20 +66,31 @@ classdef Intersection < KernelAPI
         % such that: gram_matrix(i+1,j+1) = <K(i)|K(j)>
         %            gram_matrix(i,1) = <K(i)|0>
         %            gram_matrix(1,j) = <0|K(j)>
-        function obj = precompute_gram_matrix(obj, sigs1, sigs2)
+        function obj = precompute_gram_matrix(obj, sigs1, sigs2)            
+%            load('backup_gram.mat', 'gmat');
+%            obj.gram_matrix = gmat;
+            
             if nargin > 1
-                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-
-                n1 = size(sigs1,1);
-                n2 = size(sigs2,1);
-
-                obj.gram_matrix = zeros(n1,n2);
-                for i=1:n2
-                    c = min(sigs1, repmat(sigs2(i,:), n1, 1));
-                    obj.gram_matrix(:,i) = sum(c,2);
+                n1 = size(sigs1,2);
+                n2 = size(sigs2,2);
+                                
+                obj.gram_matrix = zeros(n1+1,n2+1);
+                if issparse(sigs1) && issparse(sigs2)
+                    for i = 1:n1
+                        for j = 1:n2
+                            obj.gram_matrix(i+1,j+1) = sum(min(sigs1(:,i), sigs2(:,j)));
+                        end
+                    end
+                else                    
+                    for j=1:n2
+                        c = min(sigs1, repmat(sigs2(:,j), 1, n1));
+                        obj.gram_matrix(2:end,j+1) = sum(c,1)';
+                    end
                 end
             end
+            
+            gmat = obj.gram_matrix;
+            save('backup_gram.mat', 'gmat');
         end
     end
 end

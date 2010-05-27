@@ -1,17 +1,21 @@
-function files = get_classes_files(root)
-    classe = get_classes_names(root);
-    files = [];
-    for i=1:size(classe,1)
-        path = fullfile(root,classe{i},'*.jpg');
-        f_jpg = dir(path);
-        f_jpg = f_jpg(~[f_jpg(:).isdir]);
-        
-        path = fullfile(root,classe{i},'*.png');
-        f_png = dir(path);
-        f_png = f_png(~[f_png(:).isdir]);        
-        
-        names = struct('name',{f_jpg(:).name f_png(:).name}');
-        files = cat(1,files,struct('name', classe{i}, 'path', path, 'files', names));
+function classes = get_classes_files(DB)
+    load(DB, 'classes'); % loads array of struct(name : string, subclasses : struct(name, path))
+    root = fileparts(DB);
+  
+    for i=1:length(classes)
+        for j=1:length(classes(i).subclasses)
+            jpg_files = get_files(fullfile(root,classes(i).subclasses(j).path), 'jpg');
+            png_files = get_files(fullfile(root,classes(i).subclasses(j).path), 'png');            
+            classes(i).subclasses(j).files = cat(1,jpg_files, png_files);
+        end
     end
 end
 
+function files = get_files(root, ext)
+    if nargin < 2
+        ext = '*';
+    end
+    files = dir(fullfile(root,sprintf('*.%s',ext)));
+    files = files(~[files(:).isdir]);
+    files = {files(:).name}';
+end

@@ -2,46 +2,52 @@ classdef SHAPEC < SignatureAPI
     % Shape context
     properties % (SetAccess = protected, GetAccess = protected)
         K
+        zone
+        centers
         kmeans
         scale       % scale of the shape context
         num_R_bins  % Number of radial bins
-        num_A_bins  % Number of angle bins
-        centers
+        num_A_bins  % Number of angle bins        
     end
     
     methods (Access = protected)
         %------------------------------------------------------------------
-        function sigs = compute_signatures(obj, centers, feat, descr, pg, offset, scale)
+        function sigs = compute_signatures(obj, feat, descr, pg, offset, scale)
             global USE_PARALLEL;
-           
+            
             if USE_PARALLEL
-                common = struct('centers', centers, 'sig_size', obj.channel_sig_size, 'scale', obj.scale, 'num_R_bins', obj.num_R_bins, 'num_A_bins', obj.num_A_bins);
+                common = struct('centers', obj.centers, 'sig_size', obj.sig_size, 'scale', obj.scale, 'num_R_bins', obj.num_R_bins, 'num_A_bins', obj.num_A_bins);
                 para = struct('feat', feat, 'descr', descr);
                 sigs = run_in_parallel('SHAPEC.parallel_signatures', common, para, 0, 0, pg, offset, scale);
             else
-                n_img = size(Ipath, 1);
-                sigs = zeros(n_img, obj.channel_sig_size);
+                n_img = length(feat);
+                sigs = sparse(obj.sig_size, n_img);
                 for k=1:n_img
                     pg.progress(offset+scale*k/n_img);
-                    sigs(k, :) = obj.sig_from_feat_descr(centers, feat{k}, descr{k}, obj.scale, obj.num_R_bins, obj.num_A_bins);
-                end    
+                    sigs(:, k) = obj.sig_from_feat_descr(obj.centers, feat{k}, descr{k}, obj.scale, obj.num_R_bins, obj.num_A_bins);
+                end
             end
             
             sigs = obj.norm.normalize(sigs);
-        end   
+        end
     end
     
-    methods (Static = true)         
+    methods (Static = true)
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            obj = loadobj@SignatureAPI(a);
+        end
+        
         %------------------------------------------------------------------
         function sig = parallel_signatures(common, args)
             tid = task_open();
             
             n_img = size(args, 1);
-            sig = zeros(n_img, common.sig_size);
+            sig = sparse(common.sig_size, n_img);
             for k=1:n_img
                 task_progress(tid, k/n_img);
-                sig(k, :) = SHAPEC.sig_from_feat_descr(common.centers, args(k).feat, args(k).descr, common.scale, common.num_R_bins, common.num_A_bins);
-            end  
+                sig(:, k) = SHAPEC.sig_from_feat_descr(common.centers, args(k).feat, args(k).descr, common.scale, common.num_R_bins, common.num_A_bins);
+            end
             
             task_close(tid);
         end
@@ -53,10 +59,10 @@ classdef SHAPEC < SignatureAPI
             
             n_feat = size(feat, 1);
             n_centers = size(centers, 1);
-            sigs = cell(n_centers, 1);
+            sigs = cell(1, n_centers);
             
             for k = 1:n_centers
-                sigs{k} = zeros(1, n_centers*num_R_bins*num_A_bins);
+                sigs{k} = sparse((num_R_bins*num_A_bins+1)*n_centers, 1);
             end
             
             for k = 1:n_feat
@@ -66,7 +72,7 @@ classdef SHAPEC < SignatureAPI
                 % Normalize with the feature scale
                 C = C / feat(k,3);
                 
-                % Normalize with the feature angle                
+                % Normalize with the feature angle
                 a = feat(k,4);
                 if a ~= 0
                     R = [cos(a) sin(a); -sin(a) cos(a)];
@@ -78,126 +84,126 @@ classdef SHAPEC < SignatureAPI
                 A = angle(C(:,1)+1i*C(:,2));
                 
                 % Discretize into bins
-                R = floor(log2(R/scale))+1;
-                R(k) = 1;
-                A = floor((pi-A)*num_A_bins/(2*pi)) + 1;
+                R = floor(log2(ceil(R/scale)))+1;
+                R(k) = 0;
+                A = floor((pi-A)*num_A_bins/(2*pi)) + 1;             
                 
                 % Build histogram
-                sig = zeros(1, n_centers*num_R_bins*num_A_bins*n_centers);
-                for i = 1:num_R_bins
-                    for j = 1:num_A_bins                    
-                        I = (R == i) & (A == j);
-                        n = n_centers*(j - 1 + num_A_bins * (i - 1 + num_R_bins * (k - 1)));
-                        sig((n+1):(n+n_centers)) = sum(m(:, I), 2)';
+                sig = sparse((num_R_bins*num_A_bins+1)*n_centers, 1);
+                for i = 0:num_R_bins
+                    if i==0
+                        I = (R == i);
+                        sig(1:n_centers) = sum(m(:, I), 2);
+                    else
+                        for j = 1:num_A_bins
+                            I = (R == i) & (A == j);
+                            type_bin = (i-1) * num_A_bins + j;
+                            n = type_bin * n_centers;
+                            sig((n+1):(n+n_centers)) = sum(m(:, I), 2);
+                        end
                     end
                 end
                 
                 t = find(m(:,k),1);
                 sigs{t} = sigs{t} + sig;
             end
-            sig = cat(2, sigs{:});               
-        end   
+            sig = cat(1, sigs{:});            
+        end
     end
     
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = SHAPEC(channels, K, norm, scale, num_R_bins, num_A_bins, kmeans_lib, maxiter)          
-            if nargin < 4
-                scale = 5;
-            end
+        function obj = SHAPEC(detector, descriptor, K, norm, zone, scale, num_R_bins, num_A_bins, kmeans_lib, maxiter)
             if nargin < 5
+                zone = 0;
+            end            
+            if nargin < 6
+                scale = 14;
+            end
+            if nargin < 7
                 num_R_bins = 5;
             end
-            if nargin < 6
-                num_A_bins = 8;
-            end                
-            if nargin < 7
-                kmeans_lib = 'cpp';
-            end
             if nargin < 8
+                num_A_bins = 8;
+            end
+            if nargin < 9
+                kmeans_lib = 'c';
+            end
+            if nargin < 10
                 maxiter = 200;
-            end        
+            end
             
+            obj = obj@SignatureAPI();
+            obj.detector = detector;
+            obj.descriptor = descriptor;
             obj.K = K;
+            obj.zone = zone;
             obj.scale = scale;
             obj.num_R_bins = num_R_bins;
             obj.num_A_bins = num_A_bins;
             obj.kmeans = Kmeans(K, kmeans_lib, maxiter);
-            obj.channels = channels;
-            obj.channel_sig_size = K*K*num_R_bins*num_A_bins;  
-            obj.total_sig_size = obj.channels.number()*obj.channel_sig_size;
+            obj.sig_size = K*K*(num_R_bins*num_A_bins+1);
             obj.norm = norm;
         end
         
         %------------------------------------------------------------------
-        % Eventually learn the training set signature
-        function obj = learn(obj, Ipaths)          
+        % Learn the training set signature
+        function obj = learn(obj, Ipaths)
             global HASH_PATH TEMP_DIR;
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
             
             if exist(file,'file') == 2
+                write_log(sprintf('Loading signature from cache: %s.\n', file));
                 load(file,'centers','train_sigs');
                 obj.centers = centers;
-                obj.train_sigs = train_sigs;
-                write_log(sprintf('Signature loaded from cache: %s.\n', file));
-            else    
+                if size(train_sigs,1) == length(Ipaths) && size(train_sigs,2) == obj.sig_size
+                    obj.train_sigs = train_sigs';
+                else
+                    obj.train_sigs = train_sigs;
+                end
+                write_log(sprintf('Loaded.\n'));
+            else
                 pg = ProgressBar('Learning training signatures', '');
-                n_channels = obj.channels.number;
-                obj.centers = cell(n_channels, 1);
-                sigs = cell(n_channels, 1);
-
-                obj.channels.init();
-                last_detector = 0;
-
-                feature_progress_frac = 0.15/obj.channels.number;
-                descrip_progress_frac = 0.15/obj.channels.number;
-                k_means_progress_frac = 0.65/obj.channels.number;
-                sigs_progress_frac =    0.05/obj.channels.number;
-
-                while(not(obj.channels.eoc()))
-                    progress_value = (obj.channels.channel_id()-1)/obj.channels.number;
-                    progress_text = sprintf('Channel %d on %d: ', obj.channels.channel_id(),obj.channels.number);
-
-                    if last_detector ~= obj.channels.get_detector_id()
-                        % Compute feature points
-                        pg.setCaption([progress_text 'Computing feature points...']);
-                        feat = obj.compute_features(obj.channels.get_detector(), Ipaths, pg, progress_value, feature_progress_frac);
-                        last_detector = obj.channels.get_detector_id();
-                        progress_value = progress_value + feature_progress_frac;
-                    end
-
-                    % Compute descriptors
-                    pg.setCaption([progress_text 'Computing descriptors...']);
-                    descr = obj.compute_descriptors(obj.channels.get_detector(), obj.channels.get_descriptor(), Ipaths, feat, pg, progress_value, descrip_progress_frac);           
-                    progress_value = progress_value + descrip_progress_frac;
-
-                    % Compute visual vocabulary
-                    d = cat(1, descr{:});
-                    pg.setCaption(sprintf('%sComputing BOF... (found %d descriptors)',progress_text,size(d,1)));                 
-                    center_file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName(obj.channels.channel_id())));
-                    obj.centers{obj.channels.channel_id()} = obj.kmeans.do_kmeans(d, center_file);
-                    progress_value = progress_value + k_means_progress_frac;
-
-                    % Compute signature for this channel
-                    pg.setCaption([progress_text 'Computing signatures...']);
-                    sigs{obj.channels.channel_id()} = obj.compute_signatures(obj.centers{obj.channels.channel_id()}, feat, descr, pg, progress_value, sigs_progress_frac);
-
-                    % Next channel
-                    obj.channels.next();
+                progress_value = 0;
+                
+                feature_progress_frac = 0.05;
+                descrip_progress_frac = 0.05;
+                k_means_progress_frac = 0.50;
+                sigs_progress_frac =    0.40;
+                
+                % Compute feature points
+                pg.setCaption('Computing feature points...');
+                feat = obj.compute_features(obj.detector, Ipaths, pg, 0, feature_progress_frac);
+                progress_value = progress_value + feature_progress_frac;
+                
+                % Compute descriptors
+                pg.setCaption('Computing descriptors...');
+                descr = obj.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat, pg, progress_value, descrip_progress_frac);
+                progress_value = progress_value + descrip_progress_frac;
+                
+                % Filter features according to the bounding box
+                for i=1:length(Ipaths)
+                    [f d] = SignatureAPI.filter_by_zone(obj.zone, Ipaths{i}, feat{i}, descr{i});
+                    feat{i} = f;
+                    descr{i} = d;
                 end
-
-                obj.train_sigs = cat(2, sigs{:});
-                % Each channel is already normalized, renormalize the
-                % overall in case of multi-channel
-                if obj.channels.number > 1
-                    obj.train_sigs = obj.norm.normalize(obj.train_sigs);
-                end
+                
+                % Compute visual vocabulary
+                n = obj.kmeans.prepare_kmeans(descr);
+                pg.setCaption(sprintf('Computing BOF... (found %d descriptors)', n));
+                obj.centers = obj.kmeans.do_kmeans(...
+                    fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName())));
+                progress_value = progress_value + k_means_progress_frac;
+                
+                % Compute signature
+                pg.setCaption('Computing signatures...');
+                obj.train_sigs = obj.compute_signatures(feat, descr, pg, progress_value, sigs_progress_frac);
                 
                 train_sigs = obj.train_sigs;
                 centers = obj.centers;
-                save(file,'-v7.3','centers','train_sigs');
+                save(file,'centers','train_sigs');
                 pg.close();
             end
         end
@@ -205,64 +211,90 @@ classdef SHAPEC < SignatureAPI
         %------------------------------------------------------------------
         % Return the signature of the Images
         function sigs = get_signatures(obj, Ipaths, pg, offset, scale)
-            if nargin<5
-                pg = ProgressBar('Computing signatures', '', true);
-            end
-            n_channels = obj.channels.number;
-            sigs = cell(1, n_channels);
-           
-            obj.channels.init();
-            last_detector = 0;
-            
-            feature_progress_frac = scale*0.45/obj.channels.number;
-            descrip_progress_frac = scale*0.45/obj.channels.number;
-            sigs_progress_frac =    scale*0.10/obj.channels.number;
-            
-            while(~obj.channels.eoc())
-                progress_value = offset + scale*(obj.channels.channel_id()-1)/obj.channels.number;
-                progress_text = sprintf('Channel %d on %d: ', obj.channels.channel_id(),obj.channels.number);
+            global HASH_PATH TEMP_DIR;
+            file = fullfile(TEMP_DIR, sprintf('%s_SIG-%s.mat',HASH_PATH,obj.toFileName()));
+
+            if exist(file,'file') == 2
+                write_log(sprintf('Loading signature from cache: %s.\n', file));
+                load(file,'sigs');
+                if size(sigs,1) == length(Ipaths) && size(sigs,2) == obj.sig_size
+                    sigs = sigs';                
+                end                
+            else 
                 
-                if last_detector ~= obj.channels.get_detector_id()
-                    % Compute feature points
-                    pg.setCaption([progress_text 'Computing feature points...']);
-                    feat = obj.compute_features(obj.channels.get_detector(), Ipaths, pg, progress_value, feature_progress_frac);
-                    last_detector = obj.channels.get_detector_id();
-                    progress_value = progress_value + feature_progress_frac;
-                end
+                if nargin<3
+                    pg = ProgressBar('Computing signatures', '', true);
+                    offset = 0;
+                    scale = 1;
+                end          
+            
+                feature_progress_frac = 0.05;
+                descrip_progress_frac = 0.05;
+                sigs_progress_frac =    0.9;
+
+                % Compute feature points
+                pg.setCaption('Computing feature points...');
+                feat = obj.compute_features(obj.detector, Ipaths, pg, offset, feature_progress_frac*scale);
+                progress_value = feature_progress_frac;
 
                 % Compute descriptors
-                pg.setCaption([progress_text 'Computing descriptors...']);
-                descr = obj.compute_descriptors(obj.channels.get_detector(), obj.channels.get_descriptor(), Ipaths, feat, pg, progress_value, descrip_progress_frac); 
+                pg.setCaption('Computing descriptors...');
+                descr = obj.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat, pg, offset + progress_value*scale, descrip_progress_frac*scale);
                 progress_value = progress_value + descrip_progress_frac;
-               
+
                 % Compute signature for this channel
-                pg.setCaption([progress_text 'Computing signatures...']);
-                obj.L(:,3) = obj.L_Wchan(:, obj.channels.channel_id());
-                sigs{obj.channels.channel_id()} = obj.compute_signatures(obj.centers{obj.channels.channel_id()}, feat, descr, pg, progress_value, sigs_progress_frac);
-                
-                % Next channel
-                obj.channels.next();
-            end
-            sigs = cat(2, sigs{:});            
-            
-            if nargin<5
-                pg.close();
+                pg.setCaption('Computing signatures...');
+                sigs = obj.compute_signatures(feat, descr, pg, offset + progress_value*scale, sigs_progress_frac*scale);
+
+                save(file,'sigs');
+
+                if nargin<3
+                    pg.close();
+                end                
             end
         end
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
-        function str = toString(obj)          
-            str = [sprintf('Signature: Shape context (K = %d, histogram normalization: %s, K-means library: %s)\n', obj.K, obj.norm.toString(), obj.kmeans.get_lib()) obj.channels.toString()];
+        function str = toString(obj)
+            detect = obj.detector.toString();
+            descrp = obj.descriptor.toString();
+            n = obj.norm.toString();
+            klib = obj.kmeans.get_lib();
+            str = sprintf('Signature: Shape context (K = %d, histogram normalization: %s, K-means library: %s) of:\n$~~~~~~~~$%s of %s\n', obj.K, n, klib, descrp, detect);
         end
         function str = toFileName(obj)
-            str = sprintf('SHC[%s-%d-%s]-%s', obj.kmeans.get_lib(), obj.K, obj.norm.toFileName(), obj.channels.toFileName());
+            klib = obj.kmeans.get_lib();
+            detect = obj.detector.toFileName();
+            descrp = obj.descriptor.toFileName();
+            n = obj.norm.toFileName();
+            str = sprintf('SHC[%s-%d-%s-%s-%s]', klib, obj.K, n, descrp, detect);
         end
-        function str = KmeanstoFileName(obj, numChannel)
-            str = sprintf('Kmeans[%s-%d]-C(%d)-%s', obj.kmeans.get_lib(), obj.K, numChannel, obj.channels.toFileName());
+        function str = KmeanstoFileName(obj)
+            klib = obj.kmeans.get_lib();
+            detect = obj.detector.toFileName();
+            descrp = obj.descriptor.toFileName();
+            str = sprintf('Kmeans[%s-%d-%d-%s-%s]', klib, obj.K, obj.zone, descrp, detect);
         end
         function str = toName(obj)
             str = sprintf('SHC(%d)', obj.K);
+        end
+        function obj = save_to_temp(obj)
+            global TEMP_DIR HASH_PATH;
+            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
+            
+            if ~exist(file, 'file') == 2
+                centers = obj.center;
+                train_sigs = obj.train_sigs;
+                save(file,'centers','train_sigs');
+            end
+            
+            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName()));
+            
+            if ~exist(file, 'file') == 2
+                centers = obj.center;
+                save(file,'centers');
+            end
         end
     end
 end

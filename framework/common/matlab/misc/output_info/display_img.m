@@ -63,7 +63,7 @@ function display_img(N, dir, prefix, root, is_LSVM)
 
         title(sprintf('%s - AP = %.3f',name, ap));
         axis([0 1 0 1]);
-        
+
         pr_file = sprintf('%s%s.png', prefix, classes{i});
         print('-dpng', fullfile('experiments', pr_file));
         
