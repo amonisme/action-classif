@@ -7,16 +7,6 @@ classdef Polynomial < KernelAPI
         scalar_prod
         param_cv    % remember which parameterter was cross-validated
     end
-
-    methods (Static = true)
-        %------------------------------------------------------------------
-        function obj = loadobj(a)
-            obj = a;
-%             if ~isfield(a, 'param_cv')
-%                 obj.param_cv = [1 1 1];
-%             end
-        end 
-    end
     
     methods        
         %------------------------------------------------------------------
@@ -32,7 +22,7 @@ classdef Polynomial < KernelAPI
                 c = [];
             end            
             if nargin < 4
-                precompute = 0;
+                precompute = 1;
             end              
             if nargin < 5
                 lib = 'svmlight';
@@ -67,13 +57,13 @@ classdef Polynomial < KernelAPI
         %------------------------------------------------------------------
         % Return a trained svm (labels are 1 or -1)
         function svm = lib_call_learn(obj, C, J, labels, sigs)
-            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 1 -s %s -r %s -d %d',num2str(C), num2str(J), num2str(obj.a), num2str(obj.b), obj.c));
+            svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 1 -s %s -r %s -d %d',num2str(C), num2str(J), num2str(obj.a), num2str(obj.b), obj.c));
         end
         
         %------------------------------------------------------------------
         % Return scores provided a trained svm
         function score = lib_call_classify(obj, svm, sigs)
-            [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);
+            [err score] = svmclassify(sigs', zeros(size(sigs,1),1), svm);
         end        
         
         %------------------------------------------------------------------
@@ -118,11 +108,9 @@ classdef Polynomial < KernelAPI
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
         function params = get_params(obj, sigs)
-            sigs = [zeros(1,size(sigs,2)); sigs];
-            scal = sigs * sigs';
+            scal = sigs' * sigs;
             
             if obj.precompute
-                obj.sigs = sigs;
                 obj.scalar_prod = scal;
             end            
             
@@ -156,12 +144,15 @@ classdef Polynomial < KernelAPI
         %            gram_matrix(1,j) = <0|K(j)>
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
             if nargin == 1
-                obj.gram_matrix = (obj.a * obj.scalar_prod + obj.b) .^ obj.c;
+                obj.gram_matrix = zeros(size(obj.scalar_prod)+1);
+                obj.gram_matrix(1,:) = obj.b ^ obj.c;
+                obj.gram_matrix(:,1) = obj.b ^ obj.c;
+                obj.gram_matrix(2:end, 2:end) = (obj.a * obj.scalar_prod + obj.b) .^ obj.c;
             else
-                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-
-                obj.gram_matrix = (obj.a * (sigs1 * sigs2') + obj.b) .^ obj.c;
+                obj.gram_matrix = zeros(size(sigs1,2), size(sigs2,2));
+                obj.gram_matrix(1,:) = obj.b ^ obj.c;
+                obj.gram_matrix(:,1) = obj.b ^ obj.c;
+                obj.gram_matrix(2:end, 2:end) = (obj.a * (sigs1' * sigs2) + obj.b) .^ obj.c;
             end
         end
     end

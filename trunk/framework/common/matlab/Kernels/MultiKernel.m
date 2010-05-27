@@ -116,7 +116,7 @@ classdef MultiKernel < KernelAPI
         %------------------------------------------------------------------
         % Get sigs
         function new_sigs = get_kernel_sigs(obj, sigs)
-            new_sigs = (1:size(sigs{1},1))';
+            new_sigs = 1:size(sigs{1},2);
         end   
         
         %------------------------------------------------------------------

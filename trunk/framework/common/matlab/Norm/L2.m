@@ -9,8 +9,12 @@ classdef L2 < NormAPI
         %------------------------------------------------------------------
         % Norm L2
         function A = normalize(obj, A)
-            m = repmat(sqrt(sum(A.*A, 2))+eps,1,size(A,2));
-            A = obj.norm*A./m;
+            for i = 1:size(A,2)
+                n = sqrt(sum(A(:,i).*A(:,i), 2));
+                if n ~= 0
+                    A(:,i) = obj.norm/n*A(:,i);
+                end                    
+            end
         end
 
         %------------------------------------------------------------------

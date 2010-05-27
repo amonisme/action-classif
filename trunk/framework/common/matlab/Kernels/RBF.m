@@ -5,16 +5,6 @@ classdef RBF < KernelAPI
         param_cv    % remember which parameterter was cross-validated
         dist        % remember distances for cross validation
     end
-
-    methods (Static = true)
-        %------------------------------------------------------------------
-        function obj = loadobj(a)
-            obj = a;
-%             if ~isfield(a, 'param_cv')
-%                 obj.param_cv = [1];
-%             end
-        end 
-    end
     
     methods        
         %------------------------------------------------------------------
@@ -24,7 +14,7 @@ classdef RBF < KernelAPI
                 a = [];
             end
             if nargin < 2
-                precompute = 0;
+                precompute = 1;
             end            
             if nargin < 3
                 lib = 'svmlight';
@@ -51,13 +41,13 @@ classdef RBF < KernelAPI
         %------------------------------------------------------------------
         % Return a trained svm (labels are 1 or -1)
         function svm = lib_call_learn(obj, C, J, labels, sigs)
-            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 2 -g %s',num2str(C), num2str(J), num2str(1/obj.a)));
+            svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 2 -g %s',num2str(C), num2str(J), num2str(1/obj.a)));
         end
         
         %------------------------------------------------------------------
         % Return scores provided a trained svm
         function score = lib_call_classify(obj, svm, sigs)
-            [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);           
+            [err score] = svmclassify(sigs', zeros(size(sigs,1),1), svm);           
         end        
         
         %------------------------------------------------------------------
@@ -90,12 +80,9 @@ classdef RBF < KernelAPI
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
         function params = get_params(obj, sigs)
-            sigs = [zeros(1,size(sigs,2)); sigs];           
-            n = size(sigs,1);            
-            d = repmat(sum(sigs.^2,2),1,n) - 2*(sigs*sigs') + repmat(sum(sigs.^2,2)',n,1);
+            d = obj.prepare_L2_dist(sigs, sigs);
             
             if obj.precompute
-                obj.sigs = sigs;
                 obj.dist = d;
             end
             
@@ -117,17 +104,24 @@ classdef RBF < KernelAPI
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
             if nargin == 1
                 obj.gram_matrix = exp( - obj.dist / obj.a);
-            else
-                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-                sigs2 = [zeros(1,size(sigs2,2)); sigs2];
-
-                n1 = size(sigs1,1);
-                n2 = size(sigs2,1);
-
-                D2 = repmat(sum(sigs1.^2,2),1,n2) - 2*sigs1*sigs2' + repmat(sum((sigs2).^2,2)',n1,1);
-                obj.gram_matrix = exp( - D2 / obj.a);
+            else                
+                obj.gram_matrix = exp( - obj.prepare_L2_dist(sigs1, sigs2) / obj.a);
             end
-        end   
+        end
+    end
+    
+    methods (Static, Access = protected)
+        function dist = prepare_L2_dist(sigs1, sigs2)
+            n1 = size(sigs1,2);
+            n2 = size(sigs2,2);
+            
+            norms1 = [0 sum(sigs1.^2,1)];
+            norms2 = [0 sum(sigs2.^2,1)];            
+            scalars = zeros(n1+1,n2+1);
+            scalars(2:end, 2:end) = sigs1'*sigs2;                             
+            
+            dist = repmat(norms1',1,n2+1) - 2*scalars + repmat(norms2,n1+1,1);
+        end
     end
 end
 

@@ -5,7 +5,6 @@ classdef KernelAPI < handle
         gram_matrix     % the gram matrix
         gram_train_ok   % is the gram matrix for training up-to-date?
         gram_file       % the path of the gram matrix file
-        sigs            % For cross validation, it is useful to remember the signatures
         lib_name
         lib
     end
@@ -21,7 +20,7 @@ classdef KernelAPI < handle
         %------------------------------------------------------------------
         % Don't save the gram matrix on disk
         function obj = dont_save_gram(obj)
-            obj.gram_file = [];    
+            obj.gram_file = [];   
             obj.precompute = 1;
         end
                 
@@ -37,7 +36,7 @@ classdef KernelAPI < handle
                         obj.precompute_gram_matrix();
                         obj.disk_write_gram_matrix();    
                     end                    
-                    svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 4 -u0%s',num2str(C), num2str(J), fullfile(FILE_BUFFER_PATH, obj.gram_file)));
+                    svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 4 -u0%s',num2str(C), num2str(J), fullfile(FILE_BUFFER_PATH, obj.gram_file)));
                 end
             else            
                 svm = obj.lib_call_learn(C, J, labels, sigs);
@@ -51,7 +50,7 @@ classdef KernelAPI < handle
             if obj.precompute
                 svm.kernel_parm.custom = sprintf('0%s',fullfile(FILE_BUFFER_PATH, obj.gram_file));
                 if obj.lib == 0                    
-                    [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);
+                    [err score] = svmclassify(sigs', zeros(size(sigs,2),1), svm);
                 end
             else
                 score = obj.lib_call_classify(svm, sigs);
@@ -77,7 +76,7 @@ classdef KernelAPI < handle
         % Get sigs
         function new_sigs = get_kernel_sigs(obj, sigs)
             if obj.precompute
-                new_sigs = (1:size(sigs,1))';
+                new_sigs = 1:size(sigs,2);
             else
                 new_sigs = sigs;
             end              
@@ -87,7 +86,7 @@ classdef KernelAPI < handle
         % Compute the gram matrix from stored signatures
         function obj = compute_gram_matrix(obj, sigs1, sigs2)
             if obj.precompute
-                obj.gram_train_ok = 0;
+                obj.gram_train_ok = 0;               
                 obj.precompute_gram_matrix(sigs1, sigs2);
                 obj.disk_write_gram_matrix();             
             end

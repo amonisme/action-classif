@@ -1,14 +1,19 @@
 classdef SignatureAPI < handle
     % Signature Interface 
-    properties
+    properties (SetAccess = protected)
         detector
         descriptor
         sig_size      % Dimensionnality of the signature
         train_sigs    % Training signatures
-        norm          % Norm used to normalize signatures
+        norm          % Norm used to normalize signatures               
+        version       % API version
     end
     
-    methods (Abstract)
+    methods
+        function obj = SignatureAPI()
+            obj.version = SignatureAPI.current_version();
+        end
+        
         % Learn the training set signatures
         learn(obj, Ipaths)
         
@@ -24,6 +29,22 @@ classdef SignatureAPI < handle
     end
     
     methods (Static)
+        %------------------------------------------------------------------
+        function version = current_version()
+            version = 2;
+        end
+        
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+            if isempty(a.version)
+                a.train_sigs = a.train_sigs';
+            elseif a.version < 2
+                a.train_sigs = a.train_sigs';
+            end
+            obj = a;
+            obj.version = SignatureAPI.current_version();
+        end
+        
         %------------------------------------------------------------------
         % Return one feature per line: (X,Y,radius,scale,?,zone)
         function feat = compute_features(detector, Ipaths, pg, offset, scale)

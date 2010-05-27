@@ -1,10 +1,6 @@
-function test_BMVC_LSVM(db_id, n_compo, n_parts, use_cluster)
+function test_BMVC_LSVM(db_id, n_compo, n_parts)
     global USE_PARALLEL;
     USE_PARALLEL = 1;
-    
-    if nargin < 1
-        use_cluster = 0;
-    end
     
     db = {'../../DataBaseCropped', ...
           '../../DataBaseNoCrop', ...

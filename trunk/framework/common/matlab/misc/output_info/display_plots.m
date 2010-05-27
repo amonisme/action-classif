@@ -6,7 +6,7 @@ function display_plots(points, graph_title, labelx, labely, leg, show_stdev, do_
         do_regression = 0;
     end
     
-    MarkerSize = 10;
+    MarkerSize = 12;
     LineWidth = 2;
     scale = 0.2;
     
@@ -21,7 +21,7 @@ function display_plots(points, graph_title, labelx, labely, leg, show_stdev, do_
     f = figure;
     
     % Ceate axes
-    a = axes('Parent', f, 'FontSize',14,'FontName','Helvetica', 'XLim', [(xmin-dx) (xmax+dx)] , 'YLim', [(ymin-dy) (ymax+dy)]);
+    a = axes('Parent', f, 'FontSize',22,'FontName','Helvetica', 'XLim', [(xmin-dx) (xmax+dx)] , 'YLim', [(ymin-dy) (ymax+dy)]);
     box(a,'on');
     hold(a,'all');
 
@@ -36,6 +36,7 @@ function display_plots(points, graph_title, labelx, labely, leg, show_stdev, do_
             errorbar(points(i).X,points(i).Y, points(i).stdev, points(i).marker, 'Color', points(i).color, 'LineWidth', LineWidth, 'MarkerSize', MarkerSize);
         else
             scatter(points(i).X, points(i).Y, MarkerSize*MarkerSize, points(i).color, points(i).marker, 'LineWidth', LineWidth);
+            %errorbar(points(i).X,points(i).Y, zeros(size(points(i).stdev)), points(i).marker, 'Color', points(i).color, 'LineWidth', LineWidth, 'MarkerSize', MarkerSize);
         end
     end
     

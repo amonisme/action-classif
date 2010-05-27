@@ -2,7 +2,6 @@ classdef NN < ClassifierAPI
     
     properties (SetAccess = protected)
         signature   % Signature module        
-        class_names
         labels      % Id of the class for each training image
     end
     
@@ -16,11 +15,9 @@ classdef NN < ClassifierAPI
         %------------------------------------------------------------------
         % Learns from the training directory 'root'
         function [cv_res cv_dev] = learn(obj, root)
-            [Ipaths l] = get_labeled_files(root, 'Loading training set...\n');
-            
-            [class_id names] = names2ids(l);
-            obj.labels = class_id;
-            obj.class_names = names;
+            [Ipaths ids map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
+            obj.store_names(c_names, subc_names, map);           
+            obj.labels = ids;
             
             obj.signature.learn(Ipaths);
             cv_res = [];
@@ -28,12 +25,14 @@ classdef NN < ClassifierAPI
         end
         
         %------------------------------------------------------------------
-        % Classify the testing directory 'root'
-        function [Ipaths classes correct_label assigned_label score] = classify(obj, Ipaths, correct_label)
+        % Classify 
+        function [Ipaths classes subclasses map_sub2sup correct_label assigned_label scores] = classify(obj, Ipaths, correct_label)
             classes = obj.class_names;
+            subclasses = obj.subclasses_names;
+            map_sub2sup = obj.map_sub2sup;
             if nargin < 3
-                [Ipaths l] = get_labeled_files(Ipaths, 'Loading testing set...\n');
-                correct_label = names2ids(l, classes);
+                [Ipaths ids] = get_labeled_files(Ipaths, 'Loading testing set...\n');            
+                correct_label = ids;
             end
 
             pg = ProgressBar('Classifying', 'Computing signatures...');
@@ -45,14 +44,13 @@ classdef NN < ClassifierAPI
 
             dist = zeros(n_train, 1);
             assigned_label = zeros(n_img,1);
-            score = zeros(n_img,n_classes);
-
+            scores = zeros(n_img,n_classes);
             
             pg.setCaption('Assigning labels...');
             for i=1:n_img
                 pg.progress(0.95+0.05*i/n_img);                
                 for j=1:n_train
-                    dist(j) = chi2(sigs(i, :), obj.signature.train_sigs(j, :)); 
+                    dist(j) = chi2(sigs(:, i), obj.signature.train_sigs(:, j)); 
                 end
                 [dist I] = sort(dist);
                 l = obj.labels(I);
@@ -65,7 +63,7 @@ classdef NN < ClassifierAPI
                 for j = 1:n_classes
                     dist_pos = d(j);
                     dist_neg = min(d([1:(j-1) (j+1):n_classes]));
-                    score(i,j) = dist_neg / (dist_pos + dist_neg);
+                    scores(i,j) = dist_neg / (dist_pos + dist_neg);
                 end     
                 
                 % Label

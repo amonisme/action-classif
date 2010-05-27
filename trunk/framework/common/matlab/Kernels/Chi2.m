@@ -5,17 +5,7 @@ classdef Chi2 < KernelAPI
         param_cv    % remember which parameterter was cross-validated
         dist        % remember distances for cross validation
     end
-
-    methods (Static = true)
-        %------------------------------------------------------------------
-        function obj = loadobj(a)
-            obj = a;
-%             if ~isfield(a, 'param_cv')
-%                 obj.param_cv = [1];
-%             end
-        end      
-    end
-    
+   
     methods        
         %------------------------------------------------------------------
         % Constructor Kernel type: exp(-1/a*Chi2(X,Y)^2)
@@ -24,7 +14,7 @@ classdef Chi2 < KernelAPI
                 a = [];
             end
             if nargin < 2
-                precompute = 0;
+                precompute = 1;
             end
             if nargin < 3
                 lib = 'svmlight';
@@ -51,13 +41,13 @@ classdef Chi2 < KernelAPI
         % Return a trained svm (labels are 1 or -1) (precomputed is [] or
         % the file containing the data.)
         function svm = lib_call_learn(obj, C, J, labels, sigs)
-            svm = svmlearn(sigs, labels, sprintf('-v 0 -c %s -j %s -t 4 -g %s -u1',num2str(C), num2str(J), num2str(1/obj.a)));
+            svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 4 -g %s -u1',num2str(C), num2str(J), num2str(1/obj.a)));
         end
         
         %------------------------------------------------------------------
         % Return scores provided a trained svm
         function score = lib_call_classify(obj, svm, sigs)
-            [err score] = svmclassify(sigs, zeros(size(sigs,1),1), svm);
+            [err score] = svmclassify(sigs', zeros(size(sigs,1),1), svm);
         end        
         
         %------------------------------------------------------------------
@@ -90,11 +80,9 @@ classdef Chi2 < KernelAPI
         %------------------------------------------------------------------
         % Generate testing values of parameters for cross validation
         function params = get_params(obj, sigs)
-            sigs = [zeros(1,size(sigs,2)); sigs];
             d = obj.get_chi2_dist(sigs);
             
-            if obj.precompute
-                obj.sigs = sigs;    
+            if obj.precompute 
                 obj.dist = d;
             end
             
@@ -116,9 +104,7 @@ classdef Chi2 < KernelAPI
         function obj = precompute_gram_matrix(obj, sigs1, sigs2)
             if nargin == 1
                 obj.gram_matrix = exp( - obj.dist / obj.a);
-            else
-                sigs1 = [zeros(1,size(sigs1,2)); sigs1];
-                sigs2 = [zeros(1,size(sigs2,2)); sigs2];               
+            else            
                 obj.gram_matrix = exp( - obj.get_chi2_dist(sigs1, sigs2) / obj.a);                
             end  
         end   
@@ -136,11 +122,14 @@ classdef Chi2 < KernelAPI
                 is_symetric = 0;
             end
             
-            n1 = size(sigs1, 1);
-            n2 = size(sigs2, 1);
+            n1 = size(sigs1, 2);
+            n2 = size(sigs2, 2);
             
             % precompute the chi2 distances
-            dist = zeros(n1, n2);
+            dist = zeros(n1+1, n2+1);
+            
+            dist(2:end,1) = sum(abs(sigs1),1)';
+            dist(1,2:end) = sum(abs(sigs2),1);
 %             
 %             tic
 %             for k = 1:d
@@ -150,7 +139,7 @@ classdef Chi2 < KernelAPI
 %                 B = repmat(sigs2(:,k)',n1,1);
 %                 N = A - B;
 %                 D = A + B + eps;
-%                 dist = dist + N.*N./D;
+%                 dist(2:end,2:end) = dist(2:end,2:end) + N.*N./D;
 %             end
             
 %             sigs2sparse = cell(n2,1);
@@ -164,7 +153,7 @@ classdef Chi2 < KernelAPI
 %                 t = toc;
 %                 fprintf('%fs\n', t*n1/i);
 %                 if is_symetric
-%                     dist(i,i) = 0;
+%                     dist(i+1,i+1) = 0;
 %                     js = (i+1):n2;
 %                 else
 %                     js = 1:n2;
@@ -173,30 +162,30 @@ classdef Chi2 < KernelAPI
 %                     S = sigs1sparse + sigs2sparse{j};
 %                     I = S ~= 0;
 %                     D = sigs1(i,I) - sigs2(j,I);
-%                     dist(i,j) = sum(D.*D ./ S(I));
+%                     dist(i+1,j+1) = sum(D.*D ./ S(I));
 %                     if is_symetric
-%                         dist(j,i) = dist(i,j);
+%                         dist(j+1,i+1) = dist(i+1,j+1);
 %                     end
 %                 end
 %             end
 
             for i=1:n1               
-                I = (sigs1(i,:) ~= 0);
-                rest = sum(abs(sigs2(:,~I)), 2);
-                s1 = sigs1(i,I);
-                s2 = sigs2(:,I);
+                I = (sigs1(:,i) ~= 0);
+                rest = sum(abs(sigs2(~I,:)), 1);
+                s1 = sigs1(I,i);
+                s2 = sigs2(I,:);
                 
                 if is_symetric
-                    dist(i,i) = 0;
+                    dist(i+1,i+1) = 0;
                 end
 
                 for j=1:n2
                     if ~is_symetric || j > i 
-                        S = s1 + s2(j,:);
-                        D = s1 - s2(j,:);
-                        dist(i,j) = sum(D.*D ./ S) + rest(j);
+                        S = s1 + s2(:,j);
+                        D = s1 - s2(:,j);
+                        dist(i+1,j+1) = sum(D.*D ./ S) + rest(j);
                         if is_symetric
-                            dist(j,i) = dist(i,j);
+                            dist(j+1,i+1) = dist(i+1,j+1);
                         end
                     end
                 end

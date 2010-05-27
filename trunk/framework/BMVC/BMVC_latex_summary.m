@@ -2,37 +2,61 @@ function BMVC_latex_summary(file)
     global SHOW_BAR;
     SHOW_BAR = 0;
 
-    dirs = {{'/data/vdelaitr/DataBaseCropped_test_SVM', 'Case A'}, ...
-            {'/data/vdelaitr/DataBaseNoCrop_test_SVM', 'Case B'},  ...
-            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM', 'Case C1'},  ...
-            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM_CV', 'Case C2'},  ...
-            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM_FullGrid', 'Case C3'},  ...
-            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM_Concat', 'Case C4'},  ...
+    dirs = {{'/data/vdelaitr/DataBaseCropped_test_SVM', 'A'}, ...
+            {'/data/vdelaitr/DataBaseNoCrop_test_SVM', 'B'},  ...
+            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM_CV', 'C1'},  ...
+            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM_FullGrid', 'C2'},  ...
+            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM', 'C1 no CV'},  ...            
+            {'/data/vdelaitr/DataBaseNoCropResize_test_SVM_Concat', 'Sig concat'},  ...
+            {'/data/vdelaitr/DataBaseNoCrop_test_LSVM' 'MyDB: LSVM'}, ...
+            {'/data/vdelaitr/DataBaseNoCrop_test_LSVM' 'MyDB: LSVM+C2'}, ...
             {'/data/vdelaitr/DBGupta_test_SVM', 'Gupta Orig'}, ...
             {'/data/vdelaitr/DBGuptaResize_test_SVM' 'Gupta 600'}};
-
+        
+    classif = cell(length(dirs), 1);
+    for i = 1:length(dirs)
+        if i~=7 && i~=8
+            concatenate = strcmp(dirs{i}{1}, '/data/vdelaitr/DataBaseNoCropResize_test_SVM_Concat');     
+            full_grid = strcmp(dirs{i}{1}, '/data/vdelaitr/DataBaseNoCropResize_test_SVM_FullGrid');     
+            no_cv = strcmp(dirs{i}{1}, '/data/vdelaitr/DataBaseNoCropResize_test_SVM');
+            test_C = concatenate || full_grid || no_cv || strcmp(dirs{i}{1}, '/data/vdelaitr/DataBaseNoCropResize_test_SVM_CV');
+            if test_C
+                [nothing c] = get_paper_BMVC_classif([], [], 1, no_cv, concatenate, full_grid);
+            else
+                [nothing c] = get_paper_BMVC_classif([], [], 0, no_cv, concatenate, full_grid);
+            end
+            classif{i} = c{13}.toFileName();
+        else
+            classif{7} = 'LSVM[3-8]';
+            classif{8} = 'concat';
+        end
+    end
+    
     fid = fopen(file, 'w+');
     
     generate_latex_header(fid, 'Results');    
     
     generate_latex_paragraphe(fid, '\textbf{Case A}: Images cropped to 1.5 the bounding box and rescaled s.t. the maximum of dimensions is 300');
     generate_latex_paragraphe(fid, '\textbf{Case B}: Original images (however there is a size limit of 500 pixels: no bigger images in the database)');
-    generate_latex_paragraphe(fid, '\textbf{Case C1}: Images rescaled s.t. the maximum of the dimensions of the bounding box at 1.5 is 300. Their are two channels: $Chan_{BB}$ (signatures only from features inside the bounding box) and $Chan_{\overline{BB}}$ (signatures only from features outside the bounding box). When spatial pyramid is mentionned, it is applied only on $Chan_{BB}$. corresponding kernels are $K_{BB}$ and $K_{\overline{BB}}$ and the kernel given to the svm is K(X,Y) = $K_{BB}$(X,Y) + $K_{\overline{BB}}$(X,Y). In the case where $K_{BB}$ and $K_{\overline{BB}}$ have a parameter gamma (Chi2 and RBF), each gamma is assigned to the average distance between signatures (Chi2 or L2). The C parameter of the SVM is cross-validated.');
-    generate_latex_paragraphe(fid, '\textbf{Case C2}: Same as case C1 but the gamma parameters of the kernels are cross-validated');
-    generate_latex_paragraphe(fid, '\textbf{Case C3}: Same as case C2 but the channels are now $Chan_{BB}$ as previously and $Chan_{I}$ (signatures are computed on the whole image). We apply a grid with 2 levels on the full image for every test.');
-    generate_latex_paragraphe(fid, '\textbf{Case C4}: Same as case C1 but both channels $Chan_{BB}$ and $Chan_{\overline{BB}}$ are concatenated into a single channel $Chan_{C}$. Gamma parameter of the kernel is cross-validated.');    
+    generate_latex_paragraphe(fid, '\textbf{C1 no CV}: Images rescaled s.t. the maximum of the dimensions of the bounding box at 1.5 is 300. Their are two channels: $Chan_{BB}$ (signatures only from features inside the bounding box) and $Chan_{\overline{BB}}$ (signatures only from features outside the bounding box). When spatial pyramid is mentionned, it is applied only on $Chan_{BB}$. corresponding kernels are $K_{BB}$ and $K_{\overline{BB}}$ and the kernel given to the svm is K(X,Y) = $K_{BB}$(X,Y) + $K_{\overline{BB}}$(X,Y). In the case where $K_{BB}$ and $K_{\overline{BB}}$ have a parameter gamma (Chi2 and RBF), each gamma is assigned to the average distance between signatures (Chi2 or L2). The C parameter of the SVM is cross-validated.');
+    generate_latex_paragraphe(fid, '\textbf{Case C1}: Same as case C1 but the gamma parameters of the kernels are cross-validated');
+    generate_latex_paragraphe(fid, '\textbf{Case C2}: Same as case C2 but the channels are now $Chan_{BB}$ as previously and $Chan_{I}$ (signatures are computed on the whole image). We apply a grid with 2 levels on the full image for every test.');
+    generate_latex_paragraphe(fid, '\textbf{Sig concat}: Same as case C1 but both channels $Chan_{BB}$ and $Chan_{\overline{BB}}$ are concatenated into a single channel $Chan_{C}$. Gamma parameter of the kernel is cross-validated.');    
     generate_latex_paragraphe(fid, '\textbf{Gupta Orig}: the original database of Gupta.'); 
     generate_latex_paragraphe(fid, '\textbf{Gupta 600}: the database of Gupta with images rescaled to 600 pixels for one of the dimensions.'); 
     
-    generate_latex_summary(fid, dirs);
+    generate_latex_summary(fid, dirs, classif);
    
     generate_latex_section(fid, 'Detailled results');
     for i = 1:length(dirs)
-        generate_latex_detail(fid, dirs{i}, i>6);
+        generate_latex_detail(fid, dirs{i}{2}, fullfile(dirs{i}{1}, classif{i}), i>8);
     end
         
     generate_latex_section(fid, 'All results');
     for i = 1:length(dirs)
+        if i == 7 || i == 8
+            continue;
+        end
         generate_latex_all_results(fid, dirs{i});
     end
     
@@ -41,38 +65,57 @@ function BMVC_latex_summary(file)
     fclose(fid);
 end
 
-function generate_latex_summary(fid, dirs)
+function generate_latex_summary(fid, dirs, classif)
     generate_latex_section(fid, 'Summary');
 
     n_dirs = length(dirs);
     perf = zeros(n_dirs, 2);
-    n = zeros(n_dirs, 1);
     stdev = zeros(n_dirs, 2);
-    row_names = cell(n_dirs,1);
+    row_names = cell(n_dirs,1);    
     for i = 1:n_dirs
-        current = dirs{i};
-        [p d] = list_tests(current{1}, 0);
-        if isempty(d)
-            perf(i, :) = 0;
-            stdev(i, 1) = 0;
-            stdev(i, 2) = -1;
-        else
-            [cv_score cv_stdev] = get_cv_score(current{1}, d{1});
-            perf(i, :) = p(1,:);
+        row_names{i} = dirs{i}{2};
+        path = fullfile(dirs{i}{1}, classif{i});        
+
+        [p a] = get_prec_acc('', path);
+        perf(i, :) = [p a];
+        
+        try
+            [cv_score cv_stdev] = get_cv_score('', path);
             stdev(i, 1) = cv_stdev;
-            stdev(i, 2) = -1;
-        end
-        n(i) = length(d);
-        row_names{i} = current{2};
+        catch
+            stdev(i, 1) = -1;
+        end        
+        stdev(i, 2) = -1;        
+    end
+      
+    generate_latex_paragraphe(fid, 'Result of Intersection PYR 1024 for various databases');
+    table = result2table(perf, stdev);
+    generate_latex_table(fid, table, row_names, {'Mean average precision' 'Mean Accuracy'}); 
+    
+    perf = zeros(8, n_dirs-2);
+    col_names = row_names(1:n_dirs-2)';
+    for i = 1:n_dirs-2
+        path = fullfile(dirs{i}{1}, classif{i});
+        load(fullfile(path,'results.mat'));   
+        [acc_total acc_classes] = get_accuracy(confusion_table(correct_label,assigned_label));
+        perf(1:7,i) = acc_classes;
+        perf(8,i) = acc_total;
     end
     
-    perf = [perf n];
-    stdev = [stdev (-ones(n_dirs, 1))];
-    table = result2table(perf, stdev);
-    
-    generate_latex_paragraphe(fid, 'Best results for various databases (according to mean average precision)');
-   
-    generate_latex_table(fid, table, row_names, {'Mean average precision' 'Mean Accuracy' 'Num. of test (max = 40)'}); 
+    generate_latex_paragraphe(fid, 'Per-class average precision across different methods');
+    table = result2table(perf);
+    row_names = { ...
+                        '(1) Inter. w/ Comp.', ...
+                        '(2) Photographing', ...
+                        '(3) Playing Music', ...
+                        '(4) Riding Bike', ...
+                        '(5) Riding Horse', ...
+                        '(6) Running', ...
+                        '(7) Walking', ...                
+                        'Average (mAP)' ...
+                        }';
+                    
+    generate_latex_table(fid, table, row_names, col_names); 
 end
 
 function table = result2table(perf, stdev)
@@ -89,30 +132,27 @@ function table = result2table(perf, stdev)
     end
 end
 
-function generate_latex_detail(fid, dir, isgupta)
-    name = dir{2};
-    dir = dir{1};
-    
-    [p d] = list_tests(dir, 0);
-    
+function generate_latex_detail(fid, name, d, isgupta)
     generate_latex_subsection(fid, name); 
     
-    if ~isempty(d)    
+    if ~isempty(d)           
         %----
-        generate_latex_subsubsection(fid,'Parameters');
-        load(fullfile(dir,d{1},'classifier.mat'));   
-        generate_latex_paragraphe(fid, regexprep(classifier.toString(),'\n', '\\\\\\\\\n'));
+        if ~strcmp(name, 'MyDB: LSVM+C2')
+            generate_latex_subsubsection(fid,'Parameters');
+            load(fullfile(d,'classifier.mat'));   
+            generate_latex_paragraphe(fid, regexprep(classifier.toString(),'\n', '\\\\\\\\\n'));
+        end
 
         %----
         generate_latex_subsubsection(fid,'Confusion Table');
-        load(fullfile(dir,d{1},'results.mat'));   
+        load(fullfile(d,'results.mat'));   
         [acc_total acc_classes table] = get_accuracy(confusion_table(correct_label,assigned_label));
 
         table = result2table(table);
 
         if ~isgupta
             row_names = { ...
-                        '(1) Interacting With Computer', ...
+                        '(1) Inter. w/ Comp.', ...
                         '(2) Photographing', ...
                         '(3) Playing Music', ...
                         '(4) Riding Bike', ...
@@ -161,12 +201,14 @@ function generate_latex_detail(fid, dir, isgupta)
         for i=1:n_classes
             [rec,prec,ap] = precisionrecall(score(:, i), correct_label == i);
             ap = ap*100;
-
-
             precision(i) = ap;
             fprintf(fid, '%s: %0.2f\n\n', row_names{i}, precision(i));
         end
-        [cv_score cv_stdev] = get_cv_score(dir, d{1});
+        try
+            [cv_score cv_stdev] = get_cv_score('', d);
+        catch
+            cv_stdev = -1;
+        end
         m_prec = mean(precision);
         if cv_stdev >= 0
             fprintf(fid, '\\textbf{Mean Average precision}: $%0.2f \\pm %0.2f$\n\n', m_prec, cv_stdev);

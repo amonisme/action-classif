@@ -17,13 +17,13 @@ classdef BOF < SignatureAPI
             global USE_PARALLEL;
            
             if USE_PARALLEL
-                sigs = run_in_parallel('BOF.parallel_signatures', struct('centers', obj.centers, 'sig_size', obj.sig_size, 'L', obj.L, 'zone', obj.zone), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale);
+                sigs = run_in_parallel('BOF.parallel_signatures', struct('centers', obj.centers, 'sig_size', obj.sig_size, 'L', obj.L, 'zone', obj.zone), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale)';
             else
                 n_img = size(Ipath, 1);
-                sigs = zeros(n_img, obj.sig_size);
+                sigs = zeros(obj.sig_size, n_img);
                 for k=1:n_img
                     pg.progress(offset+scale*k/n_img);
-                    sigs(k, :) = obj.sig_from_feat_descr(obj.L, obj.centers, feat{k}, descr{k}, Ipath{k}, obj.zone);
+                    sigs(:, k) = obj.sig_from_feat_descr(obj.L, obj.centers, feat{k}, descr{k}, Ipath{k}, obj.zone);
                 end    
             end
             
@@ -31,68 +31,41 @@ classdef BOF < SignatureAPI
             % average chi² distance between features
             z_index = find(obj.L(:,3) == 0);
             for k=1:length(z_index)
-                s = sigs(:, obj.L(z_index(k),4):obj.L(z_index(k),5));
-                n_sigs = size(s, 1);
+                s = sigs(obj.L(z_index(k),4):obj.L(z_index(k),5), :);
+                n_sigs = size(s, 2);
                 dist = 0;
                 for i=1:n_sigs
                     for j=(i+1):n_sigs
-                        dist = dist + chi2(s(i,:), s(j,:));
+                        dist = dist + chi2(s(:,i), s(:,j));
                     end
                 end    
                 % Average distance
                 obj.L(z_index(k), 3) = 1 / (dist / (n_sigs*(n_sigs-1)/2));
-                sigs(:, obj.L(z_index(k),4):obj.L(z_index(k),5)) = s * obj.L(z_index(k), 3);
+                sigs(obj.L(z_index(k),4):obj.L(z_index(k),5), :) = s * obj.L(z_index(k), 3);
             end         
 
             sigs = obj.norm.normalize(sigs);
         end   
     end
     
-    methods (Static = true)
-%         %------------------------------------------------------------------
-%         function obj = loadobj(a)
-%             obj.K = a.K;
-%             obj.kmeans_lib = a.kmeans_lib;
-%             obj.maxiter = a.maxiter;
-%             obj.centers = a.centers;
-% 
-%             if isempty(a.kmeans_lib)
-%                 obj.kmeans_lib = 'cpp';
-%                 obj.maxiter = 200;
-%             end
-%             
-%             obj.kmeans = Kmeans(obj.K, obj.kmeans_lib, obj.maxiter);                
-%             
-%             if isempty(a.L)
-%                 obj.L = [1 1 1];
-%             elseif isscalar(a.L)
-%                 obj.L = floor(obj.L);
-%                 levels = (0:obj.L)';
-%                 grid = [2.^levels, 2.^levels, 1./2.^(obj.L-levels+1)];
-%                 grid(1,3) = 1/2^obj.L;
-%                 end_index = cumsum(grid(:,1).*grid(:,2));
-%                 beg_index = [0; end_index(1:(end-1))];
-%                 obj.L = [grid (beg_index*obj.K+1) (end_index*obj.K)]; 
-%             else
-%                 obj.L = a.L;
-%             end
-%             if ~isfield(a, 'L_cv')
-%                 obj.L_cv = zeros(size(obj.L,1),1);
-%             else
-%                 obj.L_cv = a.L_cv;
-%             end
-%         end
-         
+    methods (Static = true)    
+        %------------------------------------------------------------------
+        function obj = loadobj(a)
+           obj = loadobj@SignatureAPI(a);
+        end
+            
         %------------------------------------------------------------------
         function sig = parallel_signatures(common, args)
             tid = task_open();
             
             n_img = size(args, 1);
-            sig = zeros(n_img, common.sig_size);
+            sig = zeros(common.sig_size, n_img);
             for k=1:n_img
                 task_progress(tid, k/n_img);
-                sig(k, :) = BOF.sig_from_feat_descr(common.L, common.centers, args(k).feat, args(k).descr, args(k).Ipath, common.zone);
+                sig(:, k) = BOF.sig_from_feat_descr(common.L, common.centers, args(k).feat, args(k).descr, args(k).Ipath, common.zone);
             end  
+            
+            sig = sig';
             
             task_close(tid);
         end
@@ -101,7 +74,7 @@ classdef BOF < SignatureAPI
         function sig = sig_from_feat_descr(L, centers, feat, descr, Ipath, zone)
             if size(descr, 1) == 0
                 n_bin = sum(L(:,1).*L(:,2));
-                sig = zeros(1,size(centers,1)*n_bin);
+                sig = zeros(size(centers,1)*n_bin,1);
             else       
                 d = dist2(centers, descr);
                 m = (d == repmat(min(d), size(d,1), 1));  
@@ -137,7 +110,7 @@ classdef BOF < SignatureAPI
                         sig{i} = cat(1, s{:});
                     end
                 end
-                sig = cat(1,sig{:})';
+                sig = cat(1,sig{:});
             end
         end  
     end
@@ -148,7 +121,13 @@ classdef BOF < SignatureAPI
         function obj = BOF(detector, descriptor, K, norm, L, zone, kmeans_lib, maxiter)
             if nargin < 5 || isempty(L)
                 L = [1 1 1];
-            end          
+            end     
+            if isscalar(L)
+                levels = (0:L)';
+                w = 1./2.^(L-levels+1);
+                w(1) = 1/2^L;
+                L = [2.^levels, 2.^levels, w];                     
+            end
             if nargin < 6
                 zone = 0;
             end
@@ -159,13 +138,12 @@ classdef BOF < SignatureAPI
                 maxiter = 200;
             end        
             
+            obj = obj@SignatureAPI();
             obj.detector = detector;
             obj.descriptor = descriptor;
             obj.K = K;
-            obj.kmeans = Kmeans(obj.K, kmeans_lib, maxiter); 
+            obj.kmeans = Kmeans(K, kmeans_lib, maxiter); 
             obj.zone = zone;
-%             obj.kmeans_lib = kmeans_lib;
-%             obj.maxiter = maxiter;
             
             n_cells = sum(L(:,1).*L(:,2));
             end_index = cumsum(L(:,1).*L(:,2));
@@ -187,7 +165,11 @@ classdef BOF < SignatureAPI
                 write_log(sprintf('Loading signature from cache: %s.\n', file));
                 load(file,'centers','train_sigs');
                 obj.centers = centers;
-                obj.train_sigs = train_sigs;
+                if size(train_sigs,1) == length(Ipaths) && size(train_sigs,2) == obj.sig_size
+                    obj.train_sigs = train_sigs';
+                else
+                    obj.train_sigs = train_sigs;                                
+                end
                 write_log(sprintf('Loaded.\n'));
             else    
                 pg = ProgressBar('Learning training signatures', '');
@@ -242,6 +224,9 @@ classdef BOF < SignatureAPI
             if exist(file,'file') == 2
                 write_log(sprintf('Loading signature from cache: %s.\n', file));
                 load(file,'sigs');
+                if size(sigs,1) == length(Ipaths) && size(sigs,2) == obj.sig_size
+                    sigs = sigs';                
+                end                    
             else    
                 
                 if nargin<3
