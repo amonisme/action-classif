@@ -1,7 +1,5 @@
 \BOOKMARK [2][]{Outline0.1}{Introducing a new dataset}{}
 \BOOKMARK [2][]{Outline0.2}{Bag-of-features classifier}{}
-\BOOKMARK [3][]{Outline0.2.1.6}{Image representation}{Outline0.2}
-\BOOKMARK [3][]{Outline0.2.2.6}{Investigated Kernels}{Outline0.2}
-\BOOKMARK [3][]{Outline0.2.3.6}{Dealing with bounding boxes}{Outline0.2}
-\BOOKMARK [2][]{Outline0.3}{Discriminatively trained part-based model}{}
-\BOOKMARK [2][]{Outline0.4}{Experimental results}{}
+\BOOKMARK [3][]{Outline0.2.1.7}{Image representation}{Outline0.2}
+\BOOKMARK [3][]{Outline0.2.2.8}{SVM Classification}{Outline0.2}
+\BOOKMARK [3][]{Outline0.2.3.9}{Using context information}{Outline0.2}

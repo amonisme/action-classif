@@ -1,4 +1,4 @@
-function [dets, boxes, info] = my_imgdetect(Ipath, model, thresh, bbox, overlap)
+function [dets, boxes, info] = my_imgdetect(Ipath, feat, descr, model, thresh, bbox, overlap)
 
 % Wrapper that computes detections in the input image.
 %
@@ -11,8 +11,6 @@ function [dets, boxes, info] = my_imgdetect(Ipath, model, thresh, bbox, overlap)
 input = color(imread(Ipath));
 
 % MYMOD
-feat = SignatureAPI.compute_features(model.detector, {Ipath}){1};
-descr = SignatureAPI.compute_descriptors(model.detector, model.descriptor, {Ipath}, feat){1};
 d = dist2(model.centers, descr);
 m = (d == repmat(min(d), size(d,1), 1));
 n_descr = size(descr, 1);

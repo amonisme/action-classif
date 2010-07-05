@@ -41,6 +41,9 @@
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 
+\def\etal{\emph{et al}.}
+\def\v#1{\protect\vec #1}
+
 %==============================================================================
 
 \title{Recognizing human actions in still images:
@@ -110,26 +113,90 @@ We mesure the performances using:
 
 %==============================================================================
 \section{Bag-of-features classifier}
-\subsection{Image representation}
-\subsection{Investigated Kernels}
-\subsection{Dealing with bounding boxes}
+
 \begin{frame}
+\frametitle{Bag-of-features classifier}
+Here we investigate the influence of various type of parameters in the classifier
+performances:
+
+\begin{itemize}
+\item \textbf{Image representation}: Images are represented using the spatial pyramid 
+representation from Lazebnik~\etal~.
+\item \textbf{SVM Classification}: We use 1-vs-all classification scheme. We investigate
+the efficiency of different kernels.
+\item \textbf{Using context information}: We analyse the impact of the context using
+information provided by the bounding box.
+\end{itemize}
+
+\end{frame}
+
+%------------------------------------------------------------------------------
+\subsection{Image representation}
+
+\begin{frame}
+\frametitle{Bag-of-features classifier: Image representation}
+
+\begin{itemize}
+\item Features are extracted from multi-scale dense sampled SIFT descriptors.
+\item Visual vocabulary is built from k-means clustering. Size of the dictionnary $K \in \{256, 512, 1024, 2048, 4096\}$.
+\item Following Lazebnik~\etal~, we use a 2 levels spatial pyramid: image is divided into $1 \times 1$, $2 \times 2$ and $4 \times 4$
+grids of cells leading to a $(1+4+16)K = 21K$ dimensional reprensation of an image.
+
+\end{itemize}
+
+\center
+\includegraphics[width=0.5\linewidth]{figs/spatial_pyramid.png}
+
+\end{frame}
+
+%------------------------------------------------------------------------------
+
+\subsection{SVM Classification}
+\begin{frame}
+\frametitle{Bag-of-features classifier: SVM Classification}
+
+Classification is performed with
+the SVM classifier using the 1-vs-all scheme, which, in our experiments, resulted in a small but consistent improvement
+over the 1-vs-1 scheme. 
+ 
+We investigate four different kernels: 
+\begin{enumerate}
+\item the histogram intersection kernel, given by $\sum_i \min(x_i,y_i)$;
+\item the $\chi^2$ kernel, given by $\exp\{\frac{1}{\gamma} \sum_i \frac{(x_i-y_i)^2}{x_i+y_i}\}$; 
+\item  the Radial basis function (RBF) kernel, given by  $\exp\{\frac{1}{\beta} \sum_i (x_i-y_i)^2\}$; and
+\item the linear kernel given by $\sum_i x_i y_i$,
+\end{enumerate}
+
+where $\v x$ and $\v y$ denote visual word histograms of images $X$ and $Y$, and $\gamma$ and $\beta$ are
+kernel parameters.
+
+\end{frame}
+
+
+%------------------------------------------------------------------------------ 
+
+\subsection{Using context information}
+\begin{frame}
+\frametitle{Bag-of-features classifier: Using context information}
+
+We consider the following four approaches:
+\begin{enumerate}
+\item[A.] {\bf ``Person"} 
+\item[B.] {\bf ``Image"} 
+\item[C1.] {\bf ``Person+Background''} 
+\item[C2.] {\bf ``Person+Image''}
+\end{enumerate}
 
 \end{frame}
 
 
 %==============================================================================
 \section{Discriminatively trained part-based model}
-\begin{frame}
-
-\end{frame}
 
 
 %==============================================================================
 \section{Experimental results}
-\begin{frame}
 
-\end{frame}
 
 
 \end{document}
