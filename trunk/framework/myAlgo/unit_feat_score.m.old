@@ -1,0 +1,75 @@
+function [score id1 id2] = unit_feat_score(unit_feat, feat, descr)
+    score = -Inf;
+    
+    lref = unit_feat(end-3);
+    lsig = unit_feat(end-1);
+    aref = unit_feat(end-2);
+    asig = unit_feat(end);
+    
+    dsize = size(descr,2);
+    d1_score = sum(descr .* repmat(unit_feat(1:dsize), size(descr,1), 1), 2);
+    d2_score = sum(descr .* repmat(unit_feat((dsize+1):(2*dsize)), size(descr,1), 1), 2);    
+    [d1_score ids1] = sort(d1_score, 'descend');
+    [d2_score ids2] = sort(d2_score, 'descend');    
+        
+    n_feat = size(feat, 1);
+    for u=1:n_feat
+        if d1_score(u) < score && d2_score(u) < score
+            break;
+        end
+        for v=(u+1):n_feat
+            s1 = d1_score(u)*d2_score(v);
+            s2 = d1_score(v)*d2_score(u);
+            if s1 < score && s2 < score
+                break;
+            end
+            
+            vect = feat(ids1(u),1:2) - feat(ids2(v),1:2);
+            l = sqrt(sum(vect.*vect));
+            
+            s = unit_feat_score_length(lref, lsig, l);
+            
+            s1 = s1*s;
+            s2 = s2*s;
+            
+            if s1 < score && s2 < score
+                break;
+            else
+                a = angle(vect(1) + 1i*vect(2));
+                s1 = s1 * unit_feat_score_angle(aref, asig, a);
+                s2 = s2 * unit_feat_score_angle(aref, asig, a+pi);
+                s = max(s1, s2);
+                
+                if s > score
+                    score = s;
+                    if s == s1
+                        id1 = ids1(u);
+                        id2 = ids2(v);
+                    else
+                        id1 = ids1(v);
+                        id2 = ids2(u);                        
+                    end                        
+                end
+            end
+        end
+    end    
+end
+
+function score = unit_feat_score_length(lref, lsig, l)
+    x = l-lref;
+    lsig2 = lsig*lsig;
+    score = exp(-x*x / (2*lsig2)) / (2*pi*lsig2);
+end
+
+function score = unit_feat_score_angle(aref, asig, a) 
+    x = a-aref;      
+    
+    if x>pi
+        x = x - 2*pi;
+    elseif x<-pi
+        x = x + 2*pi;
+    end       
+    
+    asig2 = asig * asig;
+    score = exp(-x*x / (2*asig2)) / (2*pi*asig2);
+end

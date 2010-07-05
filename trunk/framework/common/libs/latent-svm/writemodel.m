@@ -6,7 +6,19 @@ blocks = cell(model.numblocks, 1);
 for i = 1:model.numfilters
   if model.filters(i).flip == 0
     bl = model.filters(i).blocklabel;
-    blocks{bl} = model.filters(i).w(:);
+    type = model.filters(i).type;
+    if type == 'H' || type == 'A'
+        wHOG = model.filters(i).w(:);    
+        wHOG = reshape(wHOG, numel(wHOG), 1);
+    else
+        wHOG = [];
+    end
+    if type == 'B' || type == 'A'
+        wBOF = model.filters(i).histo(:);
+    else
+        wBOF = [];
+    end
+    blocks{bl} = [wHOG; wBOF];    
   end
 end
 

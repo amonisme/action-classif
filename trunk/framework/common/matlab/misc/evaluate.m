@@ -1,10 +1,7 @@
 function precision = evaluate(classifier, root, db_name, target)
     global OUTPUT_LOG EXPERIMENT_DIR;    
 
-    if nargin < 2
-        root = '../../DataBase/';
-    end
-    if nargin < 3
+    if nargin < 4
         target = EXPERIMENT_DIR;
     end
     
@@ -33,9 +30,9 @@ function precision = evaluate(classifier, root, db_name, target)
             load(file);
             write_log(sprintf('Classifier loaded from file %s\n',file)); 
         else
-            [cv_res cv_dev] = classifier.learn(fullfile(root, sprintf('%s.train.mat', db_name)));
+            [cv_prec cv_dev_prec cv_acc cv_dev_acc] = classifier.learn(fullfile(root, sprintf('%s.train.mat', db_name)));
             save(file, 'classifier');
-            save(fullfile(dir, 'cv_log.mat'), 'cv_res', 'cv_dev');  
+            save(fullfile(dir, 'cv_log.mat'), 'cv_prec', 'cv_dev_prec', 'cv_acc', 'cv_dev_acc');  
         end
         t0 = toc;
 

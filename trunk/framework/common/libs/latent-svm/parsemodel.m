@@ -11,16 +11,31 @@ if model.symbols(i).type == 'T'
   % i is a terminal/filter
   % save filter weights from blocks
   fi = model.symbols(i).filter;
+  doHOG = model.filters(fi).type == 'H' || model.filters(fi).type == 'A';
+  doBOF = model.filters(fi).type == 'B' || model.filters(fi).type == 'A';
+  
+  if model.filters(fi).type == 'A'
+    blockHOG = blocks{model.filters(fi).blocklabel}(1:numel(model.filters(fi).w));
+    blockBOF = blocks{model.filters(fi).blocklabel}((numel(model.filters(fi).w)+1):end);
+  elseif model.filters(fi).type == 'H'
+    blockHOG = blocks{model.filters(fi).blocklabel};
+  else
+    blockBOF = blocks{model.filters(fi).blocklabel};
+  end
+      
   if model.filters(fi).symmetric == 'M'
-    f = reshape(blocks{model.filters(fi).blocklabel}, ...
-                size(model.filters(fi).w));
-    if model.filters(fi).flip
-      f = flipfeat(f);
+    if doHOG
+      f = reshape(blockHOG, size(model.filters(fi).w));
+      if model.filters(fi).flip
+        f = flipfeat(f);
+      end
+      model.filters(fi).w = f;
     end
-    model.filters(fi).w = f;
+    if doBOF
+      model.filters(fi).histo = reshape(blockBOF, size(model.filters(fi).histo));  
+    end    
   elseif model.filters(fi).symmetric == 'N'
-    f = reshape(blocks{model.filters(fi).blocklabel}, ...
-                size(model.filters(fi).w));
+    f = reshape(blockHOG, size(model.filters(fi).w));
     model.filters(fi).w = f;
   else
     error('unknown filter symmetry type');

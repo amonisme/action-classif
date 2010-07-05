@@ -76,10 +76,11 @@ classdef Intersection < KernelAPI
                                 
                 obj.gram_matrix = zeros(n1+1,n2+1);
                 if issparse(sigs1) && issparse(sigs2)
-                    for i = 1:n1
-                        for j = 1:n2
+                    for i = 1:n1                        
+                        for j = 1:n2                            
                             obj.gram_matrix(i+1,j+1) = sum(min(sigs1(:,i), sigs2(:,j)));
                         end
+                        fprintf('%f%%\n', i*100/n1);
                     end
                 else                    
                     for j=1:n2

@@ -29,7 +29,7 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
     save_file('args', tid, 0, common_args);
     
     for i = 1:num_instances
-        if i == num_instances
+        if i == num_instances || size(parallel_args,1)<num_instances;
             index = ((i-1)*size_args+1) : size(parallel_args,1);
         else
             index = ((i-1)*size_args+1) : i*size_args;

@@ -1,0 +1,9 @@
+\beamer@endinputifotherversion {3.07pt}
+\select@language {english}
+\beamer@sectionintoc {1}{Introducing a new dataset}{3}{0}{1}
+\beamer@sectionintoc {2}{Bag-of-features classifier}{6}{0}{2}
+\beamer@subsectionintoc {2}{1}{Image representation}{6}{0}{2}
+\beamer@subsectionintoc {2}{2}{Investigated Kernels}{6}{0}{2}
+\beamer@subsectionintoc {2}{3}{Dealing with bounding boxes}{6}{0}{2}
+\beamer@sectionintoc {3}{Discriminatively trained part-based model}{7}{0}{3}
+\beamer@sectionintoc {4}{Experimental results}{8}{0}{4}

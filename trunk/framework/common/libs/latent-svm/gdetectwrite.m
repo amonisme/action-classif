@@ -82,7 +82,8 @@ for i = 1:size(info,3)
                          pyra.padx, pyra.pady,    ...
                          info(DET_DS, j, i),      ...
                          model.symbols(j).filter, ...
-                         pyra.feat{info(DET_L, j, i)});
+                         pyra.feat{info(DET_L, j, i)}, ...
+                         pyra.histo{info(DET_L, j, i)});
     else
       ruleind = info(DET_IND, j, i);
       if model.rules{j}(ruleind).type == 'D'
@@ -113,7 +114,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % stores the filter feature vector in the example ex
-function ex = addfilterfeat(model, ex, x, y, padx, pady, ds, fi, feat)
+function ex = addfilterfeat(model, ex, x, y, padx, pady, ds, fi, feat, histo)
 % model object model
 % ex    example that is being extracted from the feature pyramid
 % x, y  location of filter in feat (with virtual padding)
@@ -127,19 +128,30 @@ fsz = model.filters(fi).size;
 % remove virtual padding
 fy = y - pady*(2^ds-1);
 fx = x - padx*(2^ds-1);
-f = feat(fy:fy+fsz(1)-1, fx:fx+fsz(2)-1, :);
-
-% flipped filter
-if model.filters(fi).symmetric == 'M' && model.filters(fi).flip
-  f = flipfeat(f);
+% MYMOD
+type = model.filters(fi).type;
+if type == 'H' || type == 'A'
+    fHOG = feat(fy:fy+fsz(1)-1, fx:fx+fsz(2)-1, :);
+    % flipped filter
+    if model.filters(fi).symmetric == 'M' && model.filters(fi).flip
+      fHOG = flipfeat(fHOG);
+    end    
+    fHOG = reshape(fHOG, numel(fHOG), 1);
+else
+    fHOG = [];
+end
+if type == 'B' || type == 'A'
+    fBOF = get_histo_from_integral(histo, fx, fy, fx+fsz(2)-1, fy+fsz(1)-1);
+else
+    fBOF = [];
 end
 
 % accumulate features
 bl = model.filters(fi).blocklabel;
 if isempty(ex.blocks(bl).w)
-  ex.blocks(bl).w = f(:);
+  ex.blocks(bl).w = [fHOG; fBOF];
 else
-  ex.blocks(bl).w = ex.blocks(bl).w + f(:);
+  ex.blocks(bl).w = ex.blocks(bl).w + [fHOG; fBOF];
 end
 
 

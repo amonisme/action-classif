@@ -239,14 +239,24 @@ function model = filterresponses(model, pyra, latent, bbox, overlap)
 % gather filters for computing match quality responses
 i = 1;
 filters = {};
+ihistos = {};
+doHOG = [];
+doBOF = [];
+filter_sizes = {}; % MYMOD
 filter_to_symbol = [];
 for s = model.symbols
   if s.type == 'T'
+    type = model.filters(s.filter).type;             % MYMOD
+    doHOG(i)   = (type == 'H' || type == 'A');       % MYMOD
+    doBOF(i)   = (type == 'B' || type == 'A');       % MYMOD
     filters{i} = model.filters(s.filter).w;
+    ihistos{i} = model.filters(s.filter).histo;      % MYMOD
+    filter_sizes{i} = model.filters(s.filter).size;  % MYMOD
     filter_to_symbol(i) = s.i;
     i = i + 1;
   end
 end
+doHOG = logical(doHOG);
 
 % determine which levels to compute responses for (optimization
 % for the latent=true case)
@@ -254,7 +264,29 @@ end
 
 for level = levels
   % compute filter response for all filters at this level
-  r = fconv(pyra.feat{level}, filters, 1, length(filters));
+  % MYMOD
+  r = cell(1,length(filters));
+  for i = 1:length(r)      
+    w = size(pyra.feat{level},2)-filter_sizes{i}(2)+1;
+    h = size(pyra.feat{level},1)-filter_sizes{i}(1)+1;
+    r{i} = zeros(h,w);
+  end  
+  if ~isempty(find(doHOG,1))
+      rtmp = fconv(pyra.feat{level}, filters(doHOG), 1, length(find(doHOG)));
+      r(doHOG) = rtmp;
+  end
+  if ~isempty(find(doBOF,1))
+      for i = 1:length(r)
+          if doBOF(i)
+            [h w] = size(r{i});
+            for y = 1:h
+                for x = 1:w
+                    r{i}(y,x) = r{i}(y,x) + ihistos{i}' * get_histo_from_integral(pyra.histo{level}, x, y, x+filter_sizes{i}(1)-1, y+filter_sizes{i}(2)-1);
+                end
+            end
+          end
+      end
+  end
   % find max response array size for this level
   s = [-inf -inf];
   for i = 1:length(r)
@@ -349,7 +381,7 @@ for r = 1:length(model.rules{model.start})
                      size(pyra.feat{level},1), ...
                      size(pyra.feat{level},2), ...
                      scale, pyra);
-  inds = find(o >= overlap);
+  inds = find(o >= overlap,1);
   if ~isempty(inds)
     ok = true;
     break;

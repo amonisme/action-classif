@@ -23,8 +23,8 @@ classdef DescriptorAPI
         % feature points 'feat' (one per line)
         function descr = get_descriptors(obj, Ipath, feat)
             descr = obj.compute_descriptors(Ipath, feat);
-            descr = obj.norm.normalize(descr);
             descr = single(descr);
+            descr = obj.norm.normalize(descr')';
         end
         
         %------------------------------------------------------------------

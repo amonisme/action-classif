@@ -262,7 +262,7 @@ classdef LSVM < ClassifierAPI
         
         %------------------------------------------------------------------
         % Learns from the training directory 'root'
-        function [cv_res cv_dev] = learn(obj, root)
+        function [cv_prec cv_dev_prec cv_acc cv_dev_acc] = learn(obj, root)
             global TEMP_DIR HASH_PATH USE_PARALLEL;
             [Ipaths ids map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
             obj.store_names(c_names, subc_names, map);           
@@ -295,8 +295,10 @@ classdef LSVM < ClassifierAPI
                 obj.models = lsvm_models;
             end
                 
-            cv_res = [];
-            cv_dev = [];
+            cv_prec = [];
+            cv_dev_prec = [];
+            cv_acc = [];
+            cv_dev_acc = [];            
         end
         
         %------------------------------------------------------------------
@@ -396,13 +398,6 @@ classdef LSVM < ClassifierAPI
         end
         function str = toName(obj)
             str = sprintf('LSVM(%d-%d)', obj.n_components, obj.n_parts);
-        end
-        function obj = save_to_temp(obj)
-            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
-            if ~existe(file,'file') == 2                
-                lsvm_models = obj.models;
-                save(file, 'lsvm_models');
-            end
         end
     end    
 end

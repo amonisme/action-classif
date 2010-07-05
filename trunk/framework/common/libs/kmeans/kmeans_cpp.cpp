@@ -140,7 +140,7 @@ void kmeans::do_kmeans()
 	initialize();
 	niter = 0;
 	do{
-		cout << "Iteration #" << niter + 1 << endl;
+		//cout << "Iteration #" << niter + 1 << endl;
 		clear_new_centers();
 		find_new_centers();
 		niter++;
@@ -216,7 +216,14 @@ void kmeans::find_new_centers()
 			for(int j=0;j<dimension;j++)
 				new_centers[i*dimension + j] /= static_cast<float>(cluster_count[i]);
 		else
-			cout << "Empty Cluster Detected !" << endl;
+		{
+			//cout << "Empty Cluster Detected !" << endl;
+			int assignement = rand()%ncluster;
+			cluster_count[i] = 1;
+			assign[i] = static_cast<float>(assignement);
+			for(int j=0;j<dimension;j++)
+				new_centers[i*dimension + j] = data[i*dimension + j];
+	  }
 	}
 }
 
@@ -241,7 +248,7 @@ bool kmeans::hasConverged()
 			abort = true;
 			break;
 		}
-	}	cout << "Distance: " << distance << endl;
+	}	//cout << "Distance: " << distance << endl;
 	if(!abort)
 		return true;
 	else

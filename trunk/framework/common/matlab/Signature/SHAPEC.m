@@ -35,7 +35,13 @@ classdef SHAPEC < SignatureAPI
     methods (Static = true)
         %------------------------------------------------------------------
         function obj = loadobj(a)
-            obj = loadobj@SignatureAPI(a);
+            if isempty(a.version)
+                a.train_sigs = a.train_sigs';
+            elseif a.version < 2
+                a.train_sigs = a.train_sigs';
+            end
+            obj = a;
+            obj.version = SignatureAPI.current_version();
         end
         
         %------------------------------------------------------------------
@@ -278,23 +284,6 @@ classdef SHAPEC < SignatureAPI
         end
         function str = toName(obj)
             str = sprintf('SHC(%d)', obj.K);
-        end
-        function obj = save_to_temp(obj)
-            global TEMP_DIR HASH_PATH;
-            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
-            
-            if ~exist(file, 'file') == 2
-                centers = obj.center;
-                train_sigs = obj.train_sigs;
-                save(file,'centers','train_sigs');
-            end
-            
-            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName()));
-            
-            if ~exist(file, 'file') == 2
-                centers = obj.center;
-                save(file,'centers');
-            end
         end
     end
 end

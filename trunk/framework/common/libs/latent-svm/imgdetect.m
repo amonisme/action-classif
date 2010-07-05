@@ -1,4 +1,4 @@
-function [dets, boxes, info] = imgdetect(input, model, thresh, bbox, overlap)
+function [dets, boxes, info] = imgdetect(Ipath, model, thresh, bbox, overlap)
 
 % Wrapper that computes detections in the input image.
 %
@@ -8,11 +8,23 @@ function [dets, boxes, info] = imgdetect(input, model, thresh, bbox, overlap)
 % bbox     ground truth bounding box
 % overlap  overlap requirement
 
-% we assume color images
-input = color(input);
+input = color(imread(Ipath));
+
+% MYMOD
+feat = SignatureAPI.compute_features(model.detector, Ipath);
+descr = SignatureAPI.compute_descriptors(model.detector, model.descriptor, Ipath, feat);
+d = dist2(model.centers, descr);
+m = (d == repmat(min(d), size(d,1), 1));
+n_descr = size(descr, 1);
+for j=1:n_descr
+    a = find(m(:,j), 1);
+    % X Y Scale Angle Type
+    feat(j,5) = a;
+end
 
 % get the feature pyramid
-pyra = featpyramid(input, model);
+info = imfinfo(Ipath);    
+pyra = featpyramid(input, struct('size', [info.Height info.Width], 'feat', feat), model);
 
 if nargin < 4
   bbox = [];

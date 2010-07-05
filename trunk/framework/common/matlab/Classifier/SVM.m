@@ -402,7 +402,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             end
             cv_sigs = obj.kernel.get_kernel_sigs(sigs);
             
-            samples = [obj.labels' cv_sigs];
+            samples = [obj.labels'; cv_sigs];
         end
         
         %------------------------------------------------------------------
@@ -435,7 +435,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             end
                        
             if isempty(obj.C)
-                p = 1/mean(sum(sigs.*sigs,2));
+                p = 1/mean(sum(sigs.*sigs,1));
                 params = [(p * 1.5.^(-6:6))'; params];
             else
                 params = [obj.C; params];
@@ -520,12 +520,5 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             end
             str = sprintf('SVM(%s)-%s', obj.kernel.toName(), strat);
         end     
-
-        function obj = save_to_temp(obj)           
-            n_sigs = size(obj.signature);
-            for i = 1:n_sigs
-                obj.signature{i}.save_to_temp();
-            end
-        end
     end
 end

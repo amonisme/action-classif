@@ -1,0 +1,133 @@
+\begin{thebibliography}{21}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[ped()]{pedro_code}
+http://people.cs.uchicago.edu/$\sim$pff/latent/.
+
+\bibitem[Bobick and Davis(2001)]{BoDa01}
+A.F. Bobick and J.W. Davis.
+\newblock The recognition of human movement using temporal templates.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 23\penalty0 (3):\penalty0 257--276, 2001.
+
+\bibitem[Bosch et~al.(2007)Bosch, Zisserman, and Munoz]{Bosch07}
+A.~Bosch, A.~Zisserman, and X.~Munoz.
+\newblock Representing shape with a spatial pyramid kernel.
+\newblock In \emph{Proc.~International Conference on Image and Video
+  Retrieval}, 2007.
+
+\bibitem[Dalal and Triggs(2005)]{Dalal05}
+N.~Dalal and B.~Triggs.
+\newblock Histograms of oriented gradients for human detection.
+\newblock In \emph{Proc.~Computer Vision and Pattern Recognition}, pages
+  I:886--893, 2005.
+
+\bibitem[Felzenszwalb et~al.(2009)Felzenszwalb, Girshick, McAllester, and
+  Ramanan]{Felzenszwalb09}
+P.~Felzenszwalb, R.~Girshick, D.~McAllester, and D.~Ramanan.
+\newblock Object detection with discriminatively trained part based models.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 2009.
+
+\bibitem[Felzenszwalb and Huttenlocher(2005)]{Felzenszwalb05}
+P.F. Felzenszwalb and D.P. Huttenlocher.
+\newblock Pictorial structures for object recognition.
+\newblock \emph{International Journal of Computer Vision}, 61\penalty0
+  (1):\penalty0 55--79, January 2005.
+
+\bibitem[Fischler and Elschlager(1973)]{Fischler73}
+M.A. Fischler and R.A. Elschlager.
+\newblock The representation and matching of pictorial structures.
+\newblock \emph{IEEE Transactions on Computer}, 22\penalty0 (1):\penalty0
+  67--92, January 1973.
+
+\bibitem[Gupta et~al.(2009)Gupta, Kembhavi, and Davis]{Gupta09}
+A.~Gupta, A.~Kembhavi, and L.S. Davis.
+\newblock Observing human-object interactions: {U}sing spatial and functional
+  compatibility for recognition.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 31\penalty0 (10):\penalty0 1775--1789, October 2009.
+
+\bibitem[Harzallah et~al.(2009)Harzallah, Jurie, and Schmid]{Harzallah09}
+H.~Harzallah, F.~Jurie, and C.~Schmid.
+\newblock Combining efficient object localization and image classification.
+\newblock In \emph{Proc.~International Conference on Computer Vision}, 2009.
+
+\bibitem[Ikizler et~al.(2008)Ikizler, Cinbis, Pehlivan, and Duygulu]{Ikizler08}
+N.~Ikizler, R.G. Cinbis, S.~Pehlivan, and P.~Duygulu.
+\newblock Recognizing actions from still images.
+\newblock In \emph{Proc.~International Conference on Pattern Recognition},
+  2008.
+
+\bibitem[Ikizler-Cinbis et~al.(2009)Ikizler-Cinbis, Gokberk~Cinbis, and
+  Sclaroff]{Ikizler09}
+N.~Ikizler-Cinbis, R.~Gokberk~Cinbis, and S.~Sclaroff.
+\newblock Learning actions from the {W}eb.
+\newblock In \emph{Proc.~International Conference on Computer Vision}, 2009.
+
+\bibitem[Laptev et~al.(2008)Laptev, Marsza{\l}ek, Schmid, and
+  Rozenfeld]{Laptev08}
+I.~Laptev, M.~Marsza{\l}ek, C.~Schmid, and B.~Rozenfeld.
+\newblock Learning realistic human actions from movies.
+\newblock In \emph{Proc.~Computer Vision and Pattern Recognition}, 2008.
+
+\bibitem[Lazebnik et~al.(2006)Lazebnik, Schmid, and Ponce]{Lazebnik06}
+S.~Lazebnik, C.~Schmid, and J.~Ponce.
+\newblock Beyond bags of features: spatial pyramid matching for recognizing
+  natural scene categories.
+\newblock In \emph{Proc.~Computer Vision and Pattern Recognition}, pages
+  II:~2169--2178, 2006.
+
+\bibitem[Li and Li(2007)]{Li07}
+L.J. Li and F.F. Li.
+\newblock What, where and who? {C}lassifying events by scene and object
+  recognition.
+\newblock In \emph{Proc.~International Conference on Computer Vision}, 2007.
+
+\bibitem[Moeslund et~al.(2006)Moeslund, Hilton, and Kruger]{MHK06}
+T.B. Moeslund, A.~Hilton, and V.~Kruger.
+\newblock A survey of advances in vision-based human motion capture and
+  analysis.
+\newblock \emph{Computer Vision and Image Understanding}, 103\penalty0
+  (2-3):\penalty0 90--126, 2006.
+
+\bibitem[Sch{\"o}lkopf and Smola(2002)]{Scholkopf}
+B.~Sch{\"o}lkopf and A.~Smola.
+\newblock \emph{Learning with Kernels: Support Vector Machines, Regularization,
+  Optimization and Beyond}.
+\newblock MIT Press, Cambridge, MA, 2002.
+
+\bibitem[Uijlings et~al.(2009)Uijlings, Smeulders, and Scha]{Uijlings09}
+J.R.R. Uijlings, A.W.M. Smeulders, and R.J.H. Scha.
+\newblock What is the spatial extent of an object?
+\newblock In \emph{Proc.~Computer Vision and Pattern Recognition}, pages
+  770--777, 2009.
+
+\bibitem[Vedaldi et~al.(2009)Vedaldi, Gulshan, Varma, and Zisserman]{Vedaldi09}
+A.~Vedaldi, V.~Gulshan, M.~Varma, and A.~Zisserman.
+\newblock Multiple kernels for object detection.
+\newblock In \emph{Proc.~International Conference on Computer Vision}, 2009.
+
+\bibitem[Wang et~al.(2006)Wang, Jiang, Drew, Li, and Mori]{Wang06}
+Y.~Wang, H.~Jiang, M.S. Drew, Z.N. Li, and G.~Mori.
+\newblock Unsupervised discovery of action classes.
+\newblock In \emph{Proc.~Computer Vision and Pattern Recognition}, pages
+  II:~1654--1661, 2006.
+
+\bibitem[Yu and Joachims(2009)]{Yu09a}
+Chun-Nam~John Yu and T.~Joachims.
+\newblock Learning structural svms with latent variables.
+\newblock In \emph{International Conference on Machine Learning (ICML)}, 2009.
+
+\bibitem[Zhang et~al.(2007)Zhang, Marsza{\l}ek, Lazebnik, and Schmid]{Zhang07}
+J.~Zhang, M.~Marsza{\l}ek, S.~Lazebnik, and C.~Schmid.
+\newblock Local features and kernels for classification of texture and object
+  categories: a comprehensive study.
+\newblock \emph{International Journal of Computer Vision}, 73\penalty0
+  (2):\penalty0 213--238, 2007.
+
+\end{thebibliography}
