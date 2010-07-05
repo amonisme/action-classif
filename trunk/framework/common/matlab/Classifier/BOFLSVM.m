@@ -241,16 +241,16 @@ classdef BOFLSVM < ClassifierAPI
         end
         
         %------------------------------------------------------------------
-        function scores = classify_img_parallel(common, Ipaths)
+        function scores = classify_img_parallel(common, args)
             tid = task_open();
                         
-            scores = BOFLSVM.classify_img(common.model, Ipaths, common.overlaps);
+            scores = BOFLSVM.classify_img(common.model, {args(:).Ipaths}, {args(:).feat}, {args(:).descr}, common.overlaps);
             
             task_close(tid);
         end
         
         %------------------------------------------------------------------
-        function scores = classify_img(model, Ipaths, overlaps)
+        function scores = classify_img(model, Ipaths, feat, descr, overlaps)
             n_img = length(Ipaths);
             n_overlaps = length(overlaps);
             scores = ones(1,n_img,n_overlaps)*(-Inf);
@@ -260,7 +260,7 @@ classdef BOFLSVM < ClassifierAPI
                 [bb_not_cropped person_box] = get_bb_info(Ipaths{i});
                 person_box = person_box(2:end);                
                 
-                [dets, boxes] = my_imgdetect(Ipaths{i}, model, -Inf); %models{j}.thresh);
+                [dets, boxes] = my_imgdetect(Ipaths{i}, feat{i}, descr{i}, model, -Inf, person_box, 0.);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
                     [dets boxes] = clipboxes(im, dets, boxes);
@@ -338,13 +338,7 @@ classdef BOFLSVM < ClassifierAPI
                     for k = 1:n_classes
                         lsvm_models{k} = BOFLSVM.train_model(obj.detector, obj.descriptor, obj.kmeans, Ipaths, names{k}, obj.toFileName(), ids, map, obj.n_components, obj.n_parts, k);
                     end
-                end
-                
-                for k = 1:n_classes
-                    lsvm_models{k}.detector = obj.detector;
-                    lsvm_models{k}.descriptor = obj.descriptor;
-                    lsvm_models{k}.kmeans = obj.kmeans;
-                end
+                end               
                 
                 save(file, 'lsvm_models');
                 obj.models = lsvm_models;
@@ -370,9 +364,7 @@ classdef BOFLSVM < ClassifierAPI
                 correct_label = ids;
             end
 
-            n_img = length(Ipaths);
-                    
-            pg = ProgressBar('Classifying', 'Computing bounding boxes...');
+            n_img = length(Ipaths);                                
                      
             overlaps = 0:0.1:0.9;
             
@@ -380,13 +372,20 @@ classdef BOFLSVM < ClassifierAPI
             
             if exist(file, 'file') == 2
                 load(file, 'scores');
-            else           
+            else          
+                pg = ProgressBar('Classifying', 'Computing descriptors...');
+                
+                feat = SignatureAPI.compute_features(obj.detector, Ipaths);
+                descr = SignatureAPI.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat);      
+                
+                pg.setCaption('Computing bounding boxes...');
                 if USE_PARALLEL
                     n_classes = length(obj.models);
                     scores = cell(1,n_classes);
                     for i = 1:n_classes
                         common = struct('model', obj.models{i}, 'overlaps', overlaps);
-                        scores{i} = run_in_parallel('BOFLSVM.classify_img_parallel', common, Ipaths, [], 0, pg, (i-1)/n_classes, 1/n_classes);
+                        args = struct('Ipaths', Ipaths, 'feat', feat, 'descr', descr);
+                        scores{i} = run_in_parallel('BOFLSVM.classify_img_parallel', common, args, [], 0, pg, (i-1)/n_classes, 1/n_classes);
                         scores{i} = obj.classify_img(obj.models{i}, Ipaths, overlaps);
                     end
                     scores = cat(1, scores{:});                   
@@ -394,7 +393,7 @@ classdef BOFLSVM < ClassifierAPI
                     n_classes = length(obj.models);
                     scores = cell(1,n_classes);
                     for i = 1:n_classes
-                        scores{i} = obj.classify_img(obj.models{i}, Ipaths, overlaps);
+                        scores{i} = obj.classify_img(obj.models{i}, Ipaths, feat, descr, overlaps);
                         pg.progress(i/n_classes);
                     end
                     scores = cat(1, scores{:});
