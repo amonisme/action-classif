@@ -39,6 +39,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
     
     % Wait all tasks finishes.
+    average_comp_time = 0;
     num_waiting = num_instances;
     waiting = ones(num_instances, 1);
     progress = zeros(num_instances, 1);
@@ -49,17 +50,19 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
         files{i,2} = fullfile(TEMP_DIR, tid, sprintf('info.%d', i));
     end
     
+    tic;
     while num_waiting > 0
         pgr = 0;
         for i = 1:num_instances
             if waiting(i) == 0
                 pgr = pgr + 1/num_instances;
-            elseif exist(files{i,1}, 'file') == 2
-                load(files{i,1}, 'args');
+            elseif exist(files{i,1}, 'file') == 2                
+                load(files{i,1}, 'args', 't');
                 res{i} = args;
                 num_waiting = num_waiting - 1;
                 waiting(i) = 0;
                 pgr = pgr + 1/num_instances;
+                average_comp_time = average_comp_time + (t - average_comp_time) / (num_instances-num_waiting);                
             elseif pg_enabled && exist(files{i,2}, 'file') == 2
                 fid = fopen(files{i,2},'r');
                 p = fread(fid, 1, 'float32');
@@ -76,6 +79,20 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
         if pg_enabled
             pg.progress(pg_offset + pg_scale * pgr);
         end
+        
+%         if toc > 2*average_comp_time && ~isempty(find(~waiting,1))
+%             cs = cumsum(waiting);
+%             late_task = waiting & (cs ~= cs(end));
+%             if waiting(end)
+%                 late_task(end) = 1;
+%             end
+%             M2 = M(late_task,:);            
+%             find(waiting)
+%             cs
+%             M2
+%             compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M2,memory);            
+%             tic;
+%         end
         
         t = timer('StartDelay', 1, 'TimerFcn', @stopTimer);
         start(t);

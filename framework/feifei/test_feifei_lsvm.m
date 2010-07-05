@@ -6,7 +6,7 @@ function test_feifei_lsvm(db)
     SHOW_BAR = 1;    
     FILE_BUFFER_PATH = '../../temp';
 
-    classifier = LSVM(1,8);
+    classifier = LSVM(1,9);
     
     evaluate(classifier, '/data/vdelaitr/FeiFeiNorm', db, fullfile('/data/vdelaitr/', sprintf('LSVM_%s', db)));
 end

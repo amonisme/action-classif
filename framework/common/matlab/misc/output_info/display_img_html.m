@@ -23,12 +23,67 @@ function display_img_html(dir, prefix, is_LSVM)
         n_classes = size(subclasses, 1);
         classes = subclasses;
     end    
-       
-    f = figure;
-    
+          
     file = 'index.html';    
     fid = fopen(fullfile(target_dir, file), 'w+');
     fprintf(fid, '<html>\n<body>\n<h1>%s<h1>\n', classifier.toFileName());    
+    
+    % Confusion table:
+    table = confusion_table(correct_label,assigned_label);     
+    [perf_total perf_classes table] = get_accuracy(table);
+
+    fprintf(fid, '<h2>Confusion Table (Accuracy = %0.2f)</h2>\n<table align="center" border="1">', perf_total);
+ 
+    fprintf(fid, '<tr><td></td>\n');
+    for j=1:n_classes
+        fprintf(fid, '<td align="center">%d</td>', j);
+    end
+    fprintf(fid, '</tr>\n');
+    
+    for i=1:n_classes
+        fprintf(fid, '<tr><td>%d - %s</td>\n', i, classes{i});
+        for j=1:n_classes
+            bgcolor = sprintf('%02X', ceil(2.55 * table(i,j)));            
+            bgcolor = [bgcolor bgcolor bgcolor]; % gray
+            limit = 30;
+            if table(i,j) >= limit
+                color = '#000000';
+            else
+                color = sprintf('%02X', ceil(255 * table(i,j)/limit));            
+                color = [color color color]; % gray
+            end
+            fprintf(fid, '<td bgcolor="#%s"><font color="%s">%.2f</font></td>', bgcolor, color, table(i,j));
+        end
+        fprintf(fid, '</tr>\n');
+    end
+    fprintf(fid, '</table>\n');
+
+    % MAP
+    precision = size(n_classes, 1);    
+    for i=1:n_classes
+        [rec,prec,ap] = precisionrecall(score(:, i), correct_label == i);
+        precision(i) = ap*100;
+    end
+    fprintf(fid, '<h2>Average precision (mAP = %0.2f)</h2>\n', mean(precision));
+    
+    fprintf(fid, '<table align="center" border="0" width="80%%"><tr>\n');
+    for i=1:n_classes
+        fprintf(fid, '<td>%s:&nbsp&nbsp</td><td align="center">%0.2f</td><td>', classes{i}, precision(i));
+        generate_img(fid, sprintf('%s_pr.png', classes{i}), 'width="500"');
+        fprintf(fid, '</td>\n');
+        
+        if mod(i,2) == 1
+            fprintf(fid, '<td width="100%%"></td>\n');
+        end
+        if i==n_classes || mod(i,2) == 0
+            fprintf(fid, '</tr><tr>\n');
+        end
+    end    
+    fprintf(fid, '</table>\n');
+    
+    
+    % Links
+    fprintf(fid, '<h2>Details</h2>\n');
     for i=1:n_classes
       fprintf(fid, '<font size="3"><a href="%s.html">%s</a><br></font>\n', classes{i}, classes{i});        
     end
@@ -44,14 +99,16 @@ function display_img_html(dir, prefix, is_LSVM)
         
         % if LSVM, print the model
         if is_LSVM
-            f2 = figure;
-            visualizemodel(classifier.models{i});
             model_file = sprintf('%s_model.png', classes{i});
-            print('-dpng', fullfile(target_dir, model_file));
+
+%             f = figure;
+%             visualizemodel(classifier.models{i});
+%             print('-dpng', fullfile(target_dir, model_file));
+%             close(f);
+
             fprintf(fid,'<h2>Model</h2>\n<center>\n');
             generate_img(fid, model_file, 'height="400"');
             fprintf(fid, '\n</center><br><font size="3"><a href="index.html">Back to index</a><br></font>\n');        
-            close(f2);
         end
         
         % Compute PR
@@ -60,61 +117,104 @@ function display_img_html(dir, prefix, is_LSVM)
         Ipaths = Ipaths(sortind);
         correct_label = correct_label(sortind);
         assigned_label = assigned_label(sortind);
-        sc = score(sortind, i);
+        score = score(sortind, :);
 
         % plot precision/recall
-        name = sprintf('Action ''%s''',classes{i});
-        
-        plot(rec,prec,'-');
-        grid;
-        xlabel 'recall'
-        ylabel 'precision'
-
-        title(sprintf('%s - AP = %.3f',name, ap));
-        axis([0 1 0 1]);
-
         pr_file = sprintf('%s_pr.png', classes{i});
-        print('-dpng', fullfile(target_dir, pr_file));
-        
+
+%         f = figure;
+%         name = sprintf('Action ''%s''',classes{i});
+%         
+%         plot(rec,prec,'-');
+%         grid;
+%         xlabel 'recall'
+%         ylabel 'precision'
+% 
+%         title(sprintf('%s - AP = %.3f',name, ap));
+%         axis([0 1 0 1]);
+% 
+%         print('-dpng', fullfile(target_dir, pr_file));
+%         close(f);
+%         
+
         fprintf(fid,'<h2>Precision Recall</h2>\n<center>\n');
         generate_img(fid, pr_file, 'height="400"');
         fprintf(fid, '\n</center><br><font size="3"><a href="index.html">Back to index</a><br></font>\n');        
         
+        % Images of the class
         fprintf(fid,'<h2>Images of class %s\n</h2>', classes{i});
         I = find(correct_label == i);
-        generate_imgtab(fid, target_dir, classifier, classes{i}, Ipaths, assigned_label, I, 'right', img_per_line, img_size, is_LSVM);
+        generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, I, 'right', img_per_line, img_size, is_LSVM);
         
         % Misclassified images, highest score
         fprintf(fid,'<h2>Images of other classes classified as %s\n</h2>', classes{i});
         I = find(assigned_label == i & correct_label ~= i);
-        generate_imgtab(fid, target_dir, classifier, classes{i}, Ipaths, assigned_label, I, 'wrong', img_per_line, img_size, is_LSVM);    
-    end
-    
-    fprintf(fid, '</body>\n</html>');
-    fclose(fid);
-     
-    close(f);   
+        generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, I, 'wrong', img_per_line, img_size, is_LSVM);    
+        
+        fprintf(fid, '</body>\n</html>');
+        fclose(fid);
+    end    
 end
 
-function generate_imgtab(fid, target_dir, classifier, class, Ipaths, assigned_label, I, type, img_per_line, img_size, is_LSVM)
+function generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, I, type, img_per_line, img_size, is_LSVM)
     fprintf(fid,'<table border="0" align="center"><tr>'); 
-    for j = 1:length(I)
-        if is_LSVM
-            path = lsvm_draw_boxes(target_dir, classifier, assigned_label(I(j)), Ipaths{I(j)}, class, type, j);
+    deb_line = 1;
+    num_img = length(I);
+    is_right = strcmp(type, 'right');
+    for j = 1:num_img
+        if 0
+            if is_LSVM
+                path = lsvm_draw_boxes(target_dir, classifier, assigned_label(I(j)), Ipaths{I(j)}, classes{i}, type, j);
+            else
+                path = sprintf('%s_%s_%d.png', classes{i}, type, j);
+                cmd = sprintf('cp %s %s', Ipaths{I(j)}, fullfile(target_dir,path));
+                system(cmd);
+            end
         else
-            path = sprintf('%s_%s_%d.png', class, type, j);
-            cmd = sprintf('cp %s %s', Ipaths{I(j)}, fullfile(target_dir,path));
-            system(cmd);
+            path = sprintf('%s_%s_%d.png', classes{i}, type, j);
         end
-        if mod(j-1,img_per_line) == 0 && j ~= 1
-           fprintf(fid, '</tr><tr>\n');
+        if mod(j-1,img_per_line) == 0 && j ~= 1 && j ~= num_img
+            fprintf(fid, '</tr>\n');
+            if is_right
+                generate_score_line(fid, score(I(deb_line:j-1), :), assigned_label(I(deb_line:j-1)), i, classes);
+            else
+                generate_score_line(fid, score(I(deb_line:j-1), :), assigned_label(I(deb_line:j-1)));
+            end
+            deb_line = j;
+            fprintf(fid, '<tr>\n');
         end
         fprintf(fid, '<td align="center">\n');
-        generate_img(fid, path, sprintf('height="%d"', img_size));
+        generate_img(fid, path, sprintf('height="%d" title="Original path: %s"', img_size, Ipaths{I(j)}));
         fprintf(fid, '</td>\n');
     end
-    fprintf(fid,'</tr></table>');
+    fprintf(fid,'</tr>\n');
+    if is_right
+        generate_score_line(fid, score(I(deb_line:num_img), :), assigned_label(I(deb_line:num_img)), i, classes);
+    else
+        generate_score_line(fid, score(I(deb_line:num_img), :), assigned_label(I(deb_line:num_img)));
+    end
+    fprintf(fid,'</table>');
     fprintf(fid, '<br><font size="3"><a href="index.html">Back to index</a><br></font>\n');    
+end
+
+function generate_score_line(fid, scores, assigned, id, classes)
+    fprintf(fid, '<tr>\n');
+    for i=1:length(assigned)
+        if nargin < 4
+            txt = sprintf('%0.2f', scores(i, assigned(i)));
+        else
+            if assigned(i) == id
+                color = '#00AA44';
+                class = '';
+            else
+                color = '#FF0000';
+                class = sprintf('<font size="2">&nbsp(%0.2f - %s)</font>', scores(i, assigned(i)), classes{assigned(i)});
+            end
+            txt = sprintf('<font color="%s">%0.2f%s</font>', color, scores(i, id), class);
+        end
+        fprintf(fid, '<td align="center">%s</td>\n', txt);
+    end
+    fprintf(fid, '</tr>\n');
 end
 
 function generate_img(fid, img_path, additional)
@@ -125,7 +225,7 @@ function generate_img(fid, img_path, additional)
 end
 
 
-function path = lsvm_draw_boxes(target_dir, classifier, assigned_label, img, class, type, i)
+function file = lsvm_draw_boxes(target_dir, classifier, assigned_label, img, class, type, i)
     [dets parts] = classifier.get_boxes(assigned_label, img);
     if ~isempty(dets)
         img = draw_boxes_on_img(img, dets, parts, 3);
@@ -144,9 +244,13 @@ function img = draw_boxes_on_img(img, dets, parts, width)
     parts = reshape(parts, 4, n_parts)';   
     
     colors = [255   0   0; ...
+              255   0   0; ...
+              255 255   0; ...
               255 255   0; ...
                 0 255   0; ...
-                0 255   255; ...                
+                0 255   0; ...
+                0 255   255; ...
+                0 255   255; ...
                 0   0 255];
     
     for i=2:n_parts

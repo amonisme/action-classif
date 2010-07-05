@@ -83,9 +83,6 @@ classdef NN < ClassifierAPI
         function str = toName(obj)
             str = 'NN';
         end
-        function obj = save_to_temp(obj)
-            obj.signature.save_to_temp();
-        end
     end
 end
 

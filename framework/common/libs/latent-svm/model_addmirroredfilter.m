@@ -7,5 +7,6 @@ function [m, symbol, filterind] = model_addmirroredfilter(m, fi)
 blocklabel = m.filters(fi).blocklabel;
 w = flipfeat(m.filters(fi).w);
 flip = ~m.filters(fi).flip;
-[m, symbol, filterind] = model_addfilter(m, w, 'M', ...
+type = m.filters(fi).type;  % MYMOD
+[m, symbol, filterind] = model_addfilter(m, w, 'M', type, ...
                                          blocklabel, flip);

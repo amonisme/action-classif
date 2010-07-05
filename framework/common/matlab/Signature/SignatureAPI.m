@@ -18,14 +18,13 @@ classdef SignatureAPI < handle
         learn(obj, Ipaths)
         
         % Return the signature of the Images
-        sigs = get_signatures(obj, Ipaths)        
+        sigs = get_signatures(obj, Ipaths, pg, offset, scale)        
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         str = toString(obj)
         str = toFileName(obj)
         str = toName(obj)
-        obj = save_to_temp(obj)
     end
     
     methods (Static)
@@ -59,12 +58,18 @@ classdef SignatureAPI < handle
                 write_log(sprintf('Features loaded from cache: %s.\n', file));
             else    
                 if USE_PARALLEL
-                    feat = run_in_parallel('DetectorAPI.run_parallel', detector, Ipaths, 0, 0, pg, offset, scale);
+                    if nargin >= 5
+                        feat = run_in_parallel('DetectorAPI.run_parallel', detector, Ipaths, 0, 0, pg, offset, scale);
+                    else
+                        feat = run_in_parallel('DetectorAPI.run_parallel', detector, Ipaths, 0, 0);
+                    end
                 else
                     n_img = size(Ipaths,1);
                     feat = cell(n_img, 1);
                     for k=1:n_img
-                        pg.progress(offset+scale*k/n_img);
+                        if nargin >= 5
+                            pg.progress(offset+scale*k/n_img);
+                        end
                         feat{k} = detector.get_features(Ipaths{k});
                     end
                 end
@@ -93,11 +98,17 @@ classdef SignatureAPI < handle
                 end
                 
                 if USE_PARALLEL
-                    descr = run_in_parallel('DescriptorAPI.run_parallel', descriptor, horzcat(Ipaths,feat), 0, 0, pg, offset, scale);
+                    if nargin >= 7
+                        descr = run_in_parallel('DescriptorAPI.run_parallel', descriptor, horzcat(Ipaths,feat), 0, 0, pg, offset, scale);
+                    else
+                        descr = run_in_parallel('DescriptorAPI.run_parallel', descriptor, horzcat(Ipaths,feat), 0, 0);
+                    end
                 else
                     descr = cell(n_img, 1);
                     for k=1:n_img
-                        pg.progress(offset+scale*k/n_img);
+                        if nargin >= 7
+                            pg.progress(offset+scale*k/n_img);
+                        end
                         descr{k} = descriptor.get_descriptors(Ipaths{k}, feat{k});
                     end
                 end      

@@ -252,7 +252,7 @@ void gd(double C, double J, data X, double **w, double **lb, char *logdir, char 
     int cnum = 0;
     for (int i = 0; i < num; i++)
       if (W[i] <= INCACHE)
-	cnum++;
+				cnum++;
 
     int numupdated = 0;
     for (int swapi = 0; swapi < num; swapi++) {
@@ -261,8 +261,8 @@ void gd(double C, double J, data X, double **w, double **lb, char *logdir, char 
 
       // skip if example is not in small cache
       if (W[i] > INCACHE) {
-	W[i]--;
-	continue;
+				W[i]--;
+				continue;
       }
 
       collapsed x = X.x[i];
@@ -289,7 +289,7 @@ void gd(double C, double J, data X, double **w, double **lb, char *logdir, char 
                "(delta = %.5f; stop count = %d)", 
                100*double(t)/double(ITER), max(delta, 0.0), 
                STOP_COUNT - stop_count + 1);
-	fflush(stdout);
+				fflush(stdout);
         if (converged)
           break;
       }
@@ -298,33 +298,33 @@ void gd(double C, double J, data X, double **w, double **lb, char *logdir, char 
       int M = -1;
       double V = -INFINITY;
       for (int m = 0; m < x.num; m++) {
-	double val = ex_score(x.seq[m], X, w);
-	if (val > V) {
-	  M = m;
-	  V = val;
-	}
+				double val = ex_score(x.seq[m], X, w);
+				if (val > V) {
+					M = m;
+					V = val;
+				}
       }
       
       char *ptr = x.seq[M];
       int label = LABEL(ptr);
       if (label * V < 1.0) {
         numupdated++;
-	W[i] = 0;
-	float *data = EX_DATA(ptr);
-	int blocks = NUM_NONZERO(ptr);
-	for (int j = 0; j < blocks; j++) {
-	  int b = BLOCK_IDX(data);
-	  double mult = (label > 0 ? J : -1) * rateX * X.learnmult[b];      
-	  data++;
-	  for (int k = 0; k < X.blocksizes[b]; k++)
-	    w[b][k] += mult * data[k];
-	  data += X.blocksizes[b];
-	}
+				W[i] = 0;
+				float *data = EX_DATA(ptr);
+				int blocks = NUM_NONZERO(ptr);
+				for (int j = 0; j < blocks; j++) {
+					int b = BLOCK_IDX(data);
+					double mult = (label > 0 ? J : -1) * rateX * X.learnmult[b];      
+					data++;
+					for (int k = 0; k < X.blocksizes[b]; k++)
+						w[b][k] += mult * data[k];
+					data += X.blocksizes[b];
+				}
       } else {
-	if (W[i] == INCACHE)
-          W[i] = MINWAIT + (int)(drand48()*50);
-	else
-	  W[i]++;
+				if (W[i] == INCACHE)
+						    W[i] = MINWAIT + (int)(drand48()*50);
+				else
+					W[i]++;
       }
 
       // periodically regularize the model
@@ -480,7 +480,7 @@ int main(int argc, char **argv) {
     X.componentblocks[i] = (int *)malloc(X.componentsizes[i]*sizeof(int));
     count = fread(X.componentblocks[i], sizeof(int), X.componentsizes[i], f);
     check(count == X.componentsizes[i]);
-    for (int j = 0; j < X.componentsizes[i]; j++)
+    for(int j = 0; j < X.componentsizes[i]; j++)
       printf(" %d", X.componentblocks[i][j]);
     printf("\n");
   }

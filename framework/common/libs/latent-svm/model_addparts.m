@@ -27,7 +27,7 @@ source = model.filters(filterind).w;
 pfilters = mkpartfilters(source, psize, numparts);
 
 for i = 1:numparts
-  [model, symbolf, fi] = model_addfilter(model, pfilters(i).w, sym);
+  [model, symbolf, fi] = model_addfilter(model, pfilters(i).w, sym, 'A');
   [model, N1] = model_addnonterminal(model);
 
   % add deformation rule
@@ -41,7 +41,7 @@ for i = 1:numparts
   model.rules{lhs}(ruleind).rhs = [model.rules{lhs}(ruleind).rhs N1];
   model.rules{lhs}(ruleind).anchor = [model.rules{lhs}(ruleind).anchor anchor1];
 
-  if ~isempty(partner)
+  if ~isempty(partner) && (model.filters(fi).type == 'H' || model.filters(fi).type == 'A')
     [model, symbolfp, fi] = model_addmirroredfilter(model, fi);
     [model, N2] = model_addnonterminal(model);
 

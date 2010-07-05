@@ -17,6 +17,7 @@ end
 
 % cache features
 fprintf('Caching features\n');
+feats = cell(1, length(warped));
 for i = 1:length(warped)
   fprintf('%d/%d\n', i, length(warped));
   feats{i} = features(warped{i}, model.sbin);

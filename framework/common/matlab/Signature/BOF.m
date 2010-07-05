@@ -324,24 +324,6 @@ classdef BOF < SignatureAPI
             detect = obj.detector.toFileName();
             descrp = obj.descriptor.toFileName();              
             str = sprintf('Kmeans[%s-%d-%d-%s-%s]', klib, obj.K, obj.zone, descrp, detect);
-        end   
-        
-        function obj = save_to_temp(obj)
-            global TEMP_DIR HASH_PATH;
-            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
-            
-            if ~exist(file, 'file') == 2
-                centers = obj.center;
-                train_sigs = obj.train_sigs;
-                save(file,'centers','train_sigs');
-            end
-            
-            file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName()));
-            
-            if ~exist(file, 'file') == 2
-                centers = obj.center;
-                save(file,'centers');
-            end
         end        
     end
 end

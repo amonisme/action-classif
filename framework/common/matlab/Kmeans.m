@@ -1,6 +1,6 @@
 classdef Kmeans < handle
     
-    properties (SetAccess = protected, GetAccess = protected)
+    properties (SetAccess = protected)
         K       % Number of centers
         lib     % Name of the lib
         lib_id  % id of the lib
@@ -39,7 +39,7 @@ classdef Kmeans < handle
         end
                
         %------------------------------------------------------------------
-        % prepare kmeans computation (one point per column)
+        % prepare kmeans computation (one point per line)
         function n = prepare_kmeans(obj, points)
             global FILE_BUFFER_PATH;
             
@@ -80,7 +80,37 @@ classdef Kmeans < handle
         end
         
         %------------------------------------------------------------------
-        function centers = do_kmeans(obj, file)         
+        % prepare kmeans computation (one point per line)
+        function prepare_kmeans_fused(obj, points)
+            global FILE_BUFFER_PATH;
+            
+            switch obj.lib_id
+                case 0  % vlfeat
+                    points = points';
+                    m = max(max(points));
+                    obj.points = uint8(255/m*points);
+                case {1, 3}  % vgg & mex
+                    obj.points = points';
+                case 2  % matlab
+                    obj.points = points;
+                case 4  % cpp             	
+                    file_in = fullfile(FILE_BUFFER_PATH,'input'); % if modified, modifiy also line 133 
+                        
+                    n = size(points, 1);
+                    dimension = size(points, 2);
+                    
+                    % Save data
+                    fid = fopen(file_in, 'w+');
+                    fwrite(fid, dimension, 'int32');
+                    fwrite(fid, n, 'int32');
+                    fwrite(fid, points', 'single');
+                    
+                    obj.points = dimension;
+            end
+        end        
+        
+        %------------------------------------------------------------------
+        function centers = do_kmeans(obj, file)
             if nargin >= 2 && exist(file,'file') == 2
                 load(file,'centers');
                 if exist('centers','var') ~= 1

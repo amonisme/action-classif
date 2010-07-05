@@ -1,0 +1,960 @@
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2010.3.17)  18 MAY 2010 15:59
+entering extended mode
+ %&-line parsing enabled.
+**paper.tex
+(./paper.tex
+LaTeX2e <2005/12/01>
+Babel <v3.8h> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, arabic, farsi, croatian, ukrainian, russian, bulgarian, czech, slov
+ak, danish, dutch, finnish, basque, french, german, ngerman, ibycus, greek, mon
+ogreek, ancientgreek, hungarian, italian, latin, mongolian, norsk, icelandic, i
+nterlingua, turkish, coptic, romanian, welsh, serbian, slovenian, estonian, esp
+eranto, uppersorbian, indonesian, polish, portuguese, spanish, catalan, galicia
+n, swedish, ukenglish, pinyin, loaded.
+(./bmvc2k.cls
+Document Class: bmvc2k 2010/01/29 BMVC Proceedings. v0.06
+(/usr/share/texmf-texlive/tex/latex/base/article.cls
+Document Class: article 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf-texlive/tex/latex/base/size10.clo
+File: size10.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf-texlive/tex/latex/graphics/color.sty
+Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
+
+(/etc/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package color Info: Driver file: pdftex.def on input line 130.
+
+(/usr/share/texmf-texlive/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2007/01/08 v0.04d Graphics/color for pdfTeX
+\Gread@gobject=\count87
+))
+(/usr/share/texmf-texlive/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf-texlive/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texmf-texlive/tex/latex/graphics/graphics.sty
+Package: graphics 2006/02/20 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf-texlive/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/etc/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: pdftex.def on input line 90.
+)
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+(/usr/share/texmf-texlive/tex/latex/subfigure/subfigure.sty
+Package: subfigure 2002/03/15 v2.1.5 subfigure package
+\subfigtopskip=\skip43
+\subfigcapskip=\skip44
+\subfigcaptopadj=\dimen105
+\subfigbottomskip=\skip45
+\subfigcapmargin=\dimen106
+\subfiglabelskip=\skip46
+\c@subfigure=\count88
+\c@lofdepth=\count89
+\c@subtable=\count90
+\c@lotdepth=\count91
+
+****************************************
+* Local config file subfigure.cfg used *
+****************************************
+(/usr/share/texmf-texlive/tex/latex/subfigure/subfigure.cfg)
+\subfig@top=\skip47
+\subfig@bottom=\skip48
+)
+(/usr/share/texmf-texlive/tex/latex/tools/xspace.sty
+Package: xspace 2006/05/08 v1.12 Space after command names (DPC,MH)
+)
+(/usr/share/texmf-texlive/tex/latex/eso-pic/eso-pic.sty
+Package: eso-pic 2006/07/14 v1.1d eso-pic (RN)
+
+(/usr/share/texmf-texlive/tex/latex/everyshi/everyshi.sty
+Package: everyshi 2001/05/15 v3.00 EveryShipout Package (MS)
+))
+(/usr/share/texmf-texlive/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2007/02/07 v6.75r Hypertext links for LaTeX
+\@linkdim=\dimen107
+\Hy@linkcounter=\count92
+\Hy@pagecounter=\count93
+
+(/usr/share/texmf-texlive/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2007/02/07 v6.75r Hyperref: PDFDocEncoding definition (HO)
+)
+(/etc/texmf/tex/latex/config/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
+)
+(/usr/share/texmf-texlive/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2006/08/22 v2.4 Connects package keyval with LaTeX options (
+HO)
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 2238.
+Package hyperref Info: Option `bookmarks' set `false' on input line 2238.
+Package hyperref Info: Hyper figures OFF on input line 2288.
+Package hyperref Info: Link nesting OFF on input line 2293.
+Package hyperref Info: Hyper index ON on input line 2296.
+Package hyperref Info: Plain pages OFF on input line 2303.
+Package hyperref Info: Backreferencing OFF on input line 2308.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks OFF on input line 2450.
+(/usr/share/texmf-texlive/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 2599.
+\Fld@menulength=\count94
+\Field@Width=\dimen108
+\Fld@charsize=\dimen109
+\Choice@toks=\toks15
+\Field@toks=\toks16
+Package hyperref Info: Hyper figures OFF on input line 3102.
+Package hyperref Info: Link nesting OFF on input line 3107.
+Package hyperref Info: Hyper index ON on input line 3110.
+Package hyperref Info: backreferencing OFF on input line 3117.
+Package hyperref Info: Link coloring ON on input line 3120.
+\Hy@abspage=\count95
+\c@Item=\count96
+\c@Hfootnote=\count97
+)
+*hyperref using default driver hpdftex*
+(/usr/share/texmf-texlive/tex/latex/hyperref/hpdftex.def
+File: hpdftex.def 2007/02/07 v6.75r Hyperref driver for pdfTeX
+\Fld@listcount=\count98
+)
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2000/07/18 v2.13 AMS math features
+\@mathmargin=\skip49
+
+For additional information on amsmath, use the `?' option.
+(/usr/share/texmf-texlive/tex/latex/amsmath/amstext.sty
+Package: amstext 2000/06/29 v2.01
+
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0
+\@emptytoks=\toks17
+\ex@=\dimen110
+))
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d
+\pmbraise@=\dimen111
+)
+(/usr/share/texmf-texlive/tex/latex/amsmath/amsopn.sty
+Package: amsopn 1999/12/14 v2.01 operator names
+)
+\inf@bad=\count99
+LaTeX Info: Redefining \frac on input line 211.
+\uproot@=\count100
+\leftroot@=\count101
+LaTeX Info: Redefining \overline on input line 307.
+\classnum@=\count102
+\DOTSCASE@=\count103
+LaTeX Info: Redefining \ldots on input line 379.
+LaTeX Info: Redefining \dots on input line 382.
+LaTeX Info: Redefining \cdots on input line 467.
+\Mathstrutbox@=\box26
+\strutbox@=\box27
+\big@size=\dimen112
+LaTeX Font Info:    Redeclaring font encoding OML on input line 567.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 568.
+\macc@depth=\count104
+\c@MaxMatrixCols=\count105
+\dotsspace@=\muskip11
+\c@parentequation=\count106
+\dspbrk@lvl=\count107
+\tag@help=\toks18
+\row@=\count108
+\column@=\count109
+\maxfields@=\count110
+\andhelp@=\toks19
+\eqnshift@=\dimen113
+\alignsep@=\dimen114
+\tagshift@=\dimen115
+\tagwidth@=\dimen116
+\totwidth@=\dimen117
+\lineht@=\dimen118
+\@envbody=\toks20
+\multlinegap=\skip50
+\multlinetaggap=\skip51
+\mathdisplay@stack=\toks21
+LaTeX Info: Redefining \[ on input line 2666.
+LaTeX Info: Redefining \] on input line 2667.
+)
+\bmv@CenterBoxtmp=\box28
+
+(/usr/share/texmf-texlive/tex/latex/geometry/geometry.sty
+Package: geometry 2002/07/08 v3.2 Page Geometry
+\Gm@cnth=\count111
+\Gm@cntv=\count112
+\c@Gm@tempcnt=\count113
+\Gm@bindingoffset=\dimen119
+\Gm@wd@mp=\dimen120
+\Gm@odd@mp=\dimen121
+\Gm@even@mp=\dimen122
+\Gm@dimlist=\toks22
+
+(/usr/share/texmf-texlive/tex/xelatex/xetexconfig/geometry.cfg))
+(/usr/share/texmf-texlive/tex/latex/base/fontenc.sty
+Package: fontenc 2005/09/27 v1.99g Standard LaTeX package
+
+(/usr/share/texmf-texlive/tex/latex/base/t1enc.def
+File: t1enc.def 2005/09/27 v1.99g Standard LaTeX file
+LaTeX Font Info:    Redeclaring font encoding T1 on input line 43.
+))
+(/usr/share/texmf-texlive/tex/latex/psnfss/mathptmx.sty
+Package: mathptmx 2005/04/12 PSNFSS-v9.2a Times w/ Math, improved (SPQR, WaS) 
+LaTeX Font Info:    Redeclaring symbol font `operators' on input line 28.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
+(Font)                  OT1/cmr/m/n --> OT1/ztmcm/m/n on input line 28.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
+(Font)                  OT1/cmr/bx/n --> OT1/ztmcm/m/n on input line 28.
+LaTeX Font Info:    Redeclaring symbol font `letters' on input line 29.
+LaTeX Font Info:    Overwriting symbol font `letters' in version `normal'
+(Font)                  OML/cmm/m/it --> OML/ztmcm/m/it on input line 29.
+LaTeX Font Info:    Overwriting symbol font `letters' in version `bold'
+(Font)                  OML/cmm/b/it --> OML/ztmcm/m/it on input line 29.
+LaTeX Font Info:    Redeclaring symbol font `symbols' on input line 30.
+LaTeX Font Info:    Overwriting symbol font `symbols' in version `normal'
+(Font)                  OMS/cmsy/m/n --> OMS/ztmcm/m/n on input line 30.
+LaTeX Font Info:    Overwriting symbol font `symbols' in version `bold'
+(Font)                  OMS/cmsy/b/n --> OMS/ztmcm/m/n on input line 30.
+LaTeX Font Info:    Redeclaring symbol font `largesymbols' on input line 31.
+LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `normal'
+(Font)                  OMX/cmex/m/n --> OMX/ztmcm/m/n on input line 31.
+LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `bold'
+(Font)                  OMX/cmex/m/n --> OMX/ztmcm/m/n on input line 31.
+\symbold=\mathgroup4
+\symitalic=\mathgroup5
+LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 34.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
+(Font)                  OT1/cmr/bx/n --> OT1/ptm/bx/n on input line 34.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `bold'
+(Font)                  OT1/cmr/bx/n --> OT1/ptm/bx/n on input line 34.
+LaTeX Font Info:    Redeclaring math alphabet \mathit on input line 35.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
+(Font)                  OT1/cmr/m/it --> OT1/ptm/m/it on input line 35.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
+(Font)                  OT1/cmr/bx/it --> OT1/ptm/m/it on input line 35.
+LaTeX Info: Redefining \hbar on input line 50.
+)
+(/usr/share/texmf-texlive/tex/latex/psnfss/helvet.sty
+Package: helvet 2005/04/12 PSNFSS-v9.2a (WaS) 
+)
+(/usr/share/texmf-texlive/tex/latex/psnfss/courier.sty
+Package: courier 2005/04/12 PSNFSS-v9.2a (WaS) 
+)
+\bmv@toks=\toks23
+\bmv@nauthors=\count114
+\bmv@ninsts=\count115
+\bmv@rulerbox=\box29
+\bmv@rulercount=\count116
+\bmv@ruleroffset=\dimen123
+\bmv@rulerlineheight=\dimen124
+\bmv@rulerboxheight=\dimen125
+\bmv@rulertmpbox=\box30
+\bmv@rulerrefno=\count117
+\bmv@rulertot=\count118
+\bmv@rulertmpc@=\count119
+\bmv@rulertmpc=\count120
+ (./bmvc2k_natbib.sty
+Package: bmvc2k_natbib 2007/10/30 8.1 (PWD)
+\bibhang=\skip52
+\bibsep=\skip53
+LaTeX Info: Redefining \cite on input line 602.
+\c@NAT@ctr=\count121
+)
+\bmv@citebox=\box31
+
+Finished loading BMVC2K) (/usr/share/texmf/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2007/01/21 v2.11 LaTeX color extensions (UK)
+
+(/etc/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package xcolor Info: Driver file: pdftex.def on input line 225.
+
+(/usr/share/texmf-texlive/tex/latex/colortbl/colortbl.sty
+Package: colortbl 2001/02/13 v0.1j Color table columns (DPC)
+
+(/usr/share/texmf-texlive/tex/latex/tools/array.sty
+Package: array 2005/08/23 v2.4b Tabular extension package (FMi)
+\col@sep=\dimen126
+\extrarowheight=\dimen127
+\NC@list=\toks24
+\extratabsurround=\skip54
+\backup@length=\skip55
+)
+\everycr=\toks25
+\minrowclearance=\skip56
+)
+LaTeX Info: Redefining \color on input line 702.
+\rownum=\count122
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1337.
+Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1341.
+Package xcolor Info: Model `RGB' extended on input line 1353.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1355.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1356.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1357.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1358.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1359.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1360.
+)
+(/usr/share/texmf-texlive/tex/latex/psnfss/times.sty
+Package: times 2005/04/12 PSNFSS-v9.2a (SPQR) 
+)
+(/usr/share/texmf-texlive/tex/latex/graphics/epsfig.sty
+Package: epsfig 1999/02/16 v1.7a (e)psfig emulation (SPQR)
+\epsfxsize=\dimen128
+\epsfysize=\dimen129
+)
+(/usr/share/texmf-texlive/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2002/01/22 v2.2d
+
+(/usr/share/texmf-texlive/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2001/10/25 v2.2f
+\symAMSa=\mathgroup6
+\symAMSb=\mathgroup7
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 132.
+))
+(/usr/share/texmf-texlive/tex/latex/multirow/multirow.sty
+\bigstrutjot=\dimen130
+)
+\bmv@box authname1 =\box32
+LaTeX Font Info:    Try loading font information for T1+phv on input line 57.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/t1phv.fd
+File: t1phv.fd 2001/06/04 scalable font definitions for T1/phv.
+)
+\bmv@box authnameFN1 =\box33
+LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 57
+.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/ot1ztmcm.fd
+File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
+)
+LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 57
+.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/omlztmcm.fd
+File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
+)
+LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 57
+.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/omsztmcm.fd
+File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
+)
+LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 57
+.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/omxztmcm.fd
+File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
+)
+LaTeX Font Info:    Try loading font information for OT1+ptm on input line 57.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+)
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 57.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 57.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 57.
+LaTeX Font Info:    Try loading font information for U+msa on input line 57.
+
+(/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 57.
+
+(/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2002/01/19 v2.2g AMS font definitions
+)
+\bmv@box authmail1 =\box34
+
+
+Package xcolor Warning: Incompatible color definition on input line 57.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 57.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 57.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 57.
+\bmv@cnt authinst1 =\count123
+\bmv@box authname2 =\box35
+\bmv@box authnameFN2 =\box36
+\bmv@box authmail2 =\box37
+
+Package xcolor Warning: Incompatible color definition on input line 58.
+
+\bmv@cnt authinst2 =\count124
+\bmv@box authname3 =\box38
+\bmv@box authnameFN3 =\box39
+\bmv@box authmail3 =\box40
+
+Package xcolor Warning: Incompatible color definition on input line 59.
+
+\bmv@cnt authinst3 =\count125
+\bmv@box inst1 =\box41
+\bmv@box instFN1 =\box42
+\bmv@box inst2 =\box43
+\bmv@box instFN2 =\box44
+(./paper.aux)
+\openout1 = `paper.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 105.
+LaTeX Font Info:    ... okay on input line 105.
+LaTeX Font Info:    Try loading font information for T1+ptm on input line 105.
+ (/usr/share/texmf-texlive/tex/latex/psnfss/t1ptm.fd
+File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
+)
+(/usr/share/texmf/tex/context/base/supp-pdf.tex
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count126
+\scratchdimen=\dimen131
+\scratchbox=\box45
+\nofMPsegments=\count127
+\nofMParguments=\count128
+\everyMPshowfont=\toks26
+\MPscratchCnt=\count129
+\MPscratchDim=\dimen132
+\MPnumerator=\count130
+\everyMPtoPDFconversion=\toks27
+) ABD: EveryShipout initializing macros
+Package hyperref Info: Link coloring ON on input line 105.
+
+(/usr/share/texmf-texlive/tex/latex/hyperref/nameref.sty
+Package: nameref 2006/12/27 v2.28 Cross-referencing by name of section
+
+(/usr/share/texmf-texlive/tex/latex/oberdiek/refcount.sty
+Package: refcount 2006/02/20 v3.0 Data extraction from references (HO)
+)
+\c@section@level=\count131
+)
+LaTeX Info: Redefining \ref on input line 105.
+LaTeX Info: Redefining \pageref on input line 105.
+-------------------- Geometry parameters
+paper: user defined
+landscape: --
+twocolumn: --
+twoside: true
+asymmetric: --
+h-parts: 25.60747pt, 367.32089pt, 17.07164pt
+v-parts: 8.53581pt, 597.23782pt, 14.22636pt
+hmarginratio: --
+vmarginratio: --
+lines: --
+heightrounded: true
+bindingoffset: 0.0pt
+truedimen: --
+includehead: true
+includefoot: --
+includemp: --
+driver: pdftex
+-------------------- Page layout dimensions and switches
+\paperwidth  410.0pt
+\paperheight 620.0pt
+\textwidth  367.32089pt
+\textheight 574.0pt
+\oddsidemargin  -46.66252pt
+\evensidemargin -55.19835pt
+\topmargin  -63.73418pt
+\headheight 12.0pt
+\headsep    8.53581pt
+\footskip   30.0pt
+\marginparwidth 121.0pt
+\marginparsep   11.0pt
+\columnsep  10.0pt
+\skip\footins  9.0pt plus 4.0pt minus 2.0pt
+\hoffset 0.0pt
+\voffset 0.0pt
+\mag 1000
+\@twosidetrue \@mparswitchtrue 
+(1in=72.27pt, 1cm=28.45pt)
+-----------------------
+LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <17.28> not available
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 109.
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <17.28> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 109.
+
+
+Package xcolor Warning: Incompatible color definition on input line 109.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 109.
+LaTeX Font Info:    Try loading font information for OMS+ptm on input line 109.
+
+(/usr/share/texmf-texlive/tex/latex/psnfss/omsptm.fd
+File: omsptm.fd 
+)
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <8> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 109.
+LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <9> not available
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 111.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 126.
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 132.
+
+LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <14.4> not available
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 174.
+
+Package xcolor Warning: Incompatible color definition on input line 174.
+
+
+
+pdfTeX warning: pdflatex (file ./figs/my_dataset_cropped.pdf): PDF inclusion: f
+ound PDF version <1.6>, but at most version <1.4> allowed
+<figs/my_dataset_cropped.pdf, id=14, 773.20209pt x 455.03401pt>
+File: figs/my_dataset_cropped.pdf Graphic file (type pdf)
+
+<use figs/my_dataset_cropped.pdf>
+
+Package xcolor Warning: Incompatible color definition on input line 194.
+
+BMVC cite {Bobick and Davis} 2001
+
+Package xcolor Warning: Incompatible color definition on input line 202.
+
+BMVC cite {Laptev, Marsza{\T1\l }ek, Schmid, and Rozenfeld} 2008
+
+Package xcolor Warning: Incompatible color definition on input line 202.
+
+BMVC cite {Moeslund, Hilton, and Kruger} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 202.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 207.
+
+BMVC cite {Ikizler, Cinbis, Pehlivan, and Duygulu} 2008
+
+Package xcolor Warning: Incompatible color definition on input line 207.
+
+BMVC cite {Li and Li} 2007
+
+Package xcolor Warning: Incompatible color definition on input line 207.
+
+BMVC cite {Wang, Jiang, Drew, Li, and Mori} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 207.
+
+
+BMVC cite {Ikizler-Cinbis, Gokberk\protect \unhbox \voidb@x \penalty \@M \ {}Ci
+nbis, and Sclaroff} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 207.
+
+[1
+
+] BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Ikizler, Cinbis, Pehlivan, and Duygulu} 2008
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Wang, Jiang, Drew, Li, and Mori} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Ikizler, Cinbis, Pehlivan, and Duygulu} 2008
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Wang, Jiang, Drew, Li, and Mori} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Li and Li} 2007
+
+Package xcolor Warning: Incompatible color definition on input line 209.
+
+BMVC cite {Zhang, Marsza{\T1\l }ek, Lazebnik, and Schmid} 2007
+
+Package xcolor Warning: Incompatible color definition on input line 213.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 213.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 213.
+
+[2 <./figs/my_dataset_cropped.pdf
+
+pdfTeX warning: pdflatex (file ./figs/my_dataset_cropped.pdf): PDF inclusion: P
+age Group detected which pdfTeX can't handle. Ignoring it.
+>]
+
+Package xcolor Warning: Incompatible color definition on input line 241.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 246.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 248.
+
+LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 257.
+
+Package xcolor Warning: Incompatible color definition on input line 271.
+
+BMVC cite {Lazebnik, Schmid, and Ponce} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 276.
+
+BMVC cite {Sch{ö}lkopf and Smola} 2002
+
+Package xcolor Warning: Incompatible color definition on input line 277.
+
+BMVC cite {Lazebnik, Schmid, and Ponce} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 291.
+
+BMVC cite {Bosch, Zisserman, and Munoz} 2007
+
+Package xcolor Warning: Incompatible color definition on input line 291.
+
+BMVC cite {Lazebnik, Schmid, and Ponce} 2006
+
+Package xcolor Warning: Incompatible color definition on input line 291.
+
+BMVC cite {Laptev, Marsza{\T1\l }ek, Schmid, and Rozenfeld} 2008
+
+Package xcolor Warning: Incompatible color definition on input line 291.
+
+[3]
+
+Package mathptmx Warning: There are no bold math fonts on input line 313.
+
+BMVC cite {Vedaldi, Gulshan, Varma, and Zisserman} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 316.
+
+BMVC cite {Zhang, Marsza{\T1\l }ek, Lazebnik, and Schmid} 2007
+
+Package xcolor Warning: Incompatible color definition on input line 325.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 332.
+
+[4] BMVC cite {Dalal and Triggs} 2005
+
+Package xcolor Warning: Incompatible color definition on input line 352.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 352.
+
+
+Package xcolor Warning: Incompatible color definition on input line 360.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 366.
+
+BMVC cite {Felzenszwalb and Huttenlocher} 2005
+
+Package xcolor Warning: Incompatible color definition on input line 368.
+
+BMVC cite {Fischler and Elschlager} 1973
+
+Package xcolor Warning: Incompatible color definition on input line 368.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 369.
+
+BMVC cite {Yu and Joachims} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 369.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 370.
+
+BMVC cite {ped} 
+
+Package xcolor Warning: Incompatible color definition on input line 379.
+
+BMVC cite {Harzallah, Jurie, and Schmid} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 399.
+
+[5]
+
+Package xcolor Warning: Incompatible color definition on input line 428.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 436.
+
+<figs/caseA_error_BOF_PYR.pdf, id=210, 514.92375pt x 413.545pt>
+File: figs/caseA_error_BOF_PYR.pdf Graphic file (type pdf)
+
+<use figs/caseA_error_BOF_PYR.pdf>
+<figs/caseA_error_PYR.pdf, id=211, 511.9125pt x 405.515pt>
+File: figs/caseA_error_PYR.pdf Graphic file (type pdf)
+
+<use figs/caseA_error_PYR.pdf>
+<figs/legend.pdf, id=212, 128.48pt x 299.1175pt>
+File: figs/legend.pdf Graphic file (type pdf)
+ <use figs/legend.pdf>
+
+Package xcolor Warning: Incompatible color definition on input line 470.
+
+[6 <./figs/caseA_error_BOF_PYR.pdf> <./figs/caseA_error_PYR.pdf> <./figs/legend
+.pdf>] BMVC cite {Uijlings, Smeulders, and Scha} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 491.
+
+BMVC cite {Zhang, Marsza{\T1\l }ek, Lazebnik, and Schmid} 2007
+
+Package xcolor Warning: Incompatible color definition on input line 491.
+
+
+Package xcolor Warning: Incompatible color definition on input line 522.
+
+
+Package xcolor Warning: Incompatible color definition on input line 543.
+
+[7]
+
+Package xcolor Warning: Incompatible color definition on input line 614.
+
+
+<figs/misC2_PlayingMusic_instead_RidingHorse_img0062.png, id=256, 747.79375pt x
+ 501.875pt>
+File: figs/misC2_PlayingMusic_instead_RidingHorse_img0062.png Graphic file (typ
+e png)
+ <use figs/misC2_PlayingMusic_instead_RidingHorse_img0062.png>
+<figs/misC2_Photographing_instead_PlayingMusic_img0160.png, id=257, 380.42125pt
+ x 501.875pt>
+File: figs/misC2_Photographing_instead_PlayingMusic_img0160.png Graphic file (t
+ype png)
+ <use figs/misC2_Photographing_instead_PlayingMusic_img0160.png>
+<figs/misC2_RidingHorse_instead_Running_img0037.png, id=258, 805.0075pt x 501.8
+75pt>
+File: figs/misC2_RidingHorse_instead_Running_img0037.png Graphic file (type png
+)
+ <use figs/misC2_RidingHorse_instead_Running_img0037.png>
+<figs/misC2_RidingHorse_instead_Walking_img0073.png, id=259, 390.45876pt x 501.
+875pt>
+File: figs/misC2_RidingHorse_instead_Walking_img0073.png Graphic file (type png
+)
+ <use figs/misC2_RidingHorse_instead_Walking_img0073.png>
+<figs/misC2_InteractingWithComputer_instead_PlayingMusic_img0002.png, id=260, 5
+58.085pt x 501.875pt>
+File: figs/misC2_InteractingWithComputer_instead_PlayingMusic_img0002.png Graph
+ic file (type png)
+
+<use figs/misC2_InteractingWithComputer_instead_PlayingMusic_img0002.png>
+
+Package xcolor Warning: Incompatible color definition on input line 753.
+
+
+<figs/misLSVM_PlayingMusic_instead_Photographing_img0009.png, id=261, 791.95876
+pt x 501.875pt>
+File: figs/misLSVM_PlayingMusic_instead_Photographing_img0009.png Graphic file 
+(type png)
+
+<use figs/misLSVM_PlayingMusic_instead_Photographing_img0009.png>
+<figs/misLSVM_PlayingMusic_instead_RidingBike_img0032.png, id=262, 334.24875pt 
+x 501.875pt>
+File: figs/misLSVM_PlayingMusic_instead_RidingBike_img0032.png Graphic file (ty
+pe png)
+ <use figs/misLSVM_PlayingMusic_instead_RidingBike_img0032.png>
+<figs/misLSVM_PlayingMusic_instead_RidingHorse_img0032.png, id=263, 670.505pt x
+ 501.875pt>
+File: figs/misLSVM_PlayingMusic_instead_RidingHorse_img0032.png Graphic file (t
+ype png)
+ <use figs/misLSVM_PlayingMusic_instead_RidingHorse_img0032.png>
+<figs/misLSVM_RidingHorse_instead_RidingBike_img0192.png, id=264, 669.50125pt x
+ 501.875pt>
+File: figs/misLSVM_RidingHorse_instead_RidingBike_img0192.png Graphic file (typ
+e png)
+ <use figs/misLSVM_RidingHorse_instead_RidingBike_img0192.png>
+<figs/misLSVM_Running_instead_Photographing_img0114.png, id=265, 346.29375pt x 
+501.875pt>
+File: figs/misLSVM_Running_instead_Photographing_img0114.png Graphic file (type
+ png)
+ <use figs/misLSVM_Running_instead_Photographing_img0114.png>
+
+Package xcolor Warning: Incompatible color definition on input line 780.
+
+
+<figs/misLSVMC2_InteractingWithComputer_instead_PlayingMusic_img0154.png, id=26
+6, 669.50125pt x 501.875pt>
+File: figs/misLSVMC2_InteractingWithComputer_instead_PlayingMusic_img0154.png G
+raphic file (type png)
+
+<use figs/misLSVMC2_InteractingWithComputer_instead_PlayingMusic_img0154.png>
+<figs/misLSVMC2_Walking_instead_Photographing_img0117.png, id=267, 647.41875pt 
+x 501.875pt>
+File: figs/misLSVMC2_Walking_instead_Photographing_img0117.png Graphic file (ty
+pe png)
+ <use figs/misLSVMC2_Walking_instead_Photographing_img0117.png>
+<figs/misLSVMC2_RidingBike_instead_RidingHorse_img0125.png, id=268, 727.71875pt
+ x 501.875pt>
+File: figs/misLSVMC2_RidingBike_instead_RidingHorse_img0125.png Graphic file (t
+ype png)
+ <use figs/misLSVMC2_RidingBike_instead_RidingHorse_img0125.png>
+<figs/misLSVMC2_Running_instead_Walking_img0060.png, id=269, 376.40625pt x 501.
+875pt>
+File: figs/misLSVMC2_Running_instead_Walking_img0060.png Graphic file (type png
+)
+ <use figs/misLSVMC2_Running_instead_Walking_img0060.png>
+<figs/misLSVMC2_PlayingMusic_instead_InteractingWithComputer_img0036.png, id=27
+0, 376.40625pt x 501.875pt>
+File: figs/misLSVMC2_PlayingMusic_instead_InteractingWithComputer_img0036.png G
+raphic file (type png)
+
+<use figs/misLSVMC2_PlayingMusic_instead_InteractingWithComputer_img0036.png>
+
+Package xcolor Warning: Incompatible color definition on input line 808.
+
+LaTeX Font Info:    Font shape `T1/ptm/bx/it' in size <10> not available
+(Font)              Font shape `T1/ptm/b/it' tried instead on input line 815.
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 815.
+
+[8 <./figs/misC2_PlayingMusic_instead_RidingHorse_img0062.png (PNG copy)> <./fi
+gs/misC2_Photographing_instead_PlayingMusic_img0160.png (PNG copy)> <./figs/mis
+C2_RidingHorse_instead_Running_img0037.png (PNG copy)> <./figs/misC2_RidingHors
+e_instead_Walking_img0073.png (PNG copy)> <./figs/misC2_InteractingWithComputer
+_instead_PlayingMusic_img0002.png (PNG copy)> <./figs/misLSVM_PlayingMusic_inst
+ead_Photographing_img0009.png (PNG copy)> <./figs/misLSVM_PlayingMusic_instead_
+RidingBike_img0032.png (PNG copy)> <./figs/misLSVM_PlayingMusic_instead_RidingH
+orse_img0032.png (PNG copy)> <./figs/misLSVM_RidingHorse_instead_RidingBike_img
+0192.png (PNG copy)> <./figs/misLSVM_Running_instead_Photographing_img0114.png 
+(PNG copy)>] BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 843.
+
+
+Package xcolor Warning: Incompatible color definition on input line 848.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 848.
+
+
+Package xcolor Warning: Incompatible color definition on input line 872.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 879.
+
+BMVC cite {Gupta, Kembhavi, and Davis} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 881.
+
+BMVC cite {Dalal and Triggs} 2005
+
+Package xcolor Warning: Incompatible color definition on input line 883.
+
+BMVC cite {Felzenszwalb, Girshick, McAllester, and Ramanan} 2009
+
+Package xcolor Warning: Incompatible color definition on input line 883.
+
+
+Overfull \hbox (6.91498pt too wide) in paragraph at lines 878--884
+\T1/ptm/m/n/10 We have stud-ied the per-for-mance of the bag-of-features clas-s
+i-fier and the la-tent SVM model [[]]
+ []
+
+(./paper.bbl
+
+Package xcolor Warning: Incompatible color definition on input line 1.
+
+
+Underfull \vbox (badness 6380) has occurred while \output is active []
+
+ [9 <./figs/misLSVMC2_InteractingWithComputer_instead_PlayingMusic_img0154.png 
+(PNG copy)> <./figs/misLSVMC2_Walking_instead_Photographing_img0117.png (PNG co
+py)> <./figs/misLSVMC2_RidingBike_instead_RidingHorse_img0125.png (PNG copy)> <
+./figs/misLSVMC2_Running_instead_Walking_img0060.png (PNG copy)> <./figs/misLSV
+MC2_PlayingMusic_instead_InteractingWithComputer_img0036.png (PNG copy)>] [10])
+ [11]
+(./paper.aux) ) 
+Here is how much of TeX's memory you used:
+ 5915 strings out of 94074
+ 80523 string characters out of 1165153
+ 156581 words of memory out of 1500000
+ 8959 multiletter control sequences out of 10000+50000
+ 85141 words of font info for 128 fonts, out of 1200000 for 2000
+ 645 hyphenation exceptions out of 8191
+ 41i,15n,37p,1458b,464s stack positions out of 5000i,500n,6000p,200000b,5000s
+{/usr/share/texmf-texlive/fonts/enc/dvips/base/8r.enc}</usr/shar
+e/texmf-texlive/fonts/type1/bluesky/cm/cmmi10.pfb></usr/share/texmf-texlive/fon
+ts/type1/bluesky/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/
+cmsy10.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmsy8.pfb></usr/sha
+re/texmf-texlive/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texmf-texlive/
+fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/s
+ymbol/usyr.pfb></usr/share/texmf-texlive/fonts/type1/urw/symbol/usyr.pfb></usr/
+share/texmf-texlive/fonts/type1/urw/times/utmb8a.pfb></usr/share/texmf-texlive/
+fonts/type1/urw/times/utmbi8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/tim
+es/utmr8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmr8a.pfb></usr/
+share/texmf-texlive/fonts/type1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (11 pages, 7799990 bytes).
+PDF statistics:
+ 396 PDF objects out of 1000 (max. 8388607)
+ 63 named destinations out of 1000 (max. 131072)
+ 424 words of extra memory for PDF output out of 10000 (max. 10000000)
+

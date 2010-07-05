@@ -1,4 +1,4 @@
-function test_feifei_svm(db)
+function test_feifei_svm(db, size, levels)
     cd '/data/vdelaitr/src/framework';
     set_cluster_config;
     global USE_PARALLEL SHOW_BAR FILE_BUFFER_PATH;
@@ -6,7 +6,7 @@ function test_feifei_svm(db)
     SHOW_BAR = 1;    
     FILE_BUFFER_PATH = '../../temp';
 
-    classifier = SVM({BOF(MS_Dense, SIFT(L2Trunc), 1024, L1, 2)}, {Intersection});
+    classifier = LogisticSVM({BOF(MS_Dense(6), SIFT(L2Trunc), size, L1, levels)}, {Intersection});
     
     evaluate(classifier, '/data/vdelaitr/FeiFeiNorm', db, fullfile('/data/vdelaitr/', sprintf('SVM_%s', db)));
 end
