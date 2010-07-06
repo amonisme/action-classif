@@ -40,9 +40,13 @@
 \usepackage{graphicx}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
+\usepackage{color}
 
 \def\etal{\emph{et al}.}
 \def\v#1{\protect\vec #1}
+\definecolor{mygreen}{rgb}{0.0,0.6,0.1}
+\newcommand{\ok}[1]{{\small \scriptsize  \color{mygreen} #1}} 
+\newcommand{\bad}[1]{{\small \scriptsize  \color{red} #1}} 
 
 %==============================================================================
 
@@ -113,6 +117,10 @@ We mesure the performances using:
 
 %==============================================================================
 \section{Bag-of-features classifier}
+\begin{frame}
+\tableofcontents[currentsection]
+\end{frame}
+
 
 \begin{frame}
 \frametitle{Bag-of-features classifier}
@@ -181,22 +189,230 @@ kernel parameters.
 
 We consider the following four approaches:
 \begin{enumerate}
-\item[A.] {\bf ``Person"} 
-\item[B.] {\bf ``Image"} 
-\item[C1.] {\bf ``Person+Background''} 
-\item[C2.] {\bf ``Person+Image''}
+\item[A.] {\bf \color<2,3,4>{gray}``Person"} 
+\only<1>{Images cropped to $1.5 \times$ the size of the bounding box. Resize so that the larger dimension is 300 pixels.}
+
+\item[B.] {\bf \color<1,3,4>{gray} ``Image"} 
+\only<2> {Histograms are computed on the full image. Image resized so that the larger dimension is 500 pixels.}
+
+\item[C1.] {\bf \color<1,2,4>{gray} ``Person+Background''} 
+\only<3> {Background is represented only with a BOF histogram. Kernel values between two images $\v x$ and $\v y$ 
+is the sum of two kernels over the foreground and the background: $K(\v x,\v y)=K(\v x_f,\v y_f)+K(\v x_b,\v y_b)$}
+
+\item[C2.] {\bf \color<1,2,3>{gray} ``Person+Image''}
+\only<4> {This setup is similar to C1, however, instead of the background
+region, 2-level spatial pyramid representation of the entire image is used.}
+
 \end{enumerate}
 
+\only<1-2>{
+$~$
+
+$~$
+}
+
+\only<4>{
+$~$
+}
+
+\only<1> {\hspace{1cm}\includegraphics[scale=0.9]{figs/histo_person.pdf}}
+\only<2> {\hspace{1cm}\includegraphics[scale=0.9]{figs/histo_image.pdf}}
+\only<3> {\hspace{1cm}\includegraphics[scale=0.9]{figs/histo_person_backgnd.pdf}}
+\only<4> {\hspace{1cm}\includegraphics[scale=0.9]{figs/histo_person_image.pdf}}
+
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+
+\subsection{Results}
+\begin{frame}
+\frametitle{Bag-of-features classifier: Results}
+
+\begin{figure}[tbp]
+\centering \small
+\begin{tabular}{cc}
+\includegraphics[height=.3\linewidth]{figs/caseA_error_BOF_PYR.pdf} &
+\includegraphics[height=.3\linewidth]{figs/caseA_error_PYR.pdf}
+\includegraphics[height=.3\linewidth]{figs/legend.pdf}\\
+(a) & (b)  \\
+\end{tabular}
+\caption{Classification performance (cross-validation mAP vs. test mAP) for different parameter settings for the method ``A. Person". (a) 2-levels spatial pyramid vs. the bag-of-feature representation.  (b) Classification performance for different combinations of kernels  and vocabulary sizes using the 2-levels spatial pyramid representation. The standard deviation of the validation mAP is typically 2-3\%.
+}
+ \label{fig:caseA}
+\end{figure}
+
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+
+\begin{frame}
+\frametitle{Bag-of-features classifier: Results}
+
+In the following we use the best parameters for validation time of method ``A. Person": visual dictionnary size K = 1024 and intersection kernel.
+We analyse the influence of context:
+
+\begin{table}[tbp]
+\centering
+%\rowcolors[]{1}{white}{gray!10}
+\begin{tabular}{|l|c|c|}
+\hline
+ Method                   &$~~~$mAP$~~~$&  Accuracy  \\ \hline 
+ A.  Person          &  $61.48$ &  $59.08$ \\ \hline 
+ B.  Image           &  $62.83$ &  $60.24 $ \\ \hline 
+ C1. Person+Background&  $63.96$ &  $62.65$ \\ \hline 
+ C2. BOF Person+Image     &  $70.43$ &  $67.01$ \\ \hline 
+\end{tabular}
+\caption{The overall classification performance for the different methods.}
+\label{tab:methods}
+\end{table}
+
+
+\end{frame}
+
+%==============================================================================
+\section{Discriminatively trained part-based model}
+\begin{frame}
+\tableofcontents[currentsection]
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+\subsection{The latent SVM}
+\begin{frame}
+\frametitle{The latent SVM}
+
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+\subsection{Combining part-based model and bag-of-features}
+\begin{frame}
+\frametitle{Combining part-based model and bag-of-features}
+
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+\subsection{Results}
+\begin{frame}
+\frametitle{Results}
+
+\begin{table}[tbp]
+\centering
+%\rowcolors[]{1}{white}{gray!10}
+\begin{tabular}{|l||c|c|c|}
+\hline
+ Action /  Method & $~~$BOF C2$~~$ & $~~$LSVM$~~$ & $~$LSVM+ BOF C2$~$ \\ \hline 
+(1) Inter. w/ Comp. & ${\bf 84.21}$ & $42.11$ & ${\bf 84.21}$\\ \hline 
+(2) Photographing   & ${\bf 35.53}$ & $21.05$ & $30.26$\\ \hline 
+(3) Playing Music   & $62.39$ & ${\bf 80.34}$ & $70.94$\\ \hline 
+(4) Riding Bike     & $80.85$ & $63.83$ & ${\bf 84.40}$\\ \hline 
+(5) Riding Horse    & ${\bf 71.43}$ & $67.86$ & ${\bf 71.43}$\\ \hline 
+(6) Running         & $55.00$ & $51.25$ & ${\bf 61.25}$\\ \hline 
+(7) Walking         & ${\bf 79.66}$ & $72.88$ & $78.81$\\ \hline  \hline
+ Average (mAP)      & $67.01$ & $57.05$ & ${\bf 68.76}$\\ \hline 
+\end{tabular}
+\caption{Per-class accuracy across different methods.}
+\label{tab:per_class}
+\end{table}
+
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+\subsection{Results}
+\begin{frame}
+\frametitle{Results}
+
+\begin{figure}[ht]
+\centering
+%\rowcolors[]{1}{white}{gray!10}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+&
+\includegraphics[height=.13\linewidth]{figs/misC2_Photographing_instead_PlayingMusic_img0160.png}
+&
+\includegraphics[height=.13\linewidth]{figs/misC2_RidingHorse_instead_Walking_img0073.png}
+&
+\includegraphics[height=.14\linewidth]{figs/misLSVM_PlayingMusic_instead_RidingBike_img0032.png}
+&
+\includegraphics[height=.14\linewidth]{figs/misLSVM_Running_instead_Photographing_img0114.png}
+&
+\includegraphics[height=.14\linewidth]{figs/misLSVMC2_PlayingMusic_instead_InteractingWithComputer_img0036.png}\\
+\hline
+\tiny LSVM+C2: & \ok{\tiny PlayingMusic}   & \ok{\tiny Walking}      & \ok{\tiny RidingBike}    & \ok{\tiny Photograph.}  &  \bad{\tiny PlayingMusic} \\ \hline
+\tiny C2:      & \bad{\tiny Photograping}  & \bad{\tiny RidingHorse} & \tiny ???                & \tiny ???               & \tiny ???\\ \hline
+\tiny LSVM:    & \tiny ???                 & \tiny ???               & \bad{\tiny PlayingMusic} & \bad{\tiny RidingHorse} & \tiny ???\\ \hline
+\end{tabular}
+\caption{Example of images}
+\label{fig:corr1}
+\end{figure}
 \end{frame}
 
 
 %==============================================================================
-\section{Discriminatively trained part-based model}
+\section{Testing on other databases}
+\begin{frame}
+\tableofcontents[currentsection]
+\end{frame}
 
 
-%==============================================================================
-\section{Experimental results}
+\subsection{The sports dataset}
+\begin{frame}
+\frametitle{The sports dataset}
+
+This is a sports dataset proposed by Gupta \etal with six classes:
+
+\center 
+\includegraphics[height=0.6\linewidth]{figs/sport.png}
+
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+\begin{frame}
+\frametitle{The sports dataset}
+
+We kept the same parameters as the results reported previously:
+
+\begin{table}[t]
+\centering
+%\rowcolors[]{1}{white}{gray!10}
+\begin{tabular}{|l||l|l|}
+\hline
+Method  				             & mAP	           & Accuracy  \\ \hline 
+Gupta~\etal~~\cite{Gupta09}	 & --	             &  $78.67$ \\ \hline 
+BOF Image (B) 		 	         &  91.30 	       & ${\bf 85.00} $ \\ \hline 
+LSVM 			  		             & 77.19	         & $ 73.33 $ \\ \hline 
+LSVM + BOF Image (B)		     & {\bf 91.55}     & $ {\bf 85.00} $ \\ \hline 
+\end{tabular}
+\caption{Comparison with the method of Gupta~\etal on their dataset.}
+\label{tab:gupta}
+\end{table}
+
+\end{frame}
 
 
+%------------------------------------------------------------------------------ 
+\subsection{The People-playing-musical-instrument (PPMI) dataset}
+\begin{frame}
+\frametitle{The People-playing-musical-instrument (PPMI) dataset}
+
+This is a dataset proposed by Fei-Fei \etal with people playing or only holding an instrument.
+There are seven different instruments. 
+
+\center 
+\includegraphics[height=0.6\linewidth]{figs/ppmi.png}
+
+\end{frame}
+
+
+%------------------------------------------------------------------------------ 
+\begin{frame}
+\frametitle{The People-playing-musical-instrument (PPMI) dataset}
+Results...
+\end{frame}
+
+%------------------------------------------------------------------------------ 
+\begin{frame}
+\frametitle{Conclusion}
+
+
+\end{frame}
 
 \end{document}

@@ -386,7 +386,6 @@ classdef BOFLSVM < ClassifierAPI
                         common = struct('model', obj.models{i}, 'overlaps', overlaps);
                         args = struct('Ipaths', Ipaths, 'feat', feat, 'descr', descr);
                         scores{i} = run_in_parallel('BOFLSVM.classify_img_parallel', common, args, [], 0, pg, (i-1)/n_classes, 1/n_classes);
-                        scores{i} = obj.classify_img(obj.models{i}, Ipaths, overlaps);
                     end
                     scores = cat(1, scores{:});                   
                 else            
