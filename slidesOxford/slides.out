@@ -1,5 +1,14 @@
 \BOOKMARK [2][]{Outline0.1}{Introducing a new dataset}{}
 \BOOKMARK [2][]{Outline0.2}{Bag-of-features classifier}{}
-\BOOKMARK [3][]{Outline0.2.1.7}{Image representation}{Outline0.2}
-\BOOKMARK [3][]{Outline0.2.2.8}{SVM Classification}{Outline0.2}
-\BOOKMARK [3][]{Outline0.2.3.9}{Using context information}{Outline0.2}
+\BOOKMARK [3][]{Outline0.2.1.8}{Image representation}{Outline0.2}
+\BOOKMARK [3][]{Outline0.2.2.9}{SVM Classification}{Outline0.2}
+\BOOKMARK [3][]{Outline0.2.3.10}{Using context information}{Outline0.2}
+\BOOKMARK [3][]{Outline0.2.4.14}{Results}{Outline0.2}
+\BOOKMARK [2][]{Outline0.3}{Discriminatively trained part-based model}{}
+\BOOKMARK [3][]{Outline0.3.1.17}{The latent SVM}{Outline0.3}
+\BOOKMARK [3][]{Outline0.3.2.18}{Combining part-based model and bag-of-features}{Outline0.3}
+\BOOKMARK [3][]{Outline0.3.3.19}{Results}{Outline0.3}
+\BOOKMARK [3][]{Outline0.3.4.20}{Results}{Outline0.3}
+\BOOKMARK [2][]{Outline0.4}{Testing on other databases}{}
+\BOOKMARK [3][]{Outline0.4.1.22}{The sports dataset}{Outline0.4}
+\BOOKMARK [3][]{Outline0.4.2.24}{The People-playing-musical-instrument \(PPMI\) dataset}{Outline0.4}
