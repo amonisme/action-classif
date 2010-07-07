@@ -30,7 +30,7 @@ function [feat descr] = run_colorDescriptor(Ipath, args, load_feat)
     output_file = fullfile(back,dir,'output');
     args = sprintf('%s%s --output %s --outputFormat binary %s', back, Ipath, output_file, args);
     cmd = [cmd args];
-    [st res] = system(cmd);
+    [st res] = system(cmd);    
     [feat descr] = read_output(output_file);
 end
 

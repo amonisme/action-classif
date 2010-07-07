@@ -1,4 +1,4 @@
-function model = initmodel(cls, pos, note, centers, symmetry, sbin, sz)
+function model = initmodel(cls, pos, note, symmetry, sbin, sz)
 
 % model = initmodel(cls, pos, note, symmetry, sbin, sz)
 % Initialize model structure.
@@ -32,27 +32,25 @@ end
 % get an empty model
 model = model_create(cls, note);
 model.interval = 10;
-model.centers = centers;
-model.K = size(centers, 1);
 
-if nargin < 5
+if nargin < 4
   symmetry = 'N';
 end
 
 % size of HOG features
-if nargin < 6
+if nargin < 5
   model.sbin = 8;
 else
   model.sbin = sbin;
 end
 
 % size of root filter
-if nargin < 7
+if nargin < 6
   sz = [round(h/model.sbin) round(w/model.sbin)];
 end
 
 % add root filter
-[model, symbol, filter] = model_addfilter(model, zeros([sz 32]), symmetry, 'A');
+[model, symbol, filter] = model_addfilter(model, zeros([sz 32]), symmetry);
 
 % start non-terminal
 [model, Q] = model_addnonterminal(model);

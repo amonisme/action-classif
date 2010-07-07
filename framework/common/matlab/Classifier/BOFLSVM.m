@@ -119,7 +119,7 @@ classdef BOFLSVM < ClassifierAPI
                 i = I(k);
                 models{k} = initmodel(common.name, common.spos{i}, common.note, common.centers, 'N');
                 inds = lrsplit(models{k}, common.spos{i}, i);
-                models{k} = train(common.name, models{k}, common.spos{i}(inds), common.neg, i, 1, 1, 1, ...
+                models{k} = my_train(common.name, models{k}, common.spos{i}(inds), common.neg, i, 1, 1, 1, ...
                                   common.cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
             end
                           
@@ -134,7 +134,7 @@ classdef BOFLSVM < ClassifierAPI
             for k = 1:length(I)
                 i = I(k);
                 models{k} = lrmodel(common.models{i});                    
-                models{k} = train(common.name, models{k}, common.spos{i}, common.neg(1:common.maxneg), 0, 0, 4, 3, ...                    
+                models{k} = my_train(common.name, models{k}, common.spos{i}, common.neg(1:common.maxneg), 0, 0, 4, 3, ...                    
                                   common.cachesize, true, 0.7, false, ['lrsplit2_' num2str(i)]);
             end
                           
@@ -174,9 +174,9 @@ classdef BOFLSVM < ClassifierAPI
                       initrand(); 
                       for i = 1:n_compo
                         % split data into two groups: left vs. right facing instances                    
-                        models{i} = initmodel(name, spos{i}, note, centers, 'N');
+                        models{i} = my_initmodel(name, spos{i}, note, centers, 'N');
                         inds = lrsplit(models{i}, spos{i}, i);                                             
-                        models{i} = train(name, models{i}, spos{i}(inds), neg, i, 1, 1, 1, ...
+                        models{i} = my_train(name, models{i}, spos{i}(inds), neg, i, 1, 1, 1, ...
                                           cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
                       end
                   end
@@ -196,9 +196,9 @@ classdef BOFLSVM < ClassifierAPI
                   else
                       initrand();
                       for i = 1:n_compo
-                        models{i} = lrmodel(models{i});                    
-                        %models{i} = train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 1, 1, ...
-                        models{i} = train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 4, 3, ...                                            
+                        models{i} = my_lrmodel(models{i});                    
+                        %models{i} = my_train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 1, 1, ...
+                        models{i} = my_train(name, models{i}, spos{i}, neg(1:maxneg), 0, 0, 4, 3, ...                                            
                                           cachesize, true, 0.7, false, ['lrsplit2_' num2str(i)]);
                       end
                   end
@@ -211,8 +211,8 @@ classdef BOFLSVM < ClassifierAPI
                 catch
                   initrand();
                   model = mergemodels(models);                  
-                  %model = train(name, model, pos, neg(1:maxneg), 0, 0, 1, 1, ...    
-                  model = train(name, model, pos, neg(1:maxneg), 0, 0, 1, 5, ...
+                  %model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 1, 1, ...    
+                  model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 1, 5, ...
                                 cachesize, true, 0.7, false, 'mix');
                   save([cachedir name '_mix'], 'model');
                 end
@@ -223,15 +223,15 @@ classdef BOFLSVM < ClassifierAPI
                 catch
                   initrand();
                   for i = 1:2:2*n_compo
-                    model = model_addparts(model, model.start, i, i, n_parts, [6 6]);
+                    model = my_model_addparts(model, model.start, i, i, n_parts, [6 6]);
                   end
                   
-                  %model = train(name, model, pos, neg(1:maxneg), 0, 0, 1, 1, ...                                            
-                  model = train(name, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
+                  %model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 1, 1, ...                                            
+                  model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
                                 cachesize, true, 0.7, false, 'parts_1');
                   
-                  %model = train(name, model, pos, neg, 0, 0, 1, 1, ...
-                  model = train(name, model, pos, neg, 0, 0, 1, 5, ...
+                  %model = my_train(name, model, pos, neg, 0, 0, 1, 1, ...
+                  model = my_train(name, model, pos, neg, 0, 0, 1, 5, ...
                                 cachesize, true, 0.7, true, 'parts_2');
                   save([cachedir name '_parts'], 'model');
                 end
@@ -309,7 +309,7 @@ classdef BOFLSVM < ClassifierAPI
             n_classes = length(obj.subclasses_names);
             names = cell(n_classes,1);
             for i = 1:n_classes
-                names{i} = sprintf('%s_%s_%d_%d', HASH_PATH, obj.subclasses_names{i}, obj.n_components, obj.n_parts);
+                names{i} = sprintf('%s_%s_BLSVM_%d_%d', HASH_PATH, obj.subclasses_names{i}, obj.n_components, obj.n_parts);
             end
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat', HASH_PATH, obj.toFileName()));
@@ -387,7 +387,7 @@ classdef BOFLSVM < ClassifierAPI
                         args = struct('Ipaths', Ipaths, 'feat', feat, 'descr', descr);
                         scores{i} = run_in_parallel('BOFLSVM.classify_img_parallel', common, args, [], 0, pg, (i-1)/n_classes, 1/n_classes);
                     end
-                    scores = cat(1, scores{:});                   
+                    scores = cat(2, scores{:});                   
                 else            
                     n_classes = length(obj.models);
                     scores = cell(1,n_classes);
@@ -395,12 +395,11 @@ classdef BOFLSVM < ClassifierAPI
                         scores{i} = obj.classify_img(obj.models{i}, Ipaths, feat, descr, overlaps);
                         pg.progress(i/n_classes);
                     end
-                    scores = cat(1, scores{:});
+                    scores = cat(2, scores{:});
                 end
                 save(file, 'scores');
             end            
             scores = scores(:,:,6);  % 0.5 overlap
-            scores = scores';    
 
             assigned_label = zeros(n_img,1); 
             for i = 1:n_img

@@ -223,15 +223,15 @@ classdef LSVM < ClassifierAPI
             n_overlaps = length(overlaps);
             scores = ones(1,n_img,n_overlaps)*(-Inf);
             
-            for i = 1:n_img
-                im = imread(Ipaths{i});                
+            for i = 1:n_img 
+                info = imfinfo(Ipaths{i});
                 [bb_not_cropped person_box] = get_bb_info(Ipaths{i});
                 person_box = person_box(2:end);                
                 
-                [dets, boxes] = imgdetect(im, model, -Inf); %models{j}.thresh);
+                [dets, boxes] = imgdetect(imread(Ipaths{i}), model, -Inf); %models{j}.thresh);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
-                    [dets boxes] = clipboxes(im, dets, boxes);
+                    [dets boxes] = my_clipboxes(info.Width, info.Height, dets, boxes);
 
                     overlap = inter_box(person_box, dets(:, 1:4));
                     for k = 1:n_overlaps
@@ -325,6 +325,7 @@ classdef LSVM < ClassifierAPI
             
             if exist(file, 'file') == 2
                 load(file, 'scores');
+                fprintf('Scores loaded from: %s\n', file);
             else           
                 if USE_PARALLEL 
                     common = struct('Ipaths', [], 'overlaps', overlaps);
@@ -362,14 +363,13 @@ classdef LSVM < ClassifierAPI
             
             default_overlap = 0.5;
                 
-            im = imread(Ipath);
             [bb_not_cropped person_box] = get_bb_info(Ipath);
             person_box = person_box(2:end);  
 
-            [dets, boxes] = imgdetect(im, obj.models{model_id}, -Inf);
+            [dets, boxes] = imgdetect(Ipath, obj.models{model_id}, -Inf);
             if ~isempty(boxes)
                 boxes = reduceboxes(obj.models{model_id}, boxes);
-                [dets boxes] = clipboxes(im, dets, boxes);
+                [dets boxes] = clipboxes(info.Width, info.Height, dets, boxes);
 
                 I = inter_box(person_box, dets(:, 1:4)) > default_overlap;              
                 if ~isempty(find(I,1))
@@ -384,7 +384,7 @@ classdef LSVM < ClassifierAPI
             end
             
             if visu
-                showboxes(im, parts);
+                showboxes(imread(Ipath), parts);
             end
         end
         

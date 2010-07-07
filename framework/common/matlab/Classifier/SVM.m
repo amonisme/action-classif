@@ -267,13 +267,8 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         %------------------------------------------------------------------
         % Classify the testing directory 'root'
         function [Ipaths classes subclasses map_sub2sup correct_label assigned_label scores] = classify(obj, Ipaths, correct_label, do_pg)
-            global USE_PARALLEL;
+            global USE_PARALLEL;                    
             
-            classes = obj.classes_names;
-            subclasses = obj.subclasses_names;
-            map_sub2sup = obj.map_sub2sup;            
-            
-            n_classes = size(subclasses, 1);
             if nargin < 4
                  do_pg = 1;
             end
@@ -284,7 +279,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
             end
                         
             if nargin < 3
-                [Ipaths ids] = get_labeled_files(Ipaths, 'Loading testing set...\n');            
+                [Ipaths ids map_sub2sup classes subclasses] = get_labeled_files(Ipaths, 'Loading testing set...\n');            
                 correct_label = ids;
                 
                 n_sigs = length(obj.signature);
@@ -307,7 +302,11 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                 sigs = obj.kernel.get_kernel_sigs(sigs);
             else
                 sigs = Ipaths;
+                classes = obj.classes_names;
+                subclasses = obj.subclasses_names;
+                map_sub2sup = obj.map_sub2sup;                
             end
+            n_classes = size(subclasses, 1);           
                        
             n_img = size(sigs, 2);
             n_models = size(obj.svm, 1);

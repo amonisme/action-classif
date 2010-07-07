@@ -1,0 +1,17 @@
+\begin{thebibliography}{1}
+
+\bibitem{Lazebnik06}
+Lazebnik, S., Schmid, C., Ponce, J.:
+\newblock Beyond bags of features: spatial pyramid matching for recognizing
+  natural scene categories.
+\newblock In: Proc. IEEE Conference on Computer Vision and Pattern Recognition.
+  (2006)
+
+\bibitem{Zhang07}
+Zhang, J., Marszalek, M., Lazebnik, S., Schmid, C.:
+\newblock Local features and kernels for classification of texture and object
+  categories: a comprehensive study.
+\newblock In: International Journal of Computer Vision. Volume~73. (2007)
+  213--238
+
+\end{thebibliography}
