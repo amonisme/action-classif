@@ -22,7 +22,7 @@ end
 
 % get the feature pyramid
 info = imfinfo(Ipath);    
-pyra = featpyramid(input, struct('size', [info.Height info.Width], 'feat', feat), model);
+pyra = my_featpyramid(input, struct('size', [info.Height info.Width], 'feat', feat), model);
 
 if nargin < 4
   bbox = [];
@@ -32,4 +32,4 @@ if nargin < 5
   overlap = 0;
 end
 
-[dets, boxes, info] = gdetect(pyra, model, thresh, bbox, overlap);
+[dets, boxes, info] = my_gdetect(pyra, model, thresh, bbox, overlap);

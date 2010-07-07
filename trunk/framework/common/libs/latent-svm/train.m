@@ -82,7 +82,6 @@ end
 
 datamine = true;
 pos_loss = zeros(iter,2);
-
 for t = 1:iter
   fprintf('%s iter: %d/%d\n', procid(), t, iter);
   [labels, vals, unique] = readinfo(inffile);
@@ -276,25 +275,15 @@ function num = poswarp(name, t, model, ind, pos, fid)
 % of the form Q -> F.
 globals;
 numpos = length(pos);
+warped = warppos(model, pos);
 fi = model.symbols(model.rules{model.start}.rhs).filter;
 fbl = model.filters(fi).blocklabel;
-% MYMOD
-type = model.filters(fi).type;
-doHOG = (type == 'H' || type == 'A');
-doBOF = (type == 'B' || type == 'A');
-
 obl = model.rules{model.start}.offset.blocklabel;
 width1 = ceil(model.filters(fi).size(2)/2);
 width2 = floor(model.filters(fi).size(2)/2);
 pixels = model.filters(fi).size * model.sbin;
 minsize = prod(pixels);
 num = 0;
-if doHOG
-    warpedHOG = warppos(model, pos);
-end
-if doBOF
-    warpedBOF = my_warppos(model, pos);
-end
 for i = 1:numpos
   fprintf('%s %s: iter %d: warped positive: %d/%d\n', procid(), name, t, i, numpos);
   bbox = [pos(i).x1 pos(i).y1 pos(i).x2 pos(i).y2];
@@ -303,34 +292,14 @@ for i = 1:numpos
     continue
   end    
   % get example
-  % MYMOD
-  dim = 3;
-  if doHOG
-    featHOG = features(warpedHOG{i}, model.sbin);
-    dim = dim + numel(featHOG);
-  end
-  if doBOF
-    featBOF = zeros(model.K,1);
-    for j=1:model.K
-        featBOF(j) = length(find(warpedBOF{i}.feat(:,5) == j));
-    end
-    n = norm(featBOF);
-    if n ~= 0
-        featBOF = featBOF / n;
-    end    
-    dim = dim + numel(featBOF);
-  end
-  
-  
+  im = warped{i};
+  feat = features(im, model.sbin);
+  % + 3 for the 2 blocklabels + 1-dim offset
+  dim = numel(feat) + 3;
   fwrite(fid, [1 i 0 0 0 2 dim], 'int32');
   fwrite(fid, [obl 1], 'single');
   fwrite(fid, fbl, 'single');
-  if doHOG    
-    fwrite(fid, featHOG, 'single');    
-  end
-  if doHOG
-    fwrite(fid, featBOF, 'single');    
-  end
+  fwrite(fid, feat, 'single');    
   num = num+1;
 end
 
@@ -363,11 +332,9 @@ for i = 1:batchsize:numpos
       continue;
     end
     % get example
-    % MYMOD    
     im = color(imreadx(pos(j)));
-    [imHOG, bbox] = croppos(im, bbox);
-    imBOF = my_croppos(struct('size', size(im), 'feat', pos(j).feat), bbox);
-    pyra = featpyramid(imHOG, imBOF, model);
+    [im, bbox] = croppos(im, bbox);
+    pyra = featpyramid(im, model);
     [det, bs, info] = gdetect(pyra, model, 0, bbox, overlap);
     data{k}.bs = bs;
     data{k}.pyra = pyra;
@@ -412,9 +379,8 @@ for i = 1:batchsize:numneg
   parfor k = 1:thisbatchsize
     j = inds(i+k-1);
     fprintf('%s %s: iter %d/%d: hard negatives: %d/%d (%d)\n', procid(), name, t, negiter, i+k-1, numneg, j);
-    % MYMOD
-    info = imfinfo(neg(j).im);    
-    pyra = featpyramid(color(imreadx(neg(j))), struct('size', [info.Height info.Width], 'feat', neg(j).feat), model);
+    im = color(imreadx(neg(j)));
+    pyra = featpyramid(im, model);
     [dets, bs, info] = gdetect(pyra, model, -1.002);
     data{k}.bs = bs;
     data{k}.pyra = pyra;
@@ -447,10 +413,6 @@ function num = negrandom(name, t, model, c, neg, maxnum, fid)
 numneg = length(neg);
 rndneg = floor(maxnum/numneg);
 fi = model.symbols(model.rules{model.start}.rhs).filter;
-% MYMOD
-doHOG = model.filters(fi).type == 'H' || model.filters(fi).type == 'A';
-doBOF = model.filters(fi).type == 'B' || model.filters(fi).type == 'A';
-
 rsize = model.filters(fi).size;
 width1 = ceil(rsize(2)/2);
 width2 = floor(rsize(2)/2);
@@ -459,37 +421,18 @@ obl = model.rules{model.start}.offset.blocklabel;
 num = 0;
 for i = 1:numneg
   fprintf('%s %s: iter %d: random negatives: %d/%d\n', procid(), name, t, i, numneg);
-  % MYMOD
-  info = imfinfo(neg(i).im);  
-  fsize = round([info.Height info.Width] / model.sbin)-2;
-  if doHOG
-    featHOG = features(double(imreadx(neg(i))), model.sbin);
-  end
-  if doBOF      
-    featBOF = integral_histo(struct('size', [info.Height info.Width], 'feat', neg(i).feat), model.K, model.sbin);
-  end
-  if fsize(2) > rsize(2) && fsize(1) > rsize(1)
+  im = imreadx(neg(i));
+  feat = features(double(im), model.sbin);  
+  if size(feat,2) > rsize(2) && size(feat,1) > rsize(1)
     for j = 1:rndneg
-      x = random('unid', fsize(2)-rsize(2)+1);
-      y = random('unid', fsize(1)-rsize(1)+1);
-      dim = 3;
-      if doHOG        
-        tmpfeatHOG = featHOG(y:y+rsize(1)-1, x:x+rsize(2)-1,:);
-        dim = dim + numel(tmpfeatHOG);
-      end
-      if doBOF       
-        tmpfeatBOF = get_histo_from_integral(featBOF, x, y, x+rsize(2)-1, y+rsize(1)-1);
-        dim = dim + numel(tmpfeatBOF);
-      end
+      x = random('unid', size(feat,2)-rsize(2)+1);
+      y = random('unid', size(feat,1)-rsize(1)+1);
+      f = feat(y:y+rsize(1)-1, x:x+rsize(2)-1,:);
+      dim = numel(f) + 3;
       fwrite(fid, [-1 (i-1)*rndneg+j 0 0 0 2 dim], 'int32');
       fwrite(fid, [obl 1], 'single');
       fwrite(fid, fbl, 'single');
-      if doHOG
-        fwrite(fid, tmpfeatHOG, 'single');
-      end
-      if doBOF
-        fwrite(fid, tmpfeatBOF, 'single');
-      end
+      fwrite(fid, f, 'single');
     end
     num = num+rndneg;
   end

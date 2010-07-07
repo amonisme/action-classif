@@ -112,7 +112,7 @@ classdef SignatureAPI < handle
                         descr{k} = descriptor.get_descriptors(Ipaths{k}, feat{k});
                     end
                 end      
-                save(file, 'descr');
+                save(file, 'descr', '-v7.3');
             end
         end
         
