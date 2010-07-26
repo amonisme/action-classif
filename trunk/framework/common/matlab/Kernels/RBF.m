@@ -57,7 +57,7 @@ classdef RBF < KernelAPI
         end
         function str = toFileName(obj)
             if obj.param_cv(1)
-                a = '?';
+                a = 'cv';
             else
                 a = num2str(obj.a);
             end            

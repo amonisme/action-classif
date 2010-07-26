@@ -30,7 +30,7 @@ function precision = evaluate(classifier, root, db_name, target)
             load(file);
             write_log(sprintf('Classifier loaded from file %s\n',file)); 
         else
-            [cv_prec cv_dev_prec cv_acc cv_dev_acc] = classifier.learn(fullfile(root, sprintf('%s.train.mat', db_name)));
+            [cv_prec cv_dev_prec cv_acc cv_dev_acc] = classifier.learn(make_DB_name(root, db_name, 'train'));
             save(file, 'classifier');
             save(fullfile(dir, 'cv_log.mat'), 'cv_prec', 'cv_dev_prec', 'cv_acc', 'cv_dev_acc');  
         end
@@ -39,7 +39,7 @@ function precision = evaluate(classifier, root, db_name, target)
         % Test
         file = fullfile(dir,'results.mat');
         tic;
-        [Ipaths classes subclasses map_sub2sup correct_label assigned_label score] = classifier.classify(fullfile(root, sprintf('%s.test.mat', db_name)));    
+        [Ipaths classes subclasses map_sub2sup correct_label assigned_label score] = classifier.classify(make_DB_name(root, db_name, 'test'));    
         save(file,'Ipaths','classes','subclasses','map_sub2sup','correct_label','assigned_label','score');
         t1 = toc;
 
@@ -74,5 +74,13 @@ function precision = evaluate(classifier, root, db_name, target)
     fid = fopen(fullfile(dir,'precision.txt'), 'w+');
     fwrite(fid, num2str(precision), 'char');
     fclose(fid);
+end
+
+function DB = make_DB_name(root, name, type)
+    if isempty(name)
+        DB = fullfile(root, 'ImageSets', 'Action', sprintf('*_%s.txt', type));
+    else
+        DB = fullfile(root, sprintf('%s.%s.mat', name, type));
+    end
 end
 

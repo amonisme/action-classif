@@ -40,72 +40,76 @@ classdef Kmeans < handle
                
         %------------------------------------------------------------------
         % prepare kmeans computation (one point per line)
-        function n = prepare_kmeans(obj, points)
+        function n = prepare_kmeans(obj, points, file)
             global FILE_BUFFER_PATH;
             
-            n = 0;
-            for i=1:size(points,1)
-                n = n + size(points{i}, 1);
-            end
-  
-            switch obj.lib_id
-                case 0  % vlfeat
-                    points = cat(1,points{:})';
-                    m = max(max(points));
-                    obj.points = uint8(255/m*points);
-                case {1, 3}  % vgg & mex
-                    obj.points = cat(1,points{:})';
-                case 2  % matlab
-                    obj.points = cat(1,points{:});
-                case 4  % cpp             	
-                    file_in = fullfile(FILE_BUFFER_PATH,'input'); % if modified, modifiy also line 133 
+            if nargin >= 3 && ~exist(file,'file') == 2 
+                n = 0;
+                for i=1:size(points,1)
+                    n = n + size(points{i}, 1);
+                end
 
-                    i = 1;
-                    while isempty(points{i})
-                        i = i+1;
-                    end
-                    dimension = size(points{i}, 2);
-                    
-                    % Save data
-                    fid = fopen(file_in, 'w+');
-                    fwrite(fid, dimension, 'int32');
-                    fwrite(fid, n, 'int32');
-                    for i=1:size(points,1)
-                        fwrite(fid, points{i}', 'single');
-                    end
-                    fclose(fid);
-                    
-                    obj.points = dimension;
+                switch obj.lib_id
+                    case 0  % vlfeat
+                        points = cat(1,points{:})';
+                        m = max(max(points));
+                        obj.points = uint8(255/m*points);
+                    case {1, 3}  % vgg & mex
+                        obj.points = cat(1,points{:})';
+                    case 2  % matlab
+                        obj.points = cat(1,points{:});
+                    case 4  % cpp             	
+                        file_in = fullfile(FILE_BUFFER_PATH,'input'); % if modified, modifiy also line 133 
+
+                        i = 1;
+                        while isempty(points{i})
+                            i = i+1;
+                        end
+                        dimension = size(points{i}, 2);
+
+                        % Save data
+                        fid = fopen(file_in, 'w+');
+                        fwrite(fid, dimension, 'int32');
+                        fwrite(fid, n, 'int32');
+                        for i=1:size(points,1)
+                            fwrite(fid, points{i}', 'single');
+                        end
+                        fclose(fid);
+
+                        obj.points = dimension;
+                end
             end
         end
         
         %------------------------------------------------------------------
         % prepare kmeans computation (one point per line)
-        function prepare_kmeans_fused(obj, points)
+        function prepare_kmeans_fused(obj, points, file)
             global FILE_BUFFER_PATH;
             
-            switch obj.lib_id
-                case 0  % vlfeat
-                    points = points';
-                    m = max(max(points));
-                    obj.points = uint8(255/m*points);
-                case {1, 3}  % vgg & mex
-                    obj.points = points';
-                case 2  % matlab
-                    obj.points = points;
-                case 4  % cpp             	
-                    file_in = fullfile(FILE_BUFFER_PATH,'input'); % if modified, modifiy also line 133 
-                        
-                    n = size(points, 1);
-                    dimension = size(points, 2);
-                    
-                    % Save data
-                    fid = fopen(file_in, 'w+');
-                    fwrite(fid, dimension, 'int32');
-                    fwrite(fid, n, 'int32');
-                    fwrite(fid, points', 'single');
-                    
-                    obj.points = dimension;
+            if nargin >= 3 && ~exist(file,'file') == 2            
+                switch obj.lib_id
+                    case 0  % vlfeat
+                        points = points';
+                        m = max(max(points));
+                        obj.points = uint8(255/m*points);
+                    case {1, 3}  % vgg & mex
+                        obj.points = points';
+                    case 2  % matlab
+                        obj.points = points;
+                    case 4  % cpp             	
+                        file_in = fullfile(FILE_BUFFER_PATH,'input'); % if modified, modifiy also line 133 
+
+                        n = size(points, 1);
+                        dimension = size(points, 2);
+
+                        % Save data
+                        fid = fopen(file_in, 'w+');
+                        fwrite(fid, dimension, 'int32');
+                        fwrite(fid, n, 'int32');
+                        fwrite(fid, points', 'single');
+
+                        obj.points = dimension;
+                end
             end
         end        
         

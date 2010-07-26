@@ -9,61 +9,58 @@ classdef LSVM < ClassifierAPI
     
     methods (Static)              
         %------------------------------------------------------------------
-        function [pos, neg] = make_examples(Ipaths, flippedpos, class_ids, map_ids, id)
-            n_img = numel(Ipaths);
+        function [pos, neg] = make_examples(images, flippedpos, map_ids, id)
+            n_img = length(images);
             
             w = zeros(n_img,1);
             bb = zeros(n_img, 4);
             trunc = zeros(n_img,1);            
             for i=1:n_img
-                [bb_not_cropped bbox width] = get_bb_info(Ipaths{i});
-                w(i) = width;
-                trunc(i) = bbox(1);
-                bb(i,:) = bbox(2:end);
+                w(i) = images(i).size(1);
+                trunc(i) = images(i).truncated;
+                bb(i,:) = images(i).bndbox;
             end
             trunc = logical(trunc);
             
+            do_action = cat(1,images(:).actions);
             if flippedpos
-                p = find(class_ids == id);
+                p = find(do_action(:,id));
                 n_pos = length(p);
                 pos = struct('im', cell(n_pos*2,1), 'flip', false, 'x1', 0, 'y1', 0, 'x2', 0, 'y2', 0);
-                for i = 1:n_pos                   
-                    x1 = bb(p(i),1);
-                    x2 = bb(p(i),3);
-                    pos(2*i-1).im = Ipaths{p(i)};
+                for i = 1:n_pos 
+                    x1 = images(p(i)).bndbox(1);
+                    x2 = images(p(i)).bndbox(3);
+                    pos(2*i-1).im = images(p(i)).path;
                     pos(2*i-1).x1 = x1;
-                    pos(2*i-1).y1 = bb(p(i),2);
+                    pos(2*i-1).y1 = images(p(i)).bndbox(2);
                     pos(2*i-1).x2 = x2;
-                    pos(2*i-1).y2 = bb(p(i),4);
+                    pos(2*i-1).y2 = images(p(i)).bndbox(4);
                     pos(2*i-1).flip = false;
-                    pos(2*i-1).trunc = trunc(p(i));
+                    pos(2*i-1).trunc = images(p(i)).truncated;
                     
-                    x1 = w(p(i)) - bb(p(i),3) + 1;
-                    x2 = w(p(i)) - bb(p(i),1) + 1;                    
-                    pos(2*i-0).im = Ipaths{p(i)};
+                    w = images(p(i)).size(1);
+                    x1 = w - bb(p(i),3) + 1;
+                    x2 = w - bb(p(i),1) + 1;                    
+                    pos(2*i-0).im = images(p(i)).path;
                     pos(2*i-0).x1 = x1;
-                    pos(2*i-0).y1 = bb(p(i),2);
+                    pos(2*i-0).y1 = images(p(i)).bndbox(2);
                     pos(2*i-0).x2 = x2;
-                    pos(2*i-0).y2 = bb(p(i),4);
+                    pos(2*i-0).y2 = images(p(i)).bndbox(4);
                     pos(2*i-0).flip = true;
-                    pos(2*i-0).trunc = trunc(p(i));
+                    pos(2*i-0).trunc = images(p(i)).truncated;
                 end
             else
                 p = class_ids == id;
                 box = bb(p,:);
-                pos = struct('im', Ipaths(p), 'x1', {box(:,1)}, 'y1', {box(:,2)}, 'x2', {box(:,3)}, 'y2', {box(:,4)}, 'flip', false, 'trunc', {trunc(:)});
+                pos = struct('im', {images(p).path}, 'x1', {box(:,1)}, 'y1', {box(:,2)}, 'x2', {box(:,3)}, 'y2', {box(:,4)}, 'flip', false, 'trunc', {trunc(:)});
             end
             
             if ~isempty(map_ids) % if empty, it is identity
-                same_class = find(map_ids == map_ids(id));
-                n = ones(n_img,1);
-                for i=1:length(same_class)
-                    n = n & class_ids ~= same_class(i);
-                end
+                n = sum(do_action(:, map_ids == map_ids(id) ),2) == 0;                
             else
-                n = class_ids ~= id;
+                n = ~do_action(:,id);
             end
-            neg = struct('im', Ipaths(n), 'flip', false);  
+            neg = struct('im', {images(n).path}, 'flip', false);  
         end
         %------------------------------------------------------------------
         function models = train_model_parallel(common, index)
@@ -73,7 +70,7 @@ classdef LSVM < ClassifierAPI
             models = cell(n_index, 1);
             
             for k = 1:n_index
-                models{k} = LSVM.train_model(common.Ipaths, common.names{index(k)}, common.note, common.class_ids, common.map_ids, common.n_compo, common.n_parts, index(k));
+                models{k} = LSVM.train_model(common.images, common.names{index(k)}, common.note, common.map_ids, common.n_compo, common.n_parts, index(k));
                 task_progress(tid, k/n_index);
             end
             
@@ -113,12 +110,12 @@ classdef LSVM < ClassifierAPI
         end        
 
         %------------------------------------------------------------------
-        function model = train_model(Ipaths, name, note, class_ids, map_ids, n_compo, n_parts, i)
+        function model = train_model(images, name, note, map_ids, n_compo, n_parts, i)
             globals;
             try
               load([cachedir name '_final']);
             catch ME
-                [pos, neg] = LSVM.make_examples(Ipaths, true, class_ids, map_ids, i);
+                [pos, neg] = LSVM.make_examples(images, true, map_ids, i);
                 if n_compo>length(pos)
                     n_compo = length(pos);
                 end
@@ -224,14 +221,13 @@ classdef LSVM < ClassifierAPI
             scores = ones(1,n_img,n_overlaps)*(-Inf);
             
             for i = 1:n_img 
-                info = imfinfo(Ipaths{i});
-                [bb_not_cropped person_box] = get_bb_info(Ipaths{i});
+                [bb_not_cropped person_box w h] = get_bb_info(Ipaths{i});
                 person_box = person_box(2:end);                
                 
                 [dets, boxes] = imgdetect(imread(Ipaths{i}), model, -Inf); %models{j}.thresh);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
-                    [dets boxes] = my_clipboxes(info.Width, info.Height, dets, boxes);
+                    [dets boxes] = my_clipboxes(w, h, dets, boxes);
 
                     overlap = inter_box(person_box, dets(:, 1:4));
                     for k = 1:n_overlaps
@@ -264,7 +260,7 @@ classdef LSVM < ClassifierAPI
         % Learns from the training directory 'root'
         function [cv_prec cv_dev_prec cv_acc cv_dev_acc] = learn(obj, root)
             global TEMP_DIR HASH_PATH USE_PARALLEL;
-            [Ipaths ids map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
+            [images map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
             obj.store_names(c_names, subc_names, map);           
             
             n_classes = length(obj.subclasses_names);
@@ -281,14 +277,13 @@ classdef LSVM < ClassifierAPI
                 write_log(sprintf('Classifier loaded from cache: %s.\n', file));
             else
                 if USE_PARALLEL
-                    common = struct('Ipaths', [], 'names', [], 'note', obj.toFileName(), 'class_ids', ids, 'map_ids', map, 'n_compo', obj.n_components, 'n_parts', obj.n_parts);
-                    common.Ipaths = Ipaths;
+                    common = struct('images', images, 'names', [], 'note', obj.toFileName(), 'map_ids', map, 'n_compo', obj.n_components, 'n_parts', obj.n_parts);
                     common.names = names;
-                    lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, (1:n_classes)', [], 0);
+                    lsvm_models = run_in_parallel('LSVM.train_model_parallel', common, (1:n_classes)', 0, 0);
                 else
                     lsvm_models = cell(n_classes, 1);
                     for k = 1:n_classes
-                        lsvm_models{k} = LSVM.train_model(Ipaths, names{k}, obj.toFileName(), ids, map, obj.n_components, obj.n_parts, k);
+                        lsvm_models{k} = LSVM.train_model(images, names{k}, obj.toFileName(), map, obj.n_components, obj.n_parts, k);
                     end
                 end
                 save(file, 'lsvm_models');
@@ -363,13 +358,13 @@ classdef LSVM < ClassifierAPI
             
             default_overlap = 0.5;
                 
-            [bb_not_cropped person_box] = get_bb_info(Ipath);
+            [bb_not_cropped person_box w h] = get_bb_info(Ipath);
             person_box = person_box(2:end);  
 
-            [dets, boxes] = imgdetect(Ipath, obj.models{model_id}, -Inf);
+            [dets, boxes] = imgdetect(imread(Ipath), obj.models{model_id}, -Inf);
             if ~isempty(boxes)
                 boxes = reduceboxes(obj.models{model_id}, boxes);
-                [dets boxes] = clipboxes(info.Width, info.Height, dets, boxes);
+                [dets boxes] = my_clipboxes(w, h, dets, boxes);
 
                 I = inter_box(person_box, dets(:, 1:4)) > default_overlap;              
                 if ~isempty(find(I,1))
