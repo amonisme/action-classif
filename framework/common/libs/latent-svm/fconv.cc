@@ -9,7 +9,7 @@
  * Basic version, relatively slow but very compatible.
  */
 
-struct thread_data {
+typedef struct thread_data {
   double *A;
   double *B;
   double *C;
@@ -17,7 +17,7 @@ struct thread_data {
   const mwSize *A_dims;
   const mwSize *B_dims;
   mwSize C_dims[2];
-};
+} thread_data;
 
 // convolve A and B
 void *process(void *thread_arg) {
@@ -29,15 +29,17 @@ void *process(void *thread_arg) {
   const mwSize *B_dims = args->B_dims;
   const mwSize *C_dims = args->C_dims;
   int num_features = args->A_dims[2];
-
-  for (int f = 0; f < num_features; f++) {
+ 
+  int f;
+  int x,y,xp,yp;
+  for (f = 0; f < num_features; f++) {
     double *dst = C;
     double *A_src = A + f*A_dims[0]*A_dims[1];      
     double *B_src = B + f*B_dims[0]*B_dims[1];
-    for (int x = 0; x < C_dims[1]; x++) {
-      for (int y = 0; y < C_dims[0]; y++) {
+    for (x = 0; x < C_dims[1]; x++) {
+      for (y = 0; y < C_dims[0]; y++) {
 	double val = 0;
-	for (int xp = 0; xp < B_dims[1]; xp++) {
+	for (xp = 0; xp < B_dims[1]; xp++) {
 	  double *A_off = A_src + (x+xp)*A_dims[0] + y;
 	  double *B_off = B_src + xp*B_dims[0];
 	  switch(B_dims[0]) {
@@ -63,7 +65,7 @@ void *process(void *thread_arg) {
 	  case 1: val += A_off[0] * B_off[0];
 	    break;
 	  default:	    	      
-	    for (int yp = 0; yp < B_dims[0]; yp++) {
+	    for (yp = 0; yp < B_dims[0]; yp++) {
 	      val += *(A_off++) * *(B_off++);
 	    }
 	  }
@@ -72,40 +74,47 @@ void *process(void *thread_arg) {
       }
     }
   }
+  return NULL;
 }
 
 // matlab entry point
 // C = fconv(A, cell of B, start, end);
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) { 
+  const mxArray *mxA = prhs[0];
+  const mxArray *cellB = prhs[1];
+  const mwSize *A_dims = mxGetDimensions(mxA);
+  mwSize num_bs;
+  int start, end, len;
+  double *A;
+  thread_data td;
+  int i;
+  
   if (nrhs != 4)
     mexErrMsgTxt("Wrong number of inputs"); 
   if (nlhs != 1)
     mexErrMsgTxt("Wrong number of outputs");
 
   // get A
-  const mxArray *mxA = prhs[0];
   if (mxGetNumberOfDimensions(mxA) != 3 || 
       mxGetClassID(mxA) != mxDOUBLE_CLASS)
     mexErrMsgTxt("Invalid input: A");
 
   // get B and start/end
-  const mxArray *cellB = prhs[1];
-  mwSize num_bs = mxGetNumberOfElements(cellB);  
-  int start = (int)mxGetScalar(prhs[2]) - 1;
-  int end = (int)mxGetScalar(prhs[3]) - 1;
+  num_bs = mxGetNumberOfElements(cellB);  
+  start = (int)mxGetScalar(prhs[2]) - 1;
+  end = (int)mxGetScalar(prhs[3]) - 1;
   if (start < 0 || end >= num_bs || start > end)
     mexErrMsgTxt("Invalid input: start/end");
-  int len = end-start+1;
+  len = end-start+1;
 
   // output cell
   plhs[0] = mxCreateCellMatrix(1, len);
 
   // do convolutions
-  thread_data td;
-  const mwSize *A_dims = mxGetDimensions(mxA);
-  double *A = (double *)mxGetPr(mxA);
-  for (int i = 0; i < len; i++) {
+  A = (double *)mxGetPr(mxA);
+  for (i = 0; i < len; i++) {
     const mxArray *mxB = mxGetCell(cellB, i+start);
+	int width, height;
     td.A_dims = A_dims;
     td.A = A;
     td.B_dims = mxGetDimensions(mxB);
@@ -116,8 +125,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
       mexErrMsgTxt("Invalid input: B");
 
     // compute size of output
-    int height = td.A_dims[0] - td.B_dims[0] + 1;
-    int width = td.A_dims[1] - td.B_dims[1] + 1;
+    height = td.A_dims[0] - td.B_dims[0] + 1;
+    width = td.A_dims[1] - td.B_dims[1] + 1;
     if (height < 1 || width < 1)
       mexErrMsgTxt("Invalid input: B should be smaller than A");
     td.C_dims[0] = height;

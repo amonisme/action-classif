@@ -10,7 +10,11 @@ labelsize = header(2);
 fclose(fhdr);
 
 oldfile = [datfile '_tmp'];
-unix(['mv ' datfile ' ' oldfile]);
+if(strcmp(computer, 'PCWIN'))
+    dos(['move ' datfile ' ' oldfile]);
+else
+    unix(['mv ' datfile ' ' oldfile]);
+end
 fin = fopen(oldfile, 'rb');
 fout = fopen(datfile, 'wb');
 
@@ -39,11 +43,19 @@ fclose(fin);
 fclose(fout);
 
 % remove the old cache file
-unix(['rm ' oldfile]);
+if(strcmp(computer, 'PCWIN'))
+    dos(['del ' oldfile]);
+else
+    unix(['rm ' oldfile]);
+end
 
 % keep the info file in sync with the data file
 oldfile = [inffile '_tmp'];
-unix(['cp ' inffile ' ' oldfile]);
+if(strcmp(computer, 'PCWIN'))
+    dos(['copy ' inffile ' ' oldfile]);
+else
+    unix(['cp ' inffile ' ' oldfile]);
+end
 [labels, scores, unique] = readinfo(inffile);
 labels = labels(I);
 scores = scores(I);

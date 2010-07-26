@@ -3,6 +3,9 @@
 #include <string.h>
 #include "mex.h"
 
+#define bzero(s,n) memset ((s), 0, (n))
+#define round(x) floor(x+0.5)
+
 /*
  * Fast image subsampling.
  * This is used to construct the feature pyramid.
@@ -33,14 +36,18 @@ void resize1dtran(double *src, int sheight, double *dst, int dheight,
   // we cache the interpolation values since they can be 
   // shared among different columns
   int len = (int)ceil(dheight*invscale) + 2*dheight;
-  alphainfo ofs[len];
+  struct alphainfo *ofs = malloc(sizeof(struct alphainfo)*len);
   int k = 0;
-  for (int dy = 0; dy < dheight; dy++) {
+  int dy;
+  int c,x;
+  
+  for (dy = 0; dy < dheight; dy++) {
     double fsy1 = dy * invscale;
     double fsy2 = fsy1 + invscale;
     int sy1 = (int)ceil(fsy1);
     int sy2 = (int)floor(fsy2);       
-
+	int sy;
+	
     if (sy1 - fsy1 > 1e-3) {
       assert(k < len);
       assert(sy-1 >= 0);
@@ -48,8 +55,8 @@ void resize1dtran(double *src, int sheight, double *dst, int dheight,
       ofs[k].si = sy1-1;
       ofs[k++].alpha = (sy1 - fsy1) * scale;
     }
-
-    for (int sy = sy1; sy < sy2; sy++) {
+	
+    for (sy = sy1; sy < sy2; sy++) {
       assert(k < len);
       assert(sy < sheight);
       ofs[k].di = dy*width;
@@ -68,8 +75,8 @@ void resize1dtran(double *src, int sheight, double *dst, int dheight,
 
   // resize each column of each color channel
   bzero(dst, chan*width*dheight*sizeof(double));
-  for (int c = 0; c < chan; c++) {
-    for (int x = 0; x < width; x++) {
+  for (c = 0; c < chan; c++) {
+    for (x = 0; x < width; x++) {
       double *s = src + c*width*sheight + x*sheight;
       double *d = dst + c*width*dheight + x;
       alphacopy(s, d, ofs, k);
@@ -83,22 +90,27 @@ void resize1dtran(double *src, int sheight, double *dst, int dheight,
 mxArray *resize(const mxArray *mxsrc, const mxArray *mxscale) {
   double *src = (double *)mxGetPr(mxsrc);
   const int *sdims = mxGetDimensions(mxsrc);
+  double scale = mxGetScalar(mxscale);
+  double *dst;
+  int ddims[3];
+  mxArray *mxdst;
+  double *tmp;
+  
   if (mxGetNumberOfDimensions(mxsrc) != 3 || 
       mxGetClassID(mxsrc) != mxDOUBLE_CLASS)
     mexErrMsgTxt("Invalid input");  
 
-  double scale = mxGetScalar(mxscale);
   if (scale > 1)
     mexErrMsgTxt("Invalid scaling factor");   
 
-  int ddims[3];
+  
   ddims[0] = (int)round(sdims[0]*scale);
   ddims[1] = (int)round(sdims[1]*scale);
   ddims[2] = sdims[2];
-  mxArray *mxdst = mxCreateNumericArray(3, ddims, mxDOUBLE_CLASS, mxREAL);
-  double *dst = (double *)mxGetPr(mxdst);
+  mxdst = mxCreateNumericArray(3, ddims, mxDOUBLE_CLASS, mxREAL);
+  dst = (double *)mxGetPr(mxdst);
 
-  double *tmp = (double *)mxCalloc(ddims[0]*sdims[1]*sdims[2], sizeof(double));
+  tmp = (double *)mxCalloc(ddims[0]*sdims[1]*sdims[2], sizeof(double));
   resize1dtran(src, sdims[0], tmp, ddims[0], sdims[1], sdims[2]);
   resize1dtran(tmp, sdims[1], dst, ddims[1], ddims[0], sdims[2]);
   mxFree(tmp);
