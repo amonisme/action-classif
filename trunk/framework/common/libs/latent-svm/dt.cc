@@ -12,7 +12,10 @@
  * a row or column of an array.  
  */
 
-static inline int square(int x) { return x*x; }
+typedef unsigned int int32_t; 
+ 
+//static inline int square(int x) { return x*x; }
+static int square(int x) { return x*x; }
 
 // dt helper function
 void dt_helper(double *src, double *dst, int *ptr, int step, 
@@ -20,7 +23,8 @@ void dt_helper(double *src, double *dst, int *ptr, int step,
  if (d2 >= d1) {
    int d = (d1+d2) >> 1;
    int s = s1;
-   for (int p = s1+1; p <= s2; p++)
+   int p;
+   for (p = s1+1; p <= s2; p++)
      if (src[s*step] - a*square(d-s) - b*(d-s) < 
 	 src[p*step] - a*square(d-p) - b*(d-p))
 	s = p;
@@ -40,6 +44,18 @@ void dt1d(double *src, double *dst, int *ptr, int step, int n,
 // matlab entry point
 // [M, Ix, Iy] = dt(vals, ax, bx, ay, by)
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) { 
+  int x, y;
+  const int *dims;
+  double *vals ;
+  double ax, bx, ay, by;
+  
+  mxArray *mxM, *mxIx, *mxIy;
+  double *M;
+  int32_t *Ix, *Iy;
+
+  double *tmpM;
+  int32_t *tmpIx, *tmpIy;
+  
   if (nrhs != 5)
     mexErrMsgTxt("Wrong number of inputs"); 
   if (nlhs != 3)
@@ -47,33 +63,33 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (mxGetClassID(prhs[0]) != mxDOUBLE_CLASS)
     mexErrMsgTxt("Invalid input");
 
-  const int *dims = mxGetDimensions(prhs[0]);
-  double *vals = (double *)mxGetPr(prhs[0]);
-  double ax = mxGetScalar(prhs[1]);
-  double bx = mxGetScalar(prhs[2]);
-  double ay = mxGetScalar(prhs[3]);
-  double by = mxGetScalar(prhs[4]);
+  dims = mxGetDimensions(prhs[0]);
+  vals = (double *)mxGetPr(prhs[0]);
+  ax = mxGetScalar(prhs[1]);
+  bx = mxGetScalar(prhs[2]);
+  ay = mxGetScalar(prhs[3]);
+  by = mxGetScalar(prhs[4]);
   
-  mxArray *mxM = mxCreateNumericArray(2, dims, mxDOUBLE_CLASS, mxREAL);
-  mxArray *mxIx = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
-  mxArray *mxIy = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
-  double *M = (double *)mxGetPr(mxM);
-  int32_t *Ix = (int32_t *)mxGetPr(mxIx);
-  int32_t *Iy = (int32_t *)mxGetPr(mxIy);
+  mxM = mxCreateNumericArray(2, dims, mxDOUBLE_CLASS, mxREAL);
+  mxIx = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
+  mxIy = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
+  M = (double *)mxGetPr(mxM);
+  Ix = (int32_t *)mxGetPr(mxIx);
+  Iy = (int32_t *)mxGetPr(mxIy);
 
-  double *tmpM = (double *)mxCalloc(dims[0]*dims[1], sizeof(double));
-  int32_t *tmpIx = (int32_t *)mxCalloc(dims[0]*dims[1], sizeof(int32_t));
-  int32_t *tmpIy = (int32_t *)mxCalloc(dims[0]*dims[1], sizeof(int32_t));
+  tmpM = (double *)mxCalloc(dims[0]*dims[1], sizeof(double));
+  tmpIx = (int32_t *)mxCalloc(dims[0]*dims[1], sizeof(int32_t));
+  tmpIy = (int32_t *)mxCalloc(dims[0]*dims[1], sizeof(int32_t));
 
-  for (int x = 0; x < dims[1]; x++)
+  for (x = 0; x < dims[1]; x++)
     dt1d(vals+x*dims[0], tmpM+x*dims[0], tmpIy+x*dims[0], 1, dims[0], ay, by);
 
-  for (int y = 0; y < dims[0]; y++)
+  for (y = 0; y < dims[0]; y++)
     dt1d(tmpM+y, M+y, tmpIx+y, dims[0], dims[1], ax, bx);
 
   // get argmins and adjust for matlab indexing from 1
-  for (int x = 0; x < dims[1]; x++) {
-    for (int y = 0; y < dims[0]; y++) {
+  for (x = 0; x < dims[1]; x++) {
+    for (y = 0; y < dims[0]; y++) {
       int p = x*dims[0]+y;
       Ix[p] = tmpIx[p]+1;
       Iy[p] = tmpIy[tmpIx[p]*dims[0]+y]+1;

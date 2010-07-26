@@ -83,7 +83,7 @@ S = S(ord);
 
 % compute detection bounding boxes and parse information
 [dets, boxes, info] = getdetections(model, pyra.padx, pyra.pady, ...
-                                    pyra.scales, X, Y, L, S);
+                                    pyra.scales, X, Y, L, S); 
 
 % sanity check overlap requirement
 if latent && ~isempty(dets)
