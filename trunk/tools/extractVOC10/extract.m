@@ -1,4 +1,7 @@
 function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scale, skip_ambiguous)
+    if(nargin<4)
+        crop = 0;
+    end
     if(nargin<5)
         resize = 0;
     end
@@ -67,7 +70,7 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                         h = ymax-ymin+1;
                         max_dim = max([w h]);
                         
-                        if(max_dim < limit)
+                        if(resize && max_dim < limit)
                             continue;
                         end
                             
@@ -83,27 +86,28 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                        end
                        bb = floor(bb)+1;
                        
-                       if(isfield(obj(j),'action'))
-                           act = obj(j).action;
-                           for k=1:size(act,2)
+                       if(isfield(obj(j),'actions'))
+                           act = fieldnames(obj(j).actions);
+                           for k=1:length(act)
+                                node_act = obj(j).actions.(act{k});
                                 if(skip_ambiguous)
-                                    if(isfield(act(k),'ambiguous') && str2double(act(k).ambiguous))
+                                    if(isfield(node_act,'ambiguous') && str2double(node_act.ambiguous))
                                         continue;
                                     end
                                 end
-                                dirname = fullfile(img_dest, act(k).actionname);
+                                dirname = fullfile(img_dest, act{k});
                                 if(exist(dirname,'dir') == 0)
                                     mkdir(dirname);
                                 end
                                 n = 0;
                                 for m=1:size(num,2)
-                                    if(strcmp(num(m).name,act(k).actionname))
+                                    if(strcmp(num(m).name,act{k}))
                                         n = m;
                                         break;
                                     end
                                 end
                                 if(n == 0)
-                                    num = [num struct('name',act(k).actionname,'id',1)];
+                                    num = [num struct('name',act{k},'id',1)];
                                     n = size(num,1);
                                 end
                                 if(isfield(obj(j),'truncated'))
@@ -126,13 +130,6 @@ function extract(img_src, ann_src, img_dest, crop, resize, new_size, limit, scal
                 end
             end
         end
-    end
-    
-    classes = get_classes_files(img_dest);
-    nclasses = size(classes,1);
-   
-    for i=1:nclasses
-        fprintf('%s: %d\n', classes(i).name, size(classes(i).files,1));
     end
 end
 
