@@ -457,7 +457,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                 strat = 'one VS all';
             end
             if obj.param_cv(1)
-                c = '?';
+                c = 'cv';
             else
                 c = num2str(obj.C);
             end
@@ -485,7 +485,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
                 strat = '1vA';
             end
             if obj.param_cv(1)
-                c = '?';
+                c = 'cv';
             else
                 c = num2str(obj.C);
             end            

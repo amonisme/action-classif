@@ -9,6 +9,7 @@ classdef BOFLSVM < ClassifierAPI
         K             % BOF size
         n_components  % number of component in the mixture model  
         n_parts       % number of parts
+        type_parts    % type of the parts ('A'll, 'H'og or 'B'of)
     end
     
     methods (Static)
@@ -280,7 +281,7 @@ classdef BOFLSVM < ClassifierAPI
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = BOFLSVM(K, n_compo, n_parts)
+        function obj = BOFLSVM(K, n_compo, n_parts, type_parts)
             if nargin < 1
                 K = 1;
             end
@@ -289,11 +290,18 @@ classdef BOFLSVM < ClassifierAPI
             end            
             if nargin < 3
                 n_parts = 8;
-            end            
+            end   
+            if nargin < 4
+                type_parts = 'A';
+                % A : All (HOG + BOF)
+                % H : HOG only (standard LSVM)
+                % B : BOF only
+            end
             obj = obj@ClassifierAPI();
             obj.K = K;
             obj.n_components = n_compo;
             obj.n_parts = n_parts;
+            obj.type_parts = type_parts;
             obj.detector = MS_Dense(4,1.3);
             obj.descriptor = SIFT(L2Trunc);
             obj.kmeans = Kmeans(K, 'c', 200);            
@@ -448,13 +456,13 @@ classdef BOFLSVM < ClassifierAPI
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('BOFLSVM (%d words, %d components, %d parts)', obj.K, obj.n_components, obj.n_parts);
+            str = sprintf('BOFLSVM (%d words, %d components, %d parts of type %s)', obj.K, obj.n_components, obj.n_parts, obj.type_parts);
         end
         function str = toFileName(obj)
-            str = sprintf('BOFLSVM[%d-%d-%d]', obj.K, obj.n_components, obj.n_parts);
+            str = sprintf('BOFLSVM[%d-%d-%d-%s]', obj.K, obj.n_components, obj.n_parts, obj.type_parts);
         end
         function str = toName(obj)
-            str = sprintf('BOFLSVM(%d-%d-%d)', obj.K, obj.n_components, obj.n_parts);
+            str = sprintf('BOFLSVM(%d-%d-%d-%s)', obj.K, obj.n_components, obj.n_parts, obj.type_parts);
         end
     end    
 end

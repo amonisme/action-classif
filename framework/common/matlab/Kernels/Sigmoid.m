@@ -64,12 +64,12 @@ classdef Sigmoid < KernelAPI
         end
         function str = toFileName(obj)
             if obj.param_cv(1)
-                a = '?';
+                a = 'cv';
             else
                 a = num2str(obj.a);
             end
             if obj.param_cv(2)
-                b = '?';
+                b = 'cv';
             else
                 b = num2str(obj.b);
             end            

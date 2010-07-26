@@ -9,9 +9,11 @@ function init_script(fun)
         args = fun(cargs, pargs); 
         t = toc;
     catch ME1
+        fprintf('Error in parallel task:\n');
         fprintf(ME1.message); 
         fprintf(['in ' ME1.stack(1).file]); 
         fprintf([' line ' num2str(ME1.stack(1).line)]); 
+        fprintf('\n-----\n\n');
         res = []; 
     end; 
     
