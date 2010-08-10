@@ -214,7 +214,7 @@ for t = 1:iter
         
     fprintf('parsing model\n');
     blocks = readmodel(modfile, model);
-    model = parsemodel(model, blocks);
+    model = my_parsemodel(model, blocks);
     [labels, vals, unique] = readinfo(inffile);
     
     % compute threshold for high recall
