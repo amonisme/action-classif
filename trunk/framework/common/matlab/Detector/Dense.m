@@ -19,13 +19,13 @@ classdef Dense < DetectorAPI
 %     end    
     methods (Access = protected)
         %------------------------------------------------------------------
-        function feat = impl_mylib(obj, Ipath)
+        function feat = impl_mylib(obj, Ipath, scale)
             n_scales = size(obj.spacing,1);
             feat = cell(n_scales,1);
             
             info = imfinfo(Ipath);
-            w = info.Width;
-            h = info.Height;
+            w = info.Width * scale;
+            h = info.Height * scale;
             
             for i=1:n_scales
 
@@ -65,12 +65,12 @@ classdef Dense < DetectorAPI
         end
         
         %------------------------------------------------------------------  
-        function feat = impl_colordescriptor(obj, Ipath)
+        function feat = impl_colordescriptor(obj, Ipath, scale)
             n_scales = size(obj.spacing,1);
             feat = cell(n_scales,1);
             for i=1:n_scales
                 args = sprintf('--detector densesampling --ds_spacing %d', obj.spacing(i));
-                feat{i} = run_colorDescriptor(Ipath, args);
+                feat{i} = run_colorDescriptor(Ipath, scale, args);
                 if size(feat{i},1) == 0
                     feat = feat{1:i};
                     break;
@@ -107,11 +107,11 @@ classdef Dense < DetectorAPI
         
         %------------------------------------------------------------------
         % Returns feature points of the image specified by Ipath 
-        function feat = get_features(obj, Ipath)
+        function feat = get_features(obj, Ipath, scale)
             if obj.lib == 0
-                feat = obj.impl_mylib(Ipath);
+                feat = obj.impl_mylib(Ipath, scale);
             else
-                feat = obj.impl_colordescriptor(Ipath);
+                feat = obj.impl_colordescriptor(Ipath, scale);
             end      
         end
         

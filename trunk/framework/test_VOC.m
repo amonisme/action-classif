@@ -1,5 +1,15 @@
-global USE_PARALLEL;
+function test_VOC(db)
+    if nargin < 1
+        db = {'train' 'test'};
+    end
 
-USE_PARALLEL = 1;
+    global USE_PARALLEL USE_CLUSTER;
 
-evaluate(LSVM(3,8), 'C:\Users\Vincent\Documents\Cours\M2\Stage\VOCdevkit\VOC2010', [], 'VOC');  
+    set_cluster_config();
+
+    cd '/data/vdelaitr/src/framework';
+    USE_PARALLEL = 1;
+    USE_CLUSTER = 1;
+
+    evaluate(LSVM(3,8), '/data/vdelaitr/VOCdevkit/VOC2010', [], sprintf('VOC_%s-%s', db{1}, db{2}), db);  
+end

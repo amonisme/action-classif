@@ -14,7 +14,7 @@ classdef ClassifierAPI < handle
         
         %------------------------------------------------------------------
         % Classify the testing directory 'root'
-        [Ipaths classes subclasses map_sub2sup correct_label assigned_label score] = classify(obj, Ipaths, correct_label)   
+        [images classes subclasses map_sub2sup assigned_action scores] = classify(obj, root_images)   
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:

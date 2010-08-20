@@ -6,7 +6,7 @@ function test_feifei_svm(db, size, levels)
     SHOW_BAR = 1;    
     FILE_BUFFER_PATH = '../../temp';
 
-    classifier = LogisticSVM({BOF(MS_Dense(6), SIFT(L2Trunc), size, L1, levels)}, {Intersection});
+    classifier = SVM({BOF(MS_Dense(6), SIFT(L2Trunc), size, L1, levels)}, {Intersection});
     
-    evaluate(classifier, '/data/vdelaitr/FeiFeiNorm', db, fullfile('/data/vdelaitr/', sprintf('SVM_%s', db)));
+    evaluate(classifier, '/data/vdelaitr/DB_FeiFei/DB', db, fullfile('/data/vdelaitr/DB_FeiFei/', sprintf('SVM_%s', db)));
 end

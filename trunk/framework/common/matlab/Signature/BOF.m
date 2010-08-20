@@ -4,6 +4,7 @@ classdef BOF < SignatureAPI
         K     
         L          % grids for spatial pyramid
         L_cv
+        resize     % 0 if no resize, otherwise the maximum size of the bounding box
         centers   
         kmeans
         zone           % if zone is not null, the features should be inside the 'zone'th  bounding box if zone>0
@@ -13,17 +14,22 @@ classdef BOF < SignatureAPI
        
     methods (Access = protected)
         %------------------------------------------------------------------
-        function sigs = compute_signatures(obj, feat, descr, Ipath, pg, offset, scale)
+        function sigs = compute_signatures(obj, feat, descr, images, pg, offset, scale)
             global USE_PARALLEL;
            
             if USE_PARALLEL
-                sigs = run_in_parallel('BOF.parallel_signatures', struct('centers', obj.centers, 'sig_size', obj.sig_size, 'L', obj.L, 'zone', obj.zone), struct('feat', feat, 'descr', descr, 'Ipath', Ipath), 0, 0, pg, offset, scale)';
+                common = struct('centers', obj.centers, 'sig_size', obj.sig_size, 'L', obj.L, 'zone', obj.zone);
+                args = struct('feat', feat, 'descr', descr, 'image', []);
+                for i = 1:length(images)
+                    args(i).image = images(i);
+                end
+                sigs = run_in_parallel('BOF.parallel_signatures', common, args, 0, 0, pg, offset, scale)';
             else
-                n_img = size(Ipath, 1);
+                n_img = length(images);
                 sigs = zeros(obj.sig_size, n_img);
                 for k=1:n_img
                     pg.progress(offset+scale*k/n_img);
-                    sigs(:, k) = obj.sig_from_feat_descr(obj.L, obj.centers, feat{k}, descr{k}, Ipath{k}, obj.zone);
+                    sigs(:, k) = obj.sig_from_feat_descr(obj.L, obj.centers, feat{k}, descr{k}, images(k), obj.zone);
                 end    
             end
             
@@ -62,7 +68,7 @@ classdef BOF < SignatureAPI
             sig = zeros(common.sig_size, n_img);
             for k=1:n_img
                 task_progress(tid, k/n_img);
-                sig(:, k) = BOF.sig_from_feat_descr(common.L, common.centers, args(k).feat, args(k).descr, args(k).Ipath, common.zone);
+                sig(:, k) = BOF.sig_from_feat_descr(common.L, common.centers, args(k).feat, args(k).descr, args(k).image, common.zone);
             end  
             
             sig = sig';
@@ -71,7 +77,7 @@ classdef BOF < SignatureAPI
         end
 
         %------------------------------------------------------------------
-        function sig = sig_from_feat_descr(L, centers, feat, descr, Ipath, zone)
+        function sig = sig_from_feat_descr(L, centers, feat, descr, image, zone)
             if size(descr, 1) == 0
                 n_bin = sum(L(:,1).*L(:,2));
                 sig = zeros(size(centers,1)*n_bin,1);
@@ -79,18 +85,15 @@ classdef BOF < SignatureAPI
                 d = dist2(centers, descr);
                 m = (d == repmat(min(d), size(d,1), 1));  
                 
-                if zone > 0 % We draw the grid only on the bounding box
-                    [d f] = fileparts(Ipath);
-                    f = fullfile(d, sprintf('%s.info', f));
-                    bb = load(f, '-ascii');
-                    w = bb(4)-bb(2)+1;
-                    h = bb(5)-bb(3)+1;
-                    X = (feat(:,1)-bb(2))/w;
-                    Y = (feat(:,2)-bb(3))/h;
+                if zone > 0 % We draw the grid only on the bounding box                    
+                    bb = image.bndbox;
+                    w = bb(3)-bb(1)+1;
+                    h = bb(4)-bb(2)+1;
+                    X = (feat(:,1)-bb(1))/w;
+                    Y = (feat(:,2)-bb(2))/h;
                 else            % We draw the grid on the full image
-                    info = imfinfo(Ipath);
-                    w = info.Width;
-                    h = info.Height;                   
+                    w = image.size(1);
+                    h = image.size(2);                   
                     X = (feat(:,1)-1)/w;
                     Y = (feat(:,2)-1)/h;
                 end
@@ -118,7 +121,7 @@ classdef BOF < SignatureAPI
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = BOF(detector, descriptor, K, norm, L, zone, kmeans_lib, maxiter)
+        function obj = BOF(detector, descriptor, K, norm, L, zone, resize, kmeans_lib, maxiter)
             if nargin < 5 || isempty(L)
                 L = [1 1 1];
             end     
@@ -132,9 +135,12 @@ classdef BOF < SignatureAPI
                 zone = 0;
             end
             if nargin < 7
-                kmeans_lib = 'c';
+                resize = 0;
             end
             if nargin < 8
+                kmeans_lib = 'c';
+            end
+            if nargin < 9
                 maxiter = 200;
             end        
             
@@ -142,6 +148,7 @@ classdef BOF < SignatureAPI
             obj.detector = detector;
             obj.descriptor = descriptor;
             obj.K = K;
+            obj.resize = resize;
             obj.kmeans = Kmeans(K, kmeans_lib, maxiter); 
             obj.zone = zone;
             
@@ -156,7 +163,7 @@ classdef BOF < SignatureAPI
         
         %------------------------------------------------------------------
         % Eventually learn the training set signature
-        function obj = learn(obj, Ipaths)          
+        function obj = learn(obj, images)          
             global HASH_PATH TEMP_DIR;
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.toFileName()));
@@ -165,7 +172,7 @@ classdef BOF < SignatureAPI
                 write_log(sprintf('Loading signature from cache: %s.\n', file));
                 load(file,'centers','train_sigs');
                 obj.centers = centers;
-                if size(train_sigs,1) == length(Ipaths) && size(train_sigs,2) == obj.sig_size
+                if size(train_sigs,1) == length(images) && size(train_sigs,2) == obj.sig_size
                     obj.train_sigs = train_sigs';
                 else
                     obj.train_sigs = train_sigs;                                
@@ -182,23 +189,23 @@ classdef BOF < SignatureAPI
 
                 % Compute feature points
                 pg.setCaption('Computing feature points...');
-                feat = obj.compute_features(obj.detector, Ipaths, pg, 0, feature_progress_frac);
+                feat = obj.compute_features(obj.detector, images, obj.resize, pg, 0, feature_progress_frac);
                 progress_value = progress_value + feature_progress_frac;
 
                 % Compute descriptors
                 pg.setCaption('Computing descriptors...');
-                descr = obj.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat, pg, progress_value, descrip_progress_frac);           
+                descr = obj.compute_descriptors(obj.detector, obj.descriptor, images, feat, obj.resize, pg, progress_value, descrip_progress_frac);           
                 progress_value = progress_value + descrip_progress_frac;
                                 
                 % Filter features according to the bounding box
-                for i=1:length(Ipaths)
-                    [f d] = SignatureAPI.filter_by_zone(obj.zone, Ipaths{i}, feat{i}, descr{i});
+                for i=1:length(images)
+                    [f d] = SignatureAPI.filter_by_zone(obj.zone, images(i), feat{i}, descr{i});
                     feat{i} = f;
                     descr{i} = d;
-                end                
+                end                                
                 
                 % Compute visual vocabulary
-                n = obj.kmeans.prepare_kmeans(descr);
+                n = obj.kmeans.prepare_kmeans(descr,obj.KmeanstoFileName());
                 pg.setCaption(sprintf('Computing BOF... (found %d descriptors)', n));   
                 obj.centers = obj.kmeans.do_kmeans(...
                     fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,obj.KmeanstoFileName())));
@@ -206,7 +213,7 @@ classdef BOF < SignatureAPI
 
                 % Compute signature
                 pg.setCaption('Computing signatures...');
-                obj.train_sigs = obj.compute_signatures(feat, descr, Ipaths, pg, progress_value, sigs_progress_frac);
+                obj.train_sigs = obj.compute_signatures(feat, descr, images, pg, progress_value, sigs_progress_frac);
                                
                 train_sigs = obj.train_sigs;
                 centers = obj.centers;
@@ -217,14 +224,14 @@ classdef BOF < SignatureAPI
         
         %------------------------------------------------------------------
         % Return the signature of the Images
-        function sigs = get_signatures(obj, Ipaths, pg, offset, scale)  
+        function sigs = get_signatures(obj, images, pg, offset, scale)  
             global HASH_PATH TEMP_DIR;
             file = fullfile(TEMP_DIR, sprintf('%s_SIG-%s.mat',HASH_PATH,obj.toFileName()));
 
             if exist(file,'file') == 2
                 write_log(sprintf('Loading signature from cache: %s.\n', file));
                 load(file,'sigs');
-                if size(sigs,1) == length(Ipaths) && size(sigs,2) == obj.sig_size
+                if size(sigs,1) == length(images) && size(sigs,2) == obj.sig_size
                     sigs = sigs';                
                 end                    
             else    
@@ -241,24 +248,24 @@ classdef BOF < SignatureAPI
 
                 % Compute feature points
                 pg.setCaption('Computing feature points...');
-                feat = obj.compute_features(obj.detector, Ipaths, pg, offset, feature_progress_frac*scale);
+                feat = obj.compute_features(obj.detector, images, obj.resize, pg, offset, feature_progress_frac*scale);
                 progress_value = feature_progress_frac;
 
                 % Compute descriptors
                 pg.setCaption('Computing descriptors...');
-                descr = obj.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat, pg, offset + progress_value*scale, descrip_progress_frac*scale);
+                descr = obj.compute_descriptors(obj.detector, obj.descriptor, images, feat, obj.resize, pg, offset + progress_value*scale, descrip_progress_frac*scale);
                 progress_value = progress_value + descrip_progress_frac;
 
                 % Filter features according to the bounding box
-                for i=1:length(Ipaths)
-                    [f d] = SignatureAPI.filter_by_zone(obj.zone, Ipaths{i}, feat{i}, descr{i});
+                for i=1:length(images)
+                    [f d] = SignatureAPI.filter_by_zone(obj.zone, images(i), feat{i}, descr{i});
                     feat{i} = f;
                     descr{i} = d;
                 end
 
                 % Compute signature
                 pg.setCaption('Computing signatures...');
-                sigs = obj.compute_signatures(feat, descr, Ipaths, pg, offset + progress_value*scale, sigs_progress_frac*scale);            
+                sigs = obj.compute_signatures(feat, descr, images, pg, offset + progress_value*scale, sigs_progress_frac*scale);            
 
                 save(file,'sigs');
                 
@@ -290,12 +297,17 @@ classdef BOF < SignatureAPI
         function str = toString(obj)
             detect = obj.detector.toString();
             descrp = obj.descriptor.toString();
+            if obj.resize
+                imgresize = sprintf('BndBox resized to %d pixels', obj.resize);
+            else
+                imgresize = 'No BndBox resize';
+            end 
             n = obj.norm.toString();    
             klib = obj.kmeans.get_lib();
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = sprintf('Signature: Bag of features (K = %d, Zone = %d, histogram normalization: %s, K-means library: %s) of:\n$~~~~~~~~$%s of %s\n', obj.K, obj.zone, n, klib, descrp, detect);
+                str = sprintf('Signature: Bag of features (K = %d, Zone = %d, %s, histogram normalization: %s, K-means library: %s) of:\n$~~~~~~~~$%s of %s\n', obj.K, obj.zone, imgresize, n, klib, descrp, detect);
             else
-                str = sprintf('Signature: Spatial pyramid (K = %d, Zone = %d, L = %s, histogram normalization: %s, K-means library: %s) of\n$~~~~~~~~$%s of %s\n', obj.K, obj.zone, obj.get_pyramid(), n, klib, descrp, detect);
+                str = sprintf('Signature: Spatial pyramid (K = %d, Zone = %d, L = %s, %s, histogram normalization: %s, K-means library: %s) of\n$~~~~~~~~$%s of %s\n', obj.K, obj.zone, obj.get_pyramid(), imgresize, n, klib, descrp, detect);
             end
         end
         
@@ -305,9 +317,9 @@ classdef BOF < SignatureAPI
             descrp = obj.descriptor.toFileName();
             n = obj.norm.toFileName();            
             if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = sprintf('BOF[%s-%d-%d-%s-%s-%s]', klib, obj.K, obj.zone, n, descrp, detect);
+                str = sprintf('BOF[%s-%d-%d-%d-%s-%s-%s]', klib, obj.K, obj.zone, obj.resize, n, descrp, detect);
             else
-                str = sprintf('PYR[%s-%d-%d-%s-%s-%s-%s]', klib, obj.K, obj.zone, obj.get_pyramid(), n, descrp, detect);
+                str = sprintf('PYR[%s-%d-%d-%s-%d-%s-%s-%s]', klib, obj.K, obj.zone, obj.get_pyramid(), obj.resize, n, descrp, detect);
             end
         end
         
@@ -323,7 +335,7 @@ classdef BOF < SignatureAPI
             klib = obj.kmeans.get_lib();            
             detect = obj.detector.toFileName();
             descrp = obj.descriptor.toFileName();              
-            str = sprintf('Kmeans[%s-%d-%d-%s-%s]', klib, obj.K, obj.zone, descrp, detect);
+            str = sprintf('Kmeans[%s-%d-%d-%d-%s-%s]', klib, obj.K, obj.zone, obj.resize, descrp, detect);
         end        
     end
 end

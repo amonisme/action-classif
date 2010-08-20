@@ -32,7 +32,7 @@ classdef DetectorAPI
         %------------------------------------------------------------------
         % Returns features of the image specified by Ipath (one per line)
         % Format: X Y scale angle 0
-        feat = get_features(obj, Ipath)
+        feat = get_features(obj, Ipath, scale)
         
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
@@ -44,14 +44,14 @@ classdef DetectorAPI
     methods (Static)
         %------------------------------------------------------------------
         % Run in parallel
-        function feat = run_parallel(detector, Ipath)
+        function feat = run_parallel(common, Ipath_scale)
             tid = task_open();
 
             n_img = size(Ipath, 1);
             feat = cell(n_img, 1);
             for i=1:n_img
                 task_progress(tid, i/n_img);
-                feat{i} = detector.get_features(Ipath{i});
+                feat{i} = common.detector.get_features(Ipath_scale{i,1}, Ipath_scale{i,2});
             end
 
             task_close(tid);

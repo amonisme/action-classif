@@ -31,6 +31,8 @@ function display_img(N, dir, prefix, root, is_LSVM)
            
     fprintf(fid, regexprep(classifier.toString(),'\n', '\\\\\\\\\n'));
     
+    correct_label = cat(1, images(:).actions);
+    
     for i=1:n_classes
         
         fprintf(fid, '\\section{%s}\n', classes{i});  
@@ -46,11 +48,11 @@ function display_img(N, dir, prefix, root, is_LSVM)
         end
         
         % Compute PR
-        [rec,prec,ap,sortind] = precisionrecall(score(:, i), correct_label == i);
+        [rec,prec,ap,sortind] = precisionrecall(score(:, i), correct_label(:,i));
         ap = ap*100;
-        Ipath = Ipaths(sortind);
-        correct = correct_label(sortind);
-        assigned = assigned_label(sortind);
+        Ipath = {images(sortind).path}';
+        correct = correct_label(sortind,i);
+        assigned = assigned_action(sortind,i);
         sc = score(sortind, i);
 
         % plot precision/recall
@@ -80,7 +82,8 @@ function display_img(N, dir, prefix, root, is_LSVM)
             else
                 path = Ipath{I(j)};
             end
-            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{../%s}}\n', sc(I(j)), path);
+            path
+            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{%s}}\n', sc(I(j)), path);
         end
         fprintf(fid,'\\caption{%s: Correctly classified images, highest score}\n\\end{figure}\n', classes{i});
         
@@ -92,7 +95,7 @@ function display_img(N, dir, prefix, root, is_LSVM)
             else
                 path = Ipath{I(end-j+1)};
             end            
-            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{../%s}}\n', sc(I(end-j+1)), path);
+            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{%s}}\n', sc(I(end-j+1)), path);
         end
         fprintf(fid,'\\caption{%s: Correctly classified images, smallest score}\n\\end{figure}\n', classes{i});
         
@@ -105,7 +108,7 @@ function display_img(N, dir, prefix, root, is_LSVM)
             else
                 path = Ipath{I(j)};
             end               
-            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{../%s}}\n', sc(I(j)), path);                    
+            fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{%s}}\n', sc(I(j)), path);                    
         end
         fprintf(fid,'\\caption{%s: Misclassified images, highest score}\n\\end{figure}\n\\newpage', classes{i});
     end

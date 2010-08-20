@@ -43,7 +43,7 @@ classdef Kmeans < handle
         function n = prepare_kmeans(obj, points, file)
             global FILE_BUFFER_PATH;
             
-            if nargin >= 3 && ~exist(file,'file') == 2 
+            if nargin == 2 || (nargin == 3 && exist(file,'file') ~= 2) 
                 n = 0;
                 for i=1:size(points,1)
                     n = n + size(points{i}, 1);
@@ -86,7 +86,7 @@ classdef Kmeans < handle
         function prepare_kmeans_fused(obj, points, file)
             global FILE_BUFFER_PATH;
             
-            if nargin >= 3 && ~exist(file,'file') == 2            
+            if nargin == 2 || (nargin == 3 && exist(file,'file') ~= 2)        
                 switch obj.lib_id
                     case 0  % vlfeat
                         points = points';

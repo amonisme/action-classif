@@ -1,4 +1,4 @@
-function [feat descr] = run_colorDescriptor(Ipath, args, load_feat)
+function [feat descr] = run_colorDescriptor(Ipath, scale, args, load_feat)
     global FILE_BUFFER_PATH LIB_DIR;
 
     OS = computer;
@@ -21,10 +21,18 @@ function [feat descr] = run_colorDescriptor(Ipath, args, load_feat)
         end
     end
 
-    if(nargin == 3)
+    if(nargin == 4)
         input_file = fullfile(back,dir,'input');
         args = [sprintf('--loadRegions %s ', input_file) args];
         write_input(input_file, load_feat);
+    end
+    
+    if scale ~= 1
+        im = imresize(imread(Ipath), scale);
+        [d f ext] = fileparts(Ipath);
+        ext = ext(2:end);
+        Ipath = fullfile(FILE_BUFFER_PATH, sprintf('imgtmp.%s', ext));
+        imwrite(im, Ipath, ext);
     end
     
     output_file = fullfile(back,dir,'output');

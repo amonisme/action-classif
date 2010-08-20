@@ -35,7 +35,7 @@ classdef KernelAPI < handle
                         obj.gram_train_ok = 1;
                         obj.precompute_gram_matrix();
                         obj.disk_write_gram_matrix();    
-                    end                    
+                    end       
                     svm = svmlearn(sigs', labels, sprintf('-v 0 -c %s -j %s -t 4 -u0%s',num2str(C), num2str(J), fullfile(FILE_BUFFER_PATH, obj.gram_file)));
                 end
             else            

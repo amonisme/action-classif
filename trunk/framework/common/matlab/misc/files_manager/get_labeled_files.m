@@ -74,28 +74,30 @@ function [images map classes_name subclasses_name] = get_labeled_files_VOC(DB)
     n_classes = length(files);
     classes_name = cell(n_classes, 1);
     subclasses_name = cell(n_classes, 1);
-    map = zeros(n_classes, 1);
+    map = [];
     img = containers.Map;
     
     for i = 1:n_classes
         j = find(files(i).name == '_', 1) - 1;
         classes_name{i} = files(i).name(1:j);
         subclasses_name{i} = classes_name{i};
-        map(i) = i;
         fid = fopen(fullfile(root, files(i).name));
         ids = fscanf(fid, '%d_%d %d %d');
         n_img = length(ids) / 4;
         ids = reshape(ids, 4, n_img)';
-        ids = ids(ids(:,4) == 1, 1:3);
         for j = 1:size(ids,1)
             img_id = sprintf('%d_%06d@%d', ids(j,1), ids(j,2), ids(j,3));
             if img.isKey(img_id)
-                act = img(img_id);
-                act(i) = 1;
-                img(img_id) = act;
+                if ids(j,4) == 1
+                    act = img(img_id);
+                    act(i) = 1;
+                    img(img_id) = act;
+                end
             else
                 act = zeros(1, n_classes); 
-                act(i) = 1;
+                if ids(j,4) == 1
+                    act(i) = 1;
+                end
                 img(img_id) = act;
             end
         end

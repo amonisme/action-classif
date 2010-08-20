@@ -46,6 +46,9 @@ else
   model.sbin = sbin;
 end
 
+% normalization of BOF features
+model.histo_norm = L1();
+
 % size of root filter
 if nargin < 7
   sz = [round(h/model.sbin) round(w/model.sbin)];
