@@ -10,14 +10,15 @@ classdef BOFLSVM < ClassifierAPI
         n_components  % number of component in the mixture model  
         n_parts       % number of parts
         type_parts    % type of the parts ('A'll, 'H'og or 'B'of)
+        sampling      % feature sampling of SIFT and HOGs should be the same
     end
     
     methods (Static)
         %------------------------------------------------------------------
-        function [pos, neg, centers] = make_examples(detector, descriptor, kmeans, Ipaths, flippedpos, class_ids, map_ids, id)
+        function [pos, neg, centers] = make_examples(detector, descriptor, kmeans, images, flippedpos, map_ids, id)
             global TEMP_DIR HASH_PATH;
             
-            n_img = numel(Ipaths);
+            n_img = numel(images);
             
             w = zeros(n_img,1);
             bb = zeros(n_img, 4);
@@ -28,16 +29,15 @@ classdef BOFLSVM < ClassifierAPI
             descrp = descriptor.toFileName();
             file = sprintf('Kmeans[%s-%d-%d-%s-%s]', klib, kmeans.K, 0, descrp, detect);
             
-            feat = SignatureAPI.compute_features(detector, Ipaths);
-            descr = SignatureAPI.compute_descriptors(detector, descriptor, Ipaths, feat);
+            feat = SignatureAPI.compute_features(detector, images);
+            descr = SignatureAPI.compute_descriptors(detector, descriptor, images, feat);
             kmeans.prepare_kmeans(descr);
             centers = kmeans.do_kmeans(fullfile(TEMP_DIR, sprintf('%s_%s.mat',HASH_PATH,file)));
             
             for i=1:n_img
-                [bb_not_cropped bbox width] = get_bb_info(Ipaths{i});
-                w(i) = width;
-                trunc(i) = bbox(1);
-                bb(i,:) = bbox(2:end);
+                w(i) = images(i).size(1);
+                trunc(i) = images(i).truncated;
+                bb(i,:) = images(i).bndbox;
                 
                 d = dist2(centers, descr{i});
                 m = (d == repmat(min(d), size(d,1), 1));
@@ -50,49 +50,47 @@ classdef BOFLSVM < ClassifierAPI
             end
             trunc = logical(trunc);
 
+            do_action = cat(1,images(:).actions);
             if flippedpos
-                p = find(class_ids == id);
+                p = find(do_action(:,id));
                 n_pos = length(p);
                 pos = struct('im', cell(n_pos*2,1), 'flip', false, 'x1', 0, 'y1', 0, 'x2', 0, 'y2', 0, 'feat', []);
                 for i = 1:n_pos                   
-                    x1 = bb(p(i),1);
-                    x2 = bb(p(i),3);
-                    pos(2*i-1).im = Ipaths{p(i)};
+                    x1 = images(p(i)).bndbox(1);
+                    x2 = images(p(i)).bndbox(3);
+                    pos(2*i-1).im = images(p(i)).path;
                     pos(2*i-1).x1 = x1;
-                    pos(2*i-1).y1 = bb(p(i),2);
+                    pos(2*i-1).y1 = images(p(i)).bndbox(2);
                     pos(2*i-1).x2 = x2;
-                    pos(2*i-1).y2 = bb(p(i),4);
+                    pos(2*i-1).y2 = images(p(i)).bndbox(4);
                     pos(2*i-1).flip = false;
-                    pos(2*i-1).trunc = trunc(p(i));
-                    pos(2*i-1).feat = feat{p(i)};                    
+                    pos(2*i-1).trunc = images(p(i)).truncated;
+                    pos(2*i-1).feat = feat{i};
                     
-                    x1 = w(p(i)) - bb(p(i),3) + 1;
-                    x2 = w(p(i)) - bb(p(i),1) + 1;                    
-                    pos(2*i-0).im = Ipaths{p(i)};
+                    w = images(p(i)).size(1);
+                    x1 = w - bb(p(i),3) + 1;
+                    x2 = w - bb(p(i),1) + 1;                    
+                    pos(2*i-0).im = images(p(i)).path;
                     pos(2*i-0).x1 = x1;
-                    pos(2*i-0).y1 = bb(p(i),2);
+                    pos(2*i-0).y1 = images(p(i)).bndbox(2);
                     pos(2*i-0).x2 = x2;
-                    pos(2*i-0).y2 = bb(p(i),4);
+                    pos(2*i-0).y2 = images(p(i)).bndbox(4);
                     pos(2*i-0).flip = true;
-                    pos(2*i-0).trunc = trunc(p(i));
-                    pos(2*i-0).feat = feat{p(i)};   
+                    pos(2*i-0).trunc = images(p(i)).truncated; 
+                    pos(2*i-0).feat = feat{i};
                 end
             else
-                p = class_ids == id;
+                p = do_action(:,id);
                 box = bb(p,:);
-                pos = struct('im', Ipaths(p), 'x1', {box(:,1)}, 'y1', {box(:,2)}, 'x2', {box(:,3)}, 'y2', {box(:,4)}, 'flip', false, 'trunc', {trunc(:)}, 'feat', feat(p));
+                pos = struct('im', {images(p).path}, 'x1', {box(:,1)}, 'y1', {box(:,2)}, 'x2', {box(:,3)}, 'y2', {box(:,4)}, 'flip', false, 'trunc', {trunc(:)}, 'feat', feat(p));
             end
             
             if ~isempty(map_ids) % if empty, it is identity
-                same_class = find(map_ids == map_ids(id));
-                n = ones(n_img,1);
-                for i=1:length(same_class)
-                    n = n & class_ids ~= same_class(i);
-                end
+                n = sum(do_action(:, map_ids == map_ids(id) ),2) == 0; 
             else
-                n = class_ids ~= id;
+                n = ~do_action(:,id);
             end
-            neg = struct('im', Ipaths(n), 'flip', false, 'feat', feat(n));  
+            neg = struct('im', {images(n).path}', 'flip', false, 'feat', feat(n));  
         end
 
         %------------------------------------------------------------------
@@ -103,7 +101,7 @@ classdef BOFLSVM < ClassifierAPI
             models = cell(n_index, 1);
             
             for k = 1:n_index
-                models{k} = BOFLSVM.train_model(common.detector, common.descriptor, common.kmeans, common.Ipaths, common.names{index(k)}, common.note, common.class_ids, common.map_ids, common.n_compo, common.n_parts, index(k));
+                models{k} = BOFLSVM.train_model(common.detector, common.descriptor, common.kmeans, common.images, common.names{index(k)}, common.note, common.map_ids, common.n_compo, common.n_parts, common.sampling, index(k));
                 task_progress(tid, k/n_index);
             end
             
@@ -118,7 +116,7 @@ classdef BOFLSVM < ClassifierAPI
             % split data into two groups: left vs. right facing instances
             for k = 1:length(I)
                 i = I(k);
-                models{k} = initmodel(common.name, common.spos{i}, common.note, common.centers, 'N');
+                models{k} = my_initmodel(common.name, common.spos{i}, common.note, common.centers, 'N', common.sampling*2);
                 inds = lrsplit(models{k}, common.spos{i}, i);
                 models{k} = my_train(common.name, models{k}, common.spos{i}(inds), common.neg, i, 1, 1, 1, ...
                                   common.cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
@@ -143,15 +141,16 @@ classdef BOFLSVM < ClassifierAPI
         end        
 
         %------------------------------------------------------------------
-        function model = train_model(detector, descriptor, kmeans, Ipaths, name, note, class_ids, map_ids, n_compo, n_parts, i)            
+        function model = train_model(detector, descriptor, kmeans, images, name, note, map_ids, n_compo, n_parts, sampling, i)            
             globals;
             try
               load([cachedir name '_final']);
             catch ME
-                try
-                  load(fullfile([cachedir name '_examples']));
+                try                    
+                  load(fullfile([cachedir name '_examples_' descriptor.toFileName() '_' detector.toFileName()]));
+                  fprintf('Examples loaded from: %s\n', [cachedir name '_examples']);
                 catch  
-                  [pos, neg, centers] = BOFLSVM.make_examples(detector, descriptor, kmeans, Ipaths, true, class_ids, map_ids, i);
+                  [pos, neg, centers] = BOFLSVM.make_examples(detector, descriptor, kmeans, images, true, map_ids, i);
                   save([cachedir name '_examples'], 'pos', 'neg', 'centers');
                 end
                 if n_compo>length(pos)
@@ -168,14 +167,14 @@ classdef BOFLSVM < ClassifierAPI
                   load(fullfile([cachedir name '_lrsplit1']));
                 catch                        
                   if 0
-                      common = struct('name', name, 'spos', [], 'neg', neg, 'note', note, 'centers', centers, 'cachesize', cachesize);
+                      common = struct('name', name, 'spos', [], 'neg', neg, 'note', note, 'centers', centers, 'cachesize', cachesize, 'sampling', sampling);
                       common.spos = spos;
                       models = run_in_parallel('BOFLSVM.lrsplit1_parallel', common, (1:n_compo)', 0, 0);
                   else
                       initrand(); 
                       for i = 1:n_compo
                         % split data into two groups: left vs. right facing instances                    
-                        models{i} = my_initmodel(name, spos{i}, note, centers, 'N');
+                        models{i} = my_initmodel(name, spos{i}, note, centers, 'N', sampling*2);
                         inds = lrsplit(models{i}, spos{i}, i);                                             
                         models{i} = my_train(name, models{i}, spos{i}(inds), neg, i, 1, 1, 1, ...
                                           cachesize, true, 0.7, false, ['lrsplit1_' num2str(i)]);
@@ -302,7 +301,8 @@ classdef BOFLSVM < ClassifierAPI
             obj.n_components = n_compo;
             obj.n_parts = n_parts;
             obj.type_parts = type_parts;
-            obj.detector = MS_Dense(4,1.3);
+            obj.sampling = 6;
+            obj.detector = MS_Dense(obj.sampling,1.44,5);
             obj.descriptor = SIFT(L2Trunc);
             obj.kmeans = Kmeans(K, 'c', 200);            
         end
@@ -311,13 +311,13 @@ classdef BOFLSVM < ClassifierAPI
         % Learns from the training directory 'root'
         function [cv_prec cv_dev_prec cv_acc cv_dev_acc] = learn(obj, root)
             global TEMP_DIR HASH_PATH USE_PARALLEL;
-            [Ipaths ids map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
-            obj.store_names(c_names, subc_names, map);           
+            [images map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
+            obj.store_names(c_names, subc_names, map);             
             
             n_classes = length(obj.subclasses_names);
             names = cell(n_classes,1);
             for i = 1:n_classes
-                names{i} = sprintf('%s_%s_BLSVM_%d_%d', HASH_PATH, obj.subclasses_names{i}, obj.n_components, obj.n_parts);
+                names{i} = sprintf('%s_%s_BLSVM_%d_%d_%s', HASH_PATH, obj.subclasses_names{i}, obj.n_components, obj.n_parts, obj.type_parts);
             end
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat', HASH_PATH, obj.toFileName()));
@@ -328,23 +328,23 @@ classdef BOFLSVM < ClassifierAPI
                 write_log(sprintf('Classifier loaded from cache: %s.\n', file));
             else
                 if USE_PARALLEL
-                    common = struct('Ipaths', [], ...
+                    common = struct('images', images, ...
                                     'names', [], ...
                                     'note', obj.toFileName(), ...
-                                    'class_ids', ids, ...
                                     'map_ids', map, ...
                                     'n_compo', obj.n_components, ...
                                     'n_parts', obj.n_parts, ...
                                     'detector', obj.detector, ...
                                     'descriptor', obj.descriptor, ...
-                                    'kmeans', obj.kmeans);
-                    common.Ipaths = Ipaths;
+                                    'kmeans', obj.kmeans, ...
+                                    'sampling', obj.sampling);
                     common.names = names;
-                    lsvm_models = run_in_parallel('BOFLSVM.train_model_parallel', common, (1:n_classes)', 0, 0);
+                    lsvm_models = run_in_parallel('BOFLSVM.train_model_parallel', common, (1:n_classes)', 0, 1);
+                    %lsvm_models = run_in_parallel('BOFLSVM.train_model_parallel', common, (1:n_classes)', [], 10000);
                 else
                     lsvm_models = cell(n_classes, 1);
                     for k = 1:n_classes
-                        lsvm_models{k} = BOFLSVM.train_model(obj.detector, obj.descriptor, obj.kmeans, Ipaths, names{k}, obj.toFileName(), ids, map, obj.n_components, obj.n_parts, k);
+                        lsvm_models{k} = BOFLSVM.train_model(obj.detector, obj.descriptor, obj.kmeans, images, names{k}, obj.toFileName(), map, obj.n_components, obj.n_parts, k);
                     end
                 end               
                 
@@ -360,7 +360,7 @@ classdef BOFLSVM < ClassifierAPI
         
         %------------------------------------------------------------------
         % Classify the testing pictures
-        function [Ipaths classes subclasses map_sub2sup correct_label assigned_label scores] = classify(obj, Ipaths, correct_label)            
+        function [images classes subclasses map_sub2sup assigned_action scores] = classify(obj, root_images)              
             global USE_PARALLEL TEMP_DIR HASH_PATH;
             
             classes = obj.classes_names;
@@ -368,8 +368,7 @@ classdef BOFLSVM < ClassifierAPI
             map_sub2sup = obj.map_sub2sup;   
                       
             if nargin < 3
-                [Ipaths ids] = get_labeled_files(Ipaths, 'Loading testing set...\n');            
-                correct_label = ids;
+                images = get_labeled_files(root_images, 'Loading testing set...\n');            
             end
 
             n_img = length(Ipaths);                                
@@ -392,7 +391,7 @@ classdef BOFLSVM < ClassifierAPI
                     scores = cell(1,n_classes);
                     for i = 1:n_classes
                         common = struct('model', obj.models{i}, 'overlaps', overlaps);
-                        args = struct('Ipaths', Ipaths, 'feat', feat, 'descr', descr);
+                        args = struct('Ipaths', {images(:).path}', 'feat', feat, 'descr', descr);
                         scores{i} = run_in_parallel('BOFLSVM.classify_img_parallel', common, args, [], 0, pg, (i-1)/n_classes, 1/n_classes);
                     end
                     scores = cat(2, scores{:});                   
@@ -400,7 +399,7 @@ classdef BOFLSVM < ClassifierAPI
                     n_classes = length(obj.models);
                     scores = cell(1,n_classes);
                     for i = 1:n_classes
-                        scores{i} = obj.classify_img(obj.models{i}, Ipaths, feat, descr, overlaps);
+                        scores{i} = obj.classify_img(obj.models{i}, {images(:).path}', feat, descr, overlaps);
                         pg.progress(i/n_classes);
                     end
                     scores = cat(2, scores{:});
@@ -409,10 +408,10 @@ classdef BOFLSVM < ClassifierAPI
             end            
             scores = scores(:,:,6);  % 0.5 overlap
 
-            assigned_label = zeros(n_img,1); 
+            assigned_action = zeros(n_img,1); 
             for i = 1:n_img
                 [m, j] = max(scores(i,:));
-                assigned_label(i) = j;
+                assigned_action(i) = j;
             end
             
             pg.close();

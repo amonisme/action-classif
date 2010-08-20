@@ -21,8 +21,8 @@ classdef DescriptorAPI
         %------------------------------------------------------------------
         % Returns descriptors of the image specified by Ipath given its
         % feature points 'feat' (one per line)
-        function descr = get_descriptors(obj, Ipath, feat)
-            descr = obj.compute_descriptors(Ipath, feat);
+        function descr = get_descriptors(obj, Ipath, feat, scale)
+            descr = obj.compute_descriptors(Ipath, feat, scale);
             descr = single(descr);
             descr = obj.norm.normalize(descr')';
         end
@@ -37,14 +37,14 @@ classdef DescriptorAPI
     methods (Static)        
         %------------------------------------------------------------------
         % Run in parallel
-        function descr = run_parallel(descriptor, Ipath_feat)
+        function descr = run_parallel(descriptor, Ipath_feat_scale)
             tid = task_open();
 
             n_img = size(Ipath_feat, 1);
             descr = cell(n_img, 1);
             for i=1:n_img
                 task_progress(tid, i/n_img);
-                descr{i} = descriptor.get_descriptors(Ipath_feat{i,1}, Ipath_feat{i,2});
+                descr{i} = descriptor.get_descriptors(Ipath_feat_scale{i,1}, Ipath_feat_scale{i,2}, Ipath_feat_scale{i,3});
             end
 
             task_close(tid);

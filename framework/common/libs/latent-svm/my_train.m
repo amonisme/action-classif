@@ -314,10 +314,7 @@ for i = 1:numpos
     for j=1:model.K
         featBOF(j) = length(find(warpedBOF{i}.feat(:,5) == j));
     end
-    n = norm(featBOF);
-    if n ~= 0
-        featBOF = featBOF / n;
-    end    
+    featBOF = model.histo_norm.normalize(featBOF);  
     dim = dim + numel(featBOF);
   end
   

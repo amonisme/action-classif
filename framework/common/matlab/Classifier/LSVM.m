@@ -50,7 +50,7 @@ classdef LSVM < ClassifierAPI
                     pos(2*i-0).trunc = images(p(i)).truncated;
                 end
             else
-                p = class_ids == id;
+                p = do_action(:,id);
                 box = bb(p,:);
                 pos = struct('im', {images(p).path}, 'x1', {box(:,1)}, 'y1', {box(:,2)}, 'x2', {box(:,3)}, 'y2', {box(:,4)}, 'flip', false, 'trunc', {trunc(:)});
             end
@@ -206,7 +206,7 @@ classdef LSVM < ClassifierAPI
             scores = cell(1,n_classes);
             
             for i = 1:n_classes
-                scores{i} = LSVM.classify_img(models{i}, common.Ipaths, common.overlaps);
+                scores{i} = LSVM.classify_img(models{i}, common.images, common.overlaps);
                 task_progress(tid, i/n_classes);
             end
             scores = cat(1, scores{:});
@@ -215,19 +215,18 @@ classdef LSVM < ClassifierAPI
         end
         
         %------------------------------------------------------------------
-        function scores = classify_img(model, Ipaths, overlaps)
-            n_img = length(Ipaths);
+        function scores = classify_img(model, images, overlaps)
+            n_img = length(images);
             n_overlaps = length(overlaps);
             scores = ones(1,n_img,n_overlaps)*(-Inf);
             
             for i = 1:n_img 
-                [bb_not_cropped person_box w h] = get_bb_info(Ipaths{i});
-                person_box = person_box(2:end);                
+                person_box = images(i).bndbox;                
                 
-                [dets, boxes] = imgdetect(imread(Ipaths{i}), model, -Inf); %models{j}.thresh);
+                [dets, boxes] = imgdetect(imread(images(i).path), model, -Inf); %models{j}.thresh);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
-                    [dets boxes] = my_clipboxes(w, h, dets, boxes);
+                    [dets boxes] = my_clipboxes(images(i).size(1), images(i).size(2), dets, boxes);
 
                     overlap = inter_box(person_box, dets(:, 1:4));
                     for k = 1:n_overlaps
@@ -298,19 +297,16 @@ classdef LSVM < ClassifierAPI
         
         %------------------------------------------------------------------
         % Classify the testing pictures
-        function [Ipaths classes subclasses map_sub2sup correct_label assigned_label scores] = classify(obj, Ipaths, correct_label)            
+        function [images classes subclasses map_sub2sup assigned_action scores] = classify(obj, root_images)            
             global USE_PARALLEL TEMP_DIR HASH_PATH;
             
             classes = obj.classes_names;
             subclasses = obj.subclasses_names;
-            map_sub2sup = obj.map_sub2sup;   
-                      
-            if nargin < 3
-                [Ipaths ids] = get_labeled_files(Ipaths, 'Loading testing set...\n');            
-                correct_label = ids;
-            end
+            map_sub2sup = obj.map_sub2sup;  
+            
+            [images map_sub2sup subclasses subclasses] = get_labeled_files(root_images, 'Loading testing set...\n');      
 
-            n_img = length(Ipaths);
+            n_img = length(images);
                     
             pg = ProgressBar('Classifying', 'Computing bounding boxes...');
                      
@@ -323,14 +319,13 @@ classdef LSVM < ClassifierAPI
                 fprintf('Scores loaded from: %s\n', file);
             else           
                 if USE_PARALLEL 
-                    common = struct('Ipaths', [], 'overlaps', overlaps);
-                    common.Ipaths = Ipaths;
+                    common = struct('images', images, 'overlaps', overlaps);
                     scores = run_in_parallel('LSVM.classify_parallel', common, obj.models, [], 0, pg, 0, 1);
                 else            
                     n_classes = length(obj.models);
                     scores = cell(1,n_classes);
                     for i = 1:n_classes
-                        scores{i} = obj.classify_img(obj.models{i}, Ipaths, overlaps);
+                        scores{i} = obj.classify_img(obj.models{i}, images, overlaps);
                         pg.progress(i/n_classes);
                     end
                     scores = cat(1, scores{:});
@@ -340,10 +335,10 @@ classdef LSVM < ClassifierAPI
             scores = scores(:,:,6);  % 0.5 overlap
             scores = scores';    
 
-            assigned_label = zeros(n_img,1); 
+            assigned_action = zeros(n_img,size(scores, 2));
             for i = 1:n_img
                 [m, j] = max(scores(i,:));
-                assigned_label(i) = j;
+                assigned_action(i, j) = 1;
             end
             
             pg.close();
@@ -351,20 +346,19 @@ classdef LSVM < ClassifierAPI
         
         %------------------------------------------------------------------
         % Classify the given picture
-        function [dets parts] = get_boxes(obj, model_id, Ipath, visu)
+        function [dets parts] = get_boxes(obj, model_id, image, visu)
             if nargin < 4
                 visu = 0;
             end
             
             default_overlap = 0.5;
-                
-            [bb_not_cropped person_box w h] = get_bb_info(Ipath);
-            person_box = person_box(2:end);  
 
-            [dets, boxes] = imgdetect(imread(Ipath), obj.models{model_id}, -Inf);
+            person_box = image.bndbox;
+
+            [dets, boxes] = imgdetect(imread(image.path), obj.models{model_id}, -Inf);
             if ~isempty(boxes)
                 boxes = reduceboxes(obj.models{model_id}, boxes);
-                [dets boxes] = my_clipboxes(w, h, dets, boxes);
+                [dets boxes] = my_clipboxes(image.size(1), image.size(2), dets, boxes);
 
                 I = inter_box(person_box, dets(:, 1:4)) > default_overlap;              
                 if ~isempty(find(I,1))
@@ -379,7 +373,7 @@ classdef LSVM < ClassifierAPI
             end
             
             if visu
-                showboxes(imread(Ipath), parts);
+                showboxes(imread(image.path), parts);
             end
         end
         

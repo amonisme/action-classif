@@ -14,8 +14,8 @@ classdef C_SIFT < DescriptorAPI
             end
         end             
         %------------------------------------------------------------------
-        function descr = impl_colorDescriptor(Ipath, feat)
-            [f descr] = run_colorDescriptor(Ipath, '--descriptor csift', feat);
+        function descr = impl_colorDescriptor(Ipath, feat, scale)
+            [f descr] = run_colorDescriptor(Ipath, scale, '--descriptor csift', feat);
         end
     end
 
@@ -23,8 +23,8 @@ classdef C_SIFT < DescriptorAPI
         %------------------------------------------------------------------
         % Returns descriptors of the image specified by Ipath given its
         % feature points 'feat' (one per line)
-        function descr = compute_descriptors(obj, Ipath, feat)
-            descr = obj.impl_colorDescriptor(Ipath, feat);
+        function descr = compute_descriptors(obj, Ipath, feat, scale)
+            descr = obj.impl_colorDescriptor(Ipath, feat, scale);
         end    
     end    
     

@@ -4,7 +4,7 @@ function weights  = normalize_scores(scores, labels)
     
     s = [scores ones(size(scores,1),1)];
     for i=1:n_classes
-        weights(:,i) = logistic(s, labels == i);
+        weights(:,i) = logistic(s, labels(:,i));
     end
 end
 

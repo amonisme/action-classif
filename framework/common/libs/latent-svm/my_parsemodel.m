@@ -54,7 +54,7 @@ else
     end
     for s = r.rhs
       % recurse
-      model = parsemodel(model, blocks, s);
+      model = my_parsemodel(model, blocks, s);
     end
   end
 end

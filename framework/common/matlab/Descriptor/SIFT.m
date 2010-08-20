@@ -16,13 +16,17 @@ classdef SIFT < DescriptorAPI
             end
         end    
         %------------------------------------------------------------------
-        function descr = impl_colorDescriptor(Ipath, feat)
-            [f descr] = run_colorDescriptor(Ipath, '--descriptor sift', feat);
+        function descr = impl_colorDescriptor(Ipath, feat, scale)
+            [f descr] = run_colorDescriptor(Ipath, scale, '--descriptor sift', feat);
         end
         
         %------------------------------------------------------------------
-        function descr = impl_vlfeat(Ipath, feat)
-            I = single(rgb2gray(imread(Ipath)));  
+        function descr = impl_vlfeat(Ipath, feat, scale)
+            if scale ~= 1
+                I = single(imresize(rgb2gray(imread(Ipath)),scale)); 
+            else
+                I = single(rgb2gray(imread(Ipath))); 
+            end
             [f descr] = vl_sift(I,'frames',feat);
         end
     end
@@ -70,11 +74,11 @@ classdef SIFT < DescriptorAPI
         %------------------------------------------------------------------
         % Returns descriptors of the image specified by Ipath given its
         % feature points 'feat' (one per line)
-        function descr = compute_descriptors(obj, Ipath, feat)
+        function descr = compute_descriptors(obj, Ipath, feat, scale)
             if(obj.lib == 0)
-                descr = obj.impl_colorDescriptor(Ipath, feat);
+                descr = obj.impl_colorDescriptor(Ipath, feat, scale);
             else
-                descr = obj.impl_vlfeat(Ipath, feat);
+                descr = obj.impl_vlfeat(Ipath, feat, scale);
             end
         end
     end

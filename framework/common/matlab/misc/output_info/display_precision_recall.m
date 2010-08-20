@@ -1,4 +1,4 @@
-function precision = display_precision_recall(classes, correct_label, score, fig)
+function precision = display_precision_recall(classes, correct_labels, score, fig)
     if nargin<4 
         fig=0; 
     end
@@ -7,7 +7,7 @@ function precision = display_precision_recall(classes, correct_label, score, fig
     precision = size(n_classes, 1);
     
     for i=1:n_classes
-        [rec,prec,ap] = precisionrecall(score(:, i), correct_label == i);
+        [rec,prec,ap] = precisionrecall(score(:, i), correct_labels(:,i));
         ap = ap*100;
         
         if fig

@@ -20,9 +20,9 @@ classdef Harris < DetectorAPI
     end
     methods (Access = protected)
         %------------------------------------------------------------------  
-        function feat = impl_colorDescriptor(obj, Ipath)
+        function feat = impl_colorDescriptor(obj, Ipath, scale)
             args = sprintf('--detector harrislaplace --harrisThreshold %s --harrisK %s --laplaceThreshold %s', num2str(obj.harrisTh), num2str(obj.harrisK), num2str(obj.laplaceTh));
-            feat = run_colorDescriptor(Ipath, args);
+            feat = run_colorDescriptor(Ipath, scale, args);
         end
     end
     methods
@@ -60,8 +60,8 @@ classdef Harris < DetectorAPI
         
         %------------------------------------------------------------------
         % Returns feature points of the image specified by Ipath 
-        function feat = get_features(obj, Ipath)
-            feat = obj.impl_colorDescriptor(Ipath);
+        function feat = get_features(obj, Ipath, scale)
+            feat = obj.impl_colorDescriptor(Ipath, scale);
         end
         
         %------------------------------------------------------------------
