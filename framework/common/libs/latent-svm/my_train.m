@@ -475,7 +475,7 @@ for i = 1:numneg
         dim = dim + numel(tmpfeatHOG);
       end
       if doBOF       
-        tmpfeatBOF = get_histo_from_integral(featBOF, x, y, x+rsize(2)-1, y+rsize(1)-1);
+        tmpfeatBOF = get_histo_from_integral(featBOF, x, y, x+rsize(2)-1, y+rsize(1)-1, model.histo_norm);
         dim = dim + numel(tmpfeatBOF);
       end
       fwrite(fid, [-1 (i-1)*rndneg+j 0 0 0 2 dim], 'int32');

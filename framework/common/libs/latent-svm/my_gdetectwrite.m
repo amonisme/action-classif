@@ -141,7 +141,7 @@ else
     fHOG = [];
 end
 if type == 'B' || type == 'A'
-    fBOF = get_histo_from_integral(histo, fx, fy, fx+fsz(2)-1, fy+fsz(1)-1);
+    fBOF = get_histo_from_integral(histo, fx, fy, fx+fsz(2)-1, fy+fsz(1)-1, model.histo_norm);
 else
     fBOF = [];
 end
