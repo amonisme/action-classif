@@ -315,11 +315,16 @@ classdef BOF < SignatureAPI
             klib = obj.kmeans.get_lib();
             detect = obj.detector.toFileName();
             descrp = obj.descriptor.toFileName();
-            n = obj.norm.toFileName();            
-            if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
-                str = sprintf('BOF[%s-%d-%d-%d-%s-%s-%s]', klib, obj.K, obj.zone, obj.resize, n, descrp, detect);
+            n = obj.norm.toFileName();     
+            if obj.resize
+                do_resize = 1;
             else
-                str = sprintf('PYR[%s-%d-%d-%s-%d-%s-%s-%s]', klib, obj.K, obj.zone, obj.get_pyramid(), obj.resize, n, descrp, detect);
+                do_resize = 0;
+            end     
+            if size(obj.L,1) == 1 && obj.L(1,1)*obj.L(1,2) == 1
+                str = sprintf('BOF[%s-%d-%d-%d-%s-%s-%s]', klib, obj.K, obj.zone, do_resize, n, descrp, detect);
+            else
+                str = sprintf('PYR[%s-%d-%d-%s-%d-%s-%s-%s]', klib, obj.K, obj.zone, obj.get_pyramid(), do_resize, n, descrp, detect);
             end
         end
         
