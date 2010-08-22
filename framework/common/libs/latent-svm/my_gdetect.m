@@ -281,7 +281,7 @@ for level = levels
             [h w] = size(r{i});
             for y = 1:h
                 for x = 1:w
-                    r{i}(y,x) = r{i}(y,x) + ihistos{i}' * get_histo_from_integral(pyra.histo{level}, x, y, x+filter_sizes{i}(1)-1, y+filter_sizes{i}(2)-1, model.histo_norm);
+                    r{i}(y,x) = r{i}(y,x) + ihistos{i}' * get_histo_from_integral(pyra.histo{level}, x, y, x+filter_sizes{i}(2)-1, y+filter_sizes{i}(1)-1, model.histo_norm);
                 end
             end
           end
