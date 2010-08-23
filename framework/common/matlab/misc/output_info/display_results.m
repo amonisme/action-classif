@@ -1,4 +1,4 @@
-function [accuracy precision] = display_results(dir, fig, root)
+  function [accuracy precision] = display_results(dir, fig, root)
     if nargin < 2
         fig = 0;
     end
@@ -8,9 +8,22 @@ function [accuracy precision] = display_results(dir, fig, root)
 
     load(fullfile(root,dir,'results.mat'));
     
-    accuracy = display_multiclass_accuracy(classes, confusion_table(correct_label,assigned_label));
+    % Output results
+    if ~isempty(map_sub2sup)        
+        fprintf('Results for subclasses:\n');    
+    end
+    correct_labels = cat(1, images(:).actions);
+    table = confusion_table(correct_labels,assigned_action);  
+    accuracy = display_multiclass_accuracy(subclasses, table);
+    precision = display_precision_recall(subclasses, correct_labels, score); 
     
-    precision = display_precision_recall(classes, correct_label, score, fig);
+    if ~isempty(map_sub2sup)
+        fprintf('Results for classes:\n');
+        [new_score new_correct_action new_assigned_action] = convert2supclasses(map_sub2sup, score, correct_labels, assigned_action);
+        new_table = confusion_table(new_correct_action, new_assigned_action);  
+        accuracy = display_multiclass_accuracy(classes, new_table);
+        precision = display_precision_recall(classes, new_correct_action, new_score); 
+    end
     
     file = fullfile(root, dir, 'cross_validation.txt');
     if exist(file, 'file') == 2
