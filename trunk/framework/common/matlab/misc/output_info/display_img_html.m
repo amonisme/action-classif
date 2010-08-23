@@ -1,5 +1,6 @@
 function display_img_html(dir, prefix, is_LSVM)
-    target_dir = '/data/public_html/vdelaitr/html_summary';
+    %target_dir = '/data/public_html/vdelaitr/html_summary';
+    target_dir = 'VOC_results/html';
     img_per_line = 6;
     img_size = 150;
     
@@ -29,7 +30,8 @@ function display_img_html(dir, prefix, is_LSVM)
     fprintf(fid, '<html>\n<body>\n<h1>%s<h1>\n', classifier.toFileName());    
     
     % Confusion table:
-    table = confusion_table(correct_label,assigned_label);     
+    correct_label = cat(1, images(:).actions);
+    table = confusion_table(correct_label,assigned_action);     
     [perf_total perf_classes table] = get_accuracy(table);
 
     fprintf(fid, '<h2>Confusion Table (Accuracy = %0.2f)</h2>\n<table align="center" border="1">', perf_total);
@@ -61,7 +63,7 @@ function display_img_html(dir, prefix, is_LSVM)
     % MAP
     precision = size(n_classes, 1);    
     for i=1:n_classes
-        [rec,prec,ap] = precisionrecall(score(:, i), correct_label == i);
+        [rec,prec,ap] = precisionrecall(score(:, i), correct_label(:,i));
         precision(i) = ap*100;
     end
     fprintf(fid, '<h2>Average precision (mAP = %0.2f)</h2>\n', mean(precision));
@@ -112,12 +114,12 @@ function display_img_html(dir, prefix, is_LSVM)
         end
         
         % Compute PR
-        [rec,prec,ap,sortind] = precisionrecall(score(:, i), correct_label == i);
+        [rec,prec,ap,sortind] = precisionrecall(score(:, i), correct_label(:,i));
         ap = ap*100;
-        Ipaths = Ipaths(sortind);
-        correct_label = correct_label(sortind);
-        assigned_label = assigned_label(sortind);
-        score = score(sortind, :);
+        Ipaths = {images(sortind).path}';        
+        correct = correct_label(sortind,i);
+        assigned = assigned_action(sortind,i);
+        sc = score(sortind, i);
 
         % plot precision/recall
         pr_file = sprintf('%s_pr.png', classes{i});
@@ -142,76 +144,56 @@ function display_img_html(dir, prefix, is_LSVM)
         fprintf(fid, '\n</center><br><font size="3"><a href="index.html">Back to index</a><br></font>\n');        
         
         % Images of the class
-        fprintf(fid,'<h2>Images of class %s\n</h2>', classes{i});
-        I = find(correct_label == i);
-        generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, I, 'right', img_per_line, img_size, is_LSVM);
-        
-        % Misclassified images, highest score
-        fprintf(fid,'<h2>Images of other classes classified as %s\n</h2>', classes{i});
-        I = find(assigned_label == i & correct_label ~= i);
-        generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, I, 'wrong', img_per_line, img_size, is_LSVM);    
-        
+        fprintf(fid,'<h2>Images sorted by decreasing AP\n</h2>', classes{i});
+        generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned, sc, i, correct, img_per_line, img_size, is_LSVM);
+                
         fprintf(fid, '</body>\n</html>');
         fclose(fid);
     end    
 end
 
-function generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, I, type, img_per_line, img_size, is_LSVM)
+function generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_label, score, i, correct_label, img_per_line, img_size, is_LSVM)
     fprintf(fid,'<table border="0" align="center"><tr>'); 
     deb_line = 1;
-    num_img = length(I);
-    is_right = strcmp(type, 'right');
+    num_img = length(Ipaths);
     for j = 1:num_img
         if 0
             if is_LSVM
-                path = lsvm_draw_boxes(target_dir, classifier, assigned_label(I(j)), Ipaths{I(j)}, classes{i}, type, j);
+                path = lsvm_draw_boxes(target_dir, classifier, assigned_label(j), Ipaths{j}, classes{i}, type, j);
             else
-                path = sprintf('%s_%s_%d.png', classes{i}, type, j);
-                cmd = sprintf('cp %s %s', Ipaths{I(j)}, fullfile(target_dir,path));
-                system(cmd);
+                path = sprintf('%s_%d.png', classes{i}, j);
+                copyfile(Ipaths{j}, fullfile(target_dir,path));
             end
         else
-            path = sprintf('%s_%s_%d.png', classes{i}, type, j);
+            path = sprintf('%s_%d.png', classes{i}, j);
         end
         if mod(j-1,img_per_line) == 0 && j ~= 1 && j ~= num_img
             fprintf(fid, '</tr>\n');
-            if is_right
-                generate_score_line(fid, score(I(deb_line:j-1), :), assigned_label(I(deb_line:j-1)), i, classes);
-            else
-                generate_score_line(fid, score(I(deb_line:j-1), :), assigned_label(I(deb_line:j-1)));
-            end
+            generate_score_line(fid, score(deb_line:j-1), correct_label(deb_line:j-1), classes);
             deb_line = j;
             fprintf(fid, '<tr>\n');
         end
         fprintf(fid, '<td align="center">\n');
-        generate_img(fid, path, sprintf('height="%d" title="Original path: %s"', img_size, Ipaths{I(j)}));
+        generate_img(fid, path, sprintf('height="%d" title="Original path: %s"', img_size, Ipaths{j}));
         fprintf(fid, '</td>\n');
     end
     fprintf(fid,'</tr>\n');
-    if is_right
-        generate_score_line(fid, score(I(deb_line:num_img), :), assigned_label(I(deb_line:num_img)), i, classes);
-    else
-        generate_score_line(fid, score(I(deb_line:num_img), :), assigned_label(I(deb_line:num_img)));
-    end
+    generate_score_line(fid, score(deb_line:num_img), correct_label(deb_line:num_img), classes);
     fprintf(fid,'</table>');
     fprintf(fid, '<br><font size="3"><a href="index.html">Back to index</a><br></font>\n');    
 end
 
-function generate_score_line(fid, scores, assigned, id, classes)
+function generate_score_line(fid, scores, correct, classes)
     fprintf(fid, '<tr>\n');
-    for i=1:length(assigned)
-        if nargin < 4
-            txt = sprintf('%0.2f', scores(i, assigned(i)));
+    for i=1:length(scores)
+        if correct(i)
+            color = '#00AA44';
+            class = '';
         else
-            if assigned(i) == id
-                color = '#00AA44';
-                class = '';
-            else
-                color = '#FF0000';
-                class = sprintf('<font size="2">&nbsp(%0.2f - %s)</font>', scores(i, assigned(i)), classes{assigned(i)});
-            end
-            txt = sprintf('<font color="%s">%0.2f%s</font>', color, scores(i, id), class);
+            color = '#FF0000';
+            class = '';
         end
+        txt = sprintf('<font color="%s">%0.2f%s</font>', color, scores(i), class);
         fprintf(fid, '<td align="center">%s</td>\n', txt);
     end
     fprintf(fid, '</tr>\n');

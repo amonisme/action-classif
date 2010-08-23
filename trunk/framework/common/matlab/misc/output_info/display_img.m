@@ -75,7 +75,6 @@ function display_img(N, dir, prefix, root, is_LSVM)
         % Correctly classified images, highest score
         I = find(assigned == i & correct == i);
         n = min(length(I), N);
-        n
         fprintf(fid,'\\begin{figure}[H]\n\\centering\n');
         for j = 1:n
             if is_LSVM
