@@ -339,7 +339,7 @@ classdef BOFLSVM < ClassifierAPI
                                     'kmeans', obj.kmeans, ...
                                     'sampling', obj.sampling);
                     common.names = names;
-                    lsvm_models = run_in_parallel('BOFLSVM.train_model_parallel', common, (1:n_classes)', 0, 1);
+                    lsvm_models = run_in_parallel('BOFLSVM.train_model_parallel', common, (1:n_classes)', 0, 0);
                     %lsvm_models = run_in_parallel('BOFLSVM.train_model_parallel', common, (1:n_classes)', [], 10000);
                 else
                     lsvm_models = cell(n_classes, 1);
