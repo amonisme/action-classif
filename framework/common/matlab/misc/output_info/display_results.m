@@ -22,12 +22,12 @@
         subclasse = 0;
     else
         subclasse = ~isempty(map_sub2sup);
+        correct_labels = cat(1, images(:).actions);
     end
     
     if subclasse       
       fprintf('Results for subclasses:\n');    
-    end
-    correct_labels = cat(1, images(:).actions);
+    end    
     table = confusion_table(correct_labels,assigned_action);  
     accuracy = display_multiclass_accuracy(subclasses, table);
     precision = display_precision_recall(subclasses, correct_labels, score);     
