@@ -1,5 +1,5 @@
-function [opt_alphas score p a prec acc class_prec class_acc] = combine_BOF_LSVM(score_BOF, score_LSVM, classes, images, alpha)
-    do_plot = 1;
+function [opt_alphas score p a cp ca class_prec class_acc] = combine_BOF_LSVM(score_BOF, score_LSVM, classes, images, alpha)
+    do_plot = 0;
     path = './';
 
     step = 0.01;
@@ -28,23 +28,23 @@ function [opt_alphas score p a prec acc class_prec class_acc] = combine_BOF_LSVM
 
     opt_alphas = zeros(1, n_classes);
     if do_plot
-        prec = smooth_curve(prec, 0.1);
-        acc = smooth_curve(acc, 0.1);
-        plot_curve(alpha_range, prec, acc, 'score = alpha * scoreLSVM + (1-alpha) * scoreBOF');
+        sprec = smooth_curve(prec, 0.1);
+        sacc = smooth_curve(acc, 0.1);
+        plot_curve(alpha_range, sprec, sacc, 'score = alpha * scoreLSVM + (1-alpha) * scoreBOF');
         if ~isempty(path)
             print('-dpng ', fullfile(path,'global.png'));
         end
     end
     for i=1:n_classes
-        prec = smooth_curve(class_prec(:,i), 0.1);
-        acc = smooth_curve(class_acc(:,i), 0.1);
+        sprec = smooth_curve(class_prec(:,i), 0.1);
+        sacc = smooth_curve(class_acc(:,i), 0.1);
         if do_plot
-            plot_curve(alpha_range, prec, acc, classes{i});
+            plot_curve(alpha_range, sprec, sacc, classes{i});
             if ~isempty(path)
                 print('-dpng ', fullfile(path,sprintf('%s.png', classes{i})));
             end
         end
-        [m I] = max(prec);
+        [m I] = max(sprec);
         opt_alphas(i) = (I-1) * step;
     end
 end
