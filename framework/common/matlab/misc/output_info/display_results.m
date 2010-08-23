@@ -9,7 +9,7 @@
     load(fullfile(root,dir,'results.mat'));
     
     % Backward compatibility
-    if ~exist('map_sub2sup', 1) == 1
+    if ~exist('map_sub2sup', 'var') == 1
         n_img = length(assigned_label);
         assigned = zeros(n_img, length(classes));
         correct = zeros(n_img, length(classes));        
