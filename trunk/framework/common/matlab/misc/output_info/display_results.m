@@ -8,15 +8,27 @@
 
     load(fullfile(root,dir,'results.mat'));
     
-    % Output results
-    if ~isempty(map_sub2sup)        
-        fprintf('Results for subclasses:\n');    
+    % Backward compatibility
+    if ~exist(map_sub2sup)
+        n_img = length(assigned_label);
+        assigned = zeros(n_img, length(classes));
+        correct = zeros(n_img, length(classes));        
+        for i=1:n_img
+            assigned(i, assigned_label(i)) = 1;
+            correct(i, assigned_label(i)) = 1;            
+        end
+        assigned_action = assigned;
+        correct_label = correct;        
+    else
+        if ~isempty(map_sub2sup)        
+            fprintf('Results for subclasses:\n');    
+        end
+        correct_labels = cat(1, images(:).actions);
+        table = confusion_table(correct_labels,assigned_action);  
+        accuracy = display_multiclass_accuracy(subclasses, table);
+        precision = display_precision_recall(subclasses, correct_labels, score);     
     end
-    correct_labels = cat(1, images(:).actions);
-    table = confusion_table(correct_labels,assigned_action);  
-    accuracy = display_multiclass_accuracy(subclasses, table);
-    precision = display_precision_recall(subclasses, correct_labels, score); 
-    
+        
     if ~isempty(map_sub2sup)
         fprintf('Results for classes:\n');
         [new_score new_correct_action new_assigned_action] = convert2supclasses(map_sub2sup, score, correct_labels, assigned_action);
