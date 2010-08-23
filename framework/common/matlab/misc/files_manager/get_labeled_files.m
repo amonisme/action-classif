@@ -103,7 +103,7 @@ function [images map classes_name subclasses_name] = get_labeled_files_VOC(DB)
         end
     end
     
-    images = struct('path', cell(img.length(), 1), 'actions', [], 'size', [], 'truncated', [], 'bndbox', []);
+    images = struct('path', cell(img.length(), 1), 'actions', [], 'size', [], 'truncated', [], 'bndbox', [], 'fileID', [], 'bndboxID', []);
     keys = img.keys();
     for i = 1:img.length()
         j = find(keys{i} == '@', 1);    
@@ -118,6 +118,8 @@ function [images map classes_name subclasses_name] = get_labeled_files_VOC(DB)
         images(i).actions = img(keys{i});        
         images(i).size = [str2double(XML.annotation.size.width) str2double(XML.annotation.size.height)];
         images(i).truncated = 0;
+        images(i).fileID = img_name;
+        images(i).bndboxID = box_id;
         k = box_id;
         for j = 1:size(obj,2)
             if(strcmp(obj(j).name,'person'))
