@@ -6,6 +6,7 @@ function precision = display_precision_recall(classes, correct_labels, score, fi
     n_classes = size(classes, 1);
     precision = size(n_classes, 1);
     
+    write_log('\nPer class AP:\n');
     for i=1:n_classes
         [rec,prec,ap] = precisionrecall(score(:, i), correct_labels(:,i));
         ap = ap*100;
@@ -24,10 +25,11 @@ function precision = display_precision_recall(classes, correct_labels, score, fi
         end
         
         precision(i) = ap;
+        write_log(sprintf('%s: %.2f\n', classes{i}, ap));
     end
     
-    precision = mean(precision);    
+    mAP = mean(precision);        
     
-    write_log(sprintf('Precision-recall average precision: %.2f\n', precision));
+    write_log(sprintf('Precision-recall average precision: %.2f\n', mAP));
 end
 

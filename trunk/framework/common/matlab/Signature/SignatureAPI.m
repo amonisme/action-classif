@@ -111,7 +111,7 @@ classdef SignatureAPI < handle
         function descr = compute_descriptors(detector, descriptor, images, feat, resize, pg, offset, scale)
             global HASH_PATH USE_PARALLEL TEMP_DIR;
             
-            if nargin < 3
+            if nargin < 5
                 resize = 0;
             end
             
