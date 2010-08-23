@@ -75,6 +75,7 @@ function display_img(N, dir, prefix, root, is_LSVM)
         % Correctly classified images, highest score
         I = find(assigned == i & correct == i);
         n = min(length(I), N);
+        n
         fprintf(fid,'\\begin{figure}[H]\n\\centering\n');
         for j = 1:n
             if is_LSVM
@@ -82,7 +83,6 @@ function display_img(N, dir, prefix, root, is_LSVM)
             else
                 path = Ipath{I(j)};
             end
-            path
             fprintf(fid,'\\subfigure[%.2f]{\\includegraphics[height=3cm]{%s}}\n', sc(I(j)), path);
         end
         fprintf(fid,'\\caption{%s: Correctly classified images, highest score}\n\\end{figure}\n', classes{i});

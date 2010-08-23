@@ -107,6 +107,7 @@ classdef Kmeans < handle
                         fwrite(fid, dimension, 'int32');
                         fwrite(fid, n, 'int32');
                         fwrite(fid, points', 'single');
+                        fclose(fid);
 
                         obj.points = dimension;
                 end
