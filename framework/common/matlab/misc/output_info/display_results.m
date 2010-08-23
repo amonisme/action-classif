@@ -19,6 +19,7 @@
         end
         assigned_action = assigned;
         correct_labels = correct;        
+        subclasses = classes;        
         subclasse = 0;
     else
         subclasse = ~isempty(map_sub2sup);
