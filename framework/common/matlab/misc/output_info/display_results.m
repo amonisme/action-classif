@@ -15,7 +15,7 @@
         correct = zeros(n_img, length(classes));        
         for i=1:n_img
             assigned(i, assigned_label(i)) = 1;
-            correct(i, assigned_label(i)) = 1;            
+            correct(i, correct_label(i)) = 1;            
         end
         assigned_action = assigned;
         correct_labels = correct;        
