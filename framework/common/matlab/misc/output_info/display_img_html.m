@@ -90,8 +90,8 @@ function display_img_html(dir, target_dir, prefix, is_LSVM)
       fprintf(fid, '<font size="3"><a href="%s.html">%s</a><br></font>\n', classes{i}, classes{i});        
     end
     fprintf(fid, '</body>\n</html>');
-    fclose(fid);    
-           
+    fclose(fid);
+    
     for i=1:n_classes
         file = sprintf('%s.html', classes{i});
         fid = fopen(fullfile(target_dir, file), 'w+');
@@ -166,6 +166,7 @@ function generate_imgtab(fid, target_dir, classifier, classes, Ipaths, assigned_
             end
         else
             path = sprintf('%s_%d.png', classes{i}, j);
+            copyfile(Ipaths{j}, fullfile(target_dir,path));
         end
         if mod(j-1,img_per_line) == 0 && j ~= 1 && j ~= num_img
             fprintf(fid, '</tr>\n');
