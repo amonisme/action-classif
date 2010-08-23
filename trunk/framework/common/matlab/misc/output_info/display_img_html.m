@@ -1,6 +1,6 @@
-function display_img_html(dir, prefix, is_LSVM)
+function display_img_html(dir, target_dir, prefix, is_LSVM)
     %target_dir = '/data/public_html/vdelaitr/html_summary';
-    target_dir = 'VOC_results/html';
+    %target_dir = 'VOC_results/html';
     img_per_line = 6;
     img_size = 150;
     
