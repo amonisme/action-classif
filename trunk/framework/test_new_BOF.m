@@ -20,14 +20,14 @@ function test_new_BOF()
 
     fprintf('%s', classif.toFileName());
 
-    USE_PARALLEL = 1;
-    USE_CLUSTER = 1;               
-    evaluate(classif, '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize', 'DataBaseCroppedResize', sprintf('../../test_mine_%s-%s', db{1}, db{2}), db);  
-    %param = cell(1,5);
-    %param{1,1} = classif;          
-    %param{1,2} = '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize';
-    %param{1,3} = 'DataBaseCroppedResize'; 
-    %param{1,4} = sprintf('../../test_mine_%s-%s', db{1}, db{2});
-    %param{1,5} = db;
-    %run_in_parallel('evaluate_parallel',[],param,[],8000);    
+    USE_PARALLEL = 0;
+    USE_CLUSTER = 0;               
+    %evaluate(classif, '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize', 'DataBaseCroppedResize', sprintf('../../test_mine_%s-%s', db{1}, db{2}), db);  
+    param = cell(1,5);
+    param{1,1} = classif;          
+    param{1,2} = '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize';
+    param{1,3} = 'DataBaseCroppedResize'; 
+    param{1,4} = sprintf('../../test_mine_%s-%s', db{1}, db{2});
+    param{1,5} = db;
+    run_in_parallel('evaluate_parallel',[],param,[],8000);
 end
