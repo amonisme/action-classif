@@ -142,9 +142,7 @@ classdef SVM < ClassifierAPI & CrossValidateAPI
         function [cv_prec cv_dev_prec cv_acc cv_dev_acc] = learn(obj, root)
             global HASH_PATH TEMP_DIR;
             
-            [images map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');       
-            root
-            images       
+            [images map c_names subc_names] = get_labeled_files(root, 'Loading training set...\n');            
             obj.store_names(c_names, subc_names, map);                  
             obj.labels = cat(1,images(:).actions);
             
