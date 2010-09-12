@@ -7,13 +7,13 @@ function res = run_in_parallel(fun, common_args, parallel_args, num_instances, d
     global USE_CLUSTER;
     
     if USE_CLUSTER || isempty(num_instances)
-        if nargin < 6
-            res = run_in_parallel_cluster(fun, common_args, parallel_args, memory);
+        if nargin < 8
+            res = run_in_parallel_cluster(fun, common_args, parallel_args, debug);
         else
-            res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, pg, pg_offset, pg_scale);
+            res = run_in_parallel_cluster(fun, common_args, parallel_args, debug, pg, pg_offset, pg_scale);
         end
     else
-        if nargin < 6
+        if nargin < 8
             res = run_in_parallel_local(fun, common_args, parallel_args, num_instances, debug);
         else
             res = run_in_parallel_local(fun, common_args, parallel_args, num_instances, debug, pg, pg_offset, pg_scale);
