@@ -7,19 +7,16 @@ classdef Linf < NormAPI
         
     methods 
         %------------------------------------------------------------------
-        % Norm L1
+        % Norm Linf
         function A = normalize(obj, A)
-            for i = 1:size(A,1)
-                n = max(abs(A(:,i)));
-                if n ~= 0
-                    A(:,i) = obj.norm/n*A(:,i);
-                end
-            end
+            n = max(abs(A),[],1);
+            n(n == 0) = 1;
+            A = (A * obj.norm) ./ repmat(n,size(A,1),1);              
         end
 
         %------------------------------------------------------------------
         % Construtor
-        function obj = L1(norm)
+        function obj = Linf(norm)
             if nargin == 0
                 norm = 1;
             end
@@ -29,13 +26,13 @@ classdef Linf < NormAPI
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('L1 (norm = %s)', num2str(obj.norm));
+            str = sprintf('Linf (norm = %s)', num2str(obj.norm));
         end
         function str = toFileName(obj)
-            str = sprintf('L1[%s]', num2str(obj.norm));
+            str = sprintf('Linf[%s]', num2str(obj.norm));
         end
         function str = toName(obj)
-            str = 'L1';
+            str = 'Linf';
         end    
     end
 end

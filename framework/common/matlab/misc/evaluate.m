@@ -54,7 +54,8 @@ function precision = evaluate(classifier, root, db_name, target, sets_names)
     end
     
     % Output results
-    if ~isempty(map_sub2sup)        
+    has_subclass = ~isempty(map_sub2sup) && ~isempty(find(map_sub2sup - (1:length(map_sub2sup))'));
+    if has_subclass     
         fprintf('Results for subclasses:\n');    
     end
     correct_labels = cat(1, images(:).actions);
@@ -62,7 +63,7 @@ function precision = evaluate(classifier, root, db_name, target, sets_names)
     accuracy = display_multiclass_accuracy(subclasses, table);
     precision = display_precision_recall(subclasses, correct_labels, score); 
     
-    if ~isempty(map_sub2sup)
+    if has_subclass
         fprintf('Results for classes:\n');
         [new_score new_correct_action new_assigned_action] = convert2supclasses(map_sub2sup, score, correct_labels, assigned_action);
         new_table = confusion_table(new_correct_action, new_assigned_action);  

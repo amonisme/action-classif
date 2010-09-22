@@ -41,7 +41,10 @@ else
 end
 
 % cache filter response
+tic;
+fprintf('\n[my_gdetect] Computing filter response...\n');
 model = filterresponses(model, pyra, latent, bbox, overlap);
+toc;
 
 % compute parse scores
 L = model_sort(model);
@@ -51,6 +54,7 @@ for s = L
   end
   model = symbol_score(model, s, latent, pyra, bbox, overlap);
 end
+model
 
 % find scores above threshold
 X = zeros(0, 'int32');
@@ -59,7 +63,7 @@ I = zeros(0, 'int32');
 L = zeros(0, 'int32');
 S = [];
 for level = model.interval+1:length(pyra.scales)
-  score = model.symbols(model.start).score{level};
+  score = model.symbols(model.start).score{level};  
   tmpI = find(score > thresh);
   [tmpY, tmpX] = ind2sub(size(score), tmpI);
   X = [X; tmpX];
@@ -82,8 +86,12 @@ L = L(ord);
 S = S(ord);
 
 % compute detection bounding boxes and parse information
+tic;
+fprintf('\n[my_gdetect] Detecting...\n');
 [dets, boxes, info] = getdetections(model, pyra.padx, pyra.pady, ...
                                     pyra.scales, X, Y, L, S);
+toc;
+                               
 
 % sanity check overlap requirement
 if latent && ~isempty(dets)
@@ -242,7 +250,7 @@ filters = {};
 ihistos = {};
 doHOG = [];
 doBOF = [];
-filter_sizes = {}; % MYMOD
+filter_sizes = []; % MYMOD
 filter_to_symbol = [];
 for s = model.symbols
   if s.type == 'T'
@@ -251,7 +259,7 @@ for s = model.symbols
     doBOF(i)   = (type == 'B' || type == 'A');       % MYMOD
     filters{i} = model.filters(s.filter).w;
     ihistos{i} = model.filters(s.filter).histo;      % MYMOD
-    filter_sizes{i} = model.filters(s.filter).size;  % MYMOD
+    filter_sizes(i,:) = model.filters(s.filter).size;  % MYMOD
     filter_to_symbol(i) = s.i;
     i = i + 1;
   end
@@ -267,8 +275,8 @@ for level = levels
   % MYMOD
   r = cell(1,length(filters));
   for i = 1:length(r)      
-    w = size(pyra.feat{level},2)-filter_sizes{i}(2)+1;
-    h = size(pyra.feat{level},1)-filter_sizes{i}(1)+1;
+    w = size(pyra.feat{level},2)-filter_sizes(i,2)+1;
+    h = size(pyra.feat{level},1)-filter_sizes(i,1)+1;
     r{i} = zeros(h,w);
   end  
   if ~isempty(find(doHOG,1))
@@ -276,14 +284,25 @@ for level = levels
       r(doHOG) = rtmp;
   end
   if ~isempty(find(doBOF,1))
-      for i = 1:length(r)
+      [S, I] = sortrows(filter_sizes,[1 2]);
+      last_size = [-1 -1];
+      for i = I'
           if doBOF(i)
-            [h w] = size(r{i});
-            for y = 1:h
-                for x = 1:w
-                    r{i}(y,x) = r{i}(y,x) + ihistos{i}' * get_histo_from_integral(pyra.histo{level}, x, y, x+filter_sizes{i}(2)-1, y+filter_sizes{i}(1)-1, model.histo_norm);
-                end
-            end
+              if ~isempty(find(filter_sizes(i,:) ~= last_size,1))
+                  last_size = filter_sizes(i,:);
+                  [h w d] = size(pyra.histo{level});
+                  fh = filter_sizes(i,1);
+                  fw = filter_sizes(i,2);
+                  h = h + 1;
+                  w = w + 1;
+                  Imap = padarray(pyra.histo{level}, [1 1 0], 0, 'pre');
+                  Hmap = Imap((1+fh):h, (1+fw):w, :) + ...
+                         Imap(1:(h-fh), 1:(w-fw), :) - ...
+                         Imap(1:(h-fh), (1+fw):w, :) - ...
+                         Imap((1+fh):h, 1:(w-fw), :);                    
+                  Hmap = model.histo_norm.normalize(reshape(Hmap, (h-fh)*(w-fw), d)');                                   
+              end
+              r{i} = r{i} + reshape(ihistos{I(i)}' * Hmap, h-fh, w-fw);                            
           end
       end
   end

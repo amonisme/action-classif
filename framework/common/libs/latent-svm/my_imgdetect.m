@@ -21,14 +21,17 @@ for j=1:n_descr
 end
 
 % get the feature pyramid
+tic;
+fprintf('[my_imgdetect] Computing the Feature Pyramid...\n');
 info = imfinfo(Ipath);    
 pyra = my_featpyramid(input, struct('size', [info.Height info.Width], 'feat', feat), model);
+toc;
 
-if nargin < 4
+if nargin < 6
   bbox = [];
 end
 
-if nargin < 5
+if nargin < 7
   overlap = 0;
 end
 

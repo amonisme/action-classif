@@ -40,7 +40,7 @@ classdef DescriptorAPI
         function descr = run_parallel(descriptor, Ipath_feat_scale)
             tid = task_open();
 
-            n_img = size(Ipath_feat, 1);
+            n_img = size(Ipath_feat_scale, 1);
             descr = cell(n_img, 1);
             for i=1:n_img
                 task_progress(tid, i/n_img);

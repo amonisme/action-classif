@@ -218,22 +218,24 @@ classdef BOFLSVM < ClassifierAPI
                 end
 
                 % add parts and update models using latent detections & hard negatives.
-                try 
-                  load([cachedir name '_parts']);
-                catch
-                  initrand();
-                  for i = 1:2:2*n_compo
-                    model = my_model_addparts(model, model.start, i, i, n_parts, [6 6]);
-                  end
-                  
-                  %model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 1, 1, ...                                            
-                  model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
-                                cachesize, true, 0.7, false, 'parts_1');
-                  
-                  %model = my_train(name, model, pos, neg, 0, 0, 1, 1, ...
-                  model = my_train(name, model, pos, neg, 0, 0, 1, 5, ...
-                                cachesize, true, 0.7, true, 'parts_2');
-                  save([cachedir name '_parts'], 'model');
+                if n_parts > 0
+                    try 
+                      load([cachedir name '_parts']);
+                    catch
+                      initrand();
+                      for i = 1:2:2*n_compo
+                        model = my_model_addparts(model, model.start, i, i, n_parts, [6 6]);
+                      end
+
+                      %model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 1, 1, ...                                            
+                      model = my_train(name, model, pos, neg(1:maxneg), 0, 0, 8, 10, ...
+                                    cachesize, true, 0.7, false, 'parts_1');
+
+                      %model = my_train(name, model, pos, neg, 0, 0, 1, 1, ...
+                      model = my_train(name, model, pos, neg, 0, 0, 1, 5, ...
+                                    cachesize, true, 0.7, true, 'parts_2');
+                      save([cachedir name '_parts'], 'model');
+                    end
                 end
                 
                 save([cachedir name '_final'], 'model');
@@ -260,7 +262,7 @@ classdef BOFLSVM < ClassifierAPI
                 [bb_not_cropped person_box] = get_bb_info(Ipaths{i});
                 person_box = person_box(2:end);                
                 
-                [dets, boxes] = my_imgdetect(Ipaths{i}, feat{i}, descr{i}, model, -Inf, person_box, 0.);
+                [dets, boxes] = my_imgdetect(Ipaths{i}, feat{i}, descr{i}, model, -Inf);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
                     [dets boxes] = clipboxes(im, dets, boxes);
@@ -280,7 +282,7 @@ classdef BOFLSVM < ClassifierAPI
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = BOFLSVM(K, n_compo, n_parts, type_parts)
+        function obj = BOFLSVM(K, n_compo, n_parts, type_parts, sampling)
             if nargin < 1
                 K = 1;
             end
@@ -296,12 +298,15 @@ classdef BOFLSVM < ClassifierAPI
                 % H : HOG only (standard LSVM)
                 % B : BOF only
             end
+            if nargin < 5
+                sampling = 8;
+            end
             obj = obj@ClassifierAPI();
             obj.K = K;
             obj.n_components = n_compo;
             obj.n_parts = n_parts;
             obj.type_parts = type_parts;
-            obj.sampling = 6;
+            obj.sampling = sampling;
             obj.detector = MS_Dense(obj.sampling,1.44,5);
             obj.descriptor = SIFT(L2Trunc);
             obj.kmeans = Kmeans(K, 'c', 200);            
@@ -317,7 +322,7 @@ classdef BOFLSVM < ClassifierAPI
             n_classes = length(obj.subclasses_names);
             names = cell(n_classes,1);
             for i = 1:n_classes
-                names{i} = sprintf('%s_%s_BLSVM_%d_%d_%s', HASH_PATH, obj.subclasses_names{i}, obj.n_components, obj.n_parts, obj.type_parts);
+                names{i} = sprintf('%s_BLSVM_%s_%d_%d_%d_%s', HASH_PATH, obj.subclasses_names{i}, obj.K, obj.n_components, obj.n_parts, obj.type_parts);
             end
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s.mat', HASH_PATH, obj.toFileName()));
@@ -344,7 +349,7 @@ classdef BOFLSVM < ClassifierAPI
                 else
                     lsvm_models = cell(n_classes, 1);
                     for k = 1:n_classes
-                        lsvm_models{k} = BOFLSVM.train_model(obj.detector, obj.descriptor, obj.kmeans, images, names{k}, obj.toFileName(), map, obj.n_components, obj.n_parts, k);
+                        lsvm_models{k} = BOFLSVM.train_model(obj.detector, obj.descriptor, obj.kmeans, images, names{k}, obj.toFileName(), map, obj.n_components, obj.n_parts, obj.sampling, k);
                     end
                 end               
                 
@@ -371,19 +376,20 @@ classdef BOFLSVM < ClassifierAPI
                 images = get_labeled_files(root_images, 'Loading testing set...\n');            
             end
 
-            n_img = length(Ipaths);                                
+            n_img = length(images);                                
                      
             overlaps = 0:0.1:0.9;
             
             file = fullfile(TEMP_DIR, sprintf('%s_%s_saved_scores.mat', HASH_PATH, obj.toFileName()));
             
             if exist(file, 'file') == 2
+                fprintf('Scores loaded from %s\n', file);
                 load(file, 'scores');
             else          
                 pg = ProgressBar('Classifying', 'Computing descriptors...');
                 
-                feat = SignatureAPI.compute_features(obj.detector, Ipaths);
-                descr = SignatureAPI.compute_descriptors(obj.detector, obj.descriptor, Ipaths, feat);      
+                feat = SignatureAPI.compute_features(obj.detector, images);
+                descr = SignatureAPI.compute_descriptors(obj.detector, obj.descriptor, images, feat);      
                 
                 pg.setCaption('Computing bounding boxes...');
                 if USE_PARALLEL
@@ -405,32 +411,30 @@ classdef BOFLSVM < ClassifierAPI
                     scores = cat(2, scores{:});
                 end
                 save(file, 'scores');
+                pg.close();
             end            
-            scores = scores(:,:,6);  % 0.5 overlap
+            scores = scores(:,:,1);  % 0% overlap
 
-            assigned_action = zeros(n_img,1); 
+            assigned_action = zeros(n_img,size(scores, 2));
             for i = 1:n_img
                 [m, j] = max(scores(i,:));
-                assigned_action(i) = j;
-            end
-            
-            pg.close();
+                assigned_action(i, j) = 1;
+            end            
         end
         
         %------------------------------------------------------------------
         % Classify the given picture
-        function [dets parts] = get_boxes(obj, model_id, Ipath, visu)
+        function [dets parts] = get_boxes(obj, model_id, image, visu)
             if nargin < 4
                 visu = 0;
             end
             
             default_overlap = 0.5;
                 
-            im = imread(Ipath);
-            [bb_not_cropped person_box] = get_bb_info(Ipath);
-            person_box = person_box(2:end);  
+            im = imread(image.path);
+            person_box = image.bndbox;
 
-            [dets, boxes] = my_imgdetect(Ipath, obj.models{model_id}, -Inf);
+            [dets, boxes] = my_imgdetect(image.path, obj.models{model_id}, -Inf);
             if ~isempty(boxes)
                 boxes = reduceboxes(obj.models{model_id}, boxes);
                 [dets boxes] = clipboxes(im, dets, boxes);
@@ -458,7 +462,7 @@ classdef BOFLSVM < ClassifierAPI
             str = sprintf('BOFLSVM (%d words, %d components, %d parts of type %s)', obj.K, obj.n_components, obj.n_parts, obj.type_parts);
         end
         function str = toFileName(obj)
-            str = sprintf('BOFLSVM[%d-%d-%d-%s]', obj.K, obj.n_components, obj.n_parts, obj.type_parts);
+            str = sprintf('BOFLSVM[%d-%d-%d-%d-%s-%s-%s]', obj.sampling, obj.K, obj.n_components, obj.n_parts, obj.type_parts, obj.descriptor.toFileName(), obj.detector.toFileName());
         end
         function str = toName(obj)
             str = sprintf('BOFLSVM(%d-%d-%d-%s)', obj.K, obj.n_components, obj.n_parts, obj.type_parts);

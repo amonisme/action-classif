@@ -223,7 +223,7 @@ classdef LSVM < ClassifierAPI
             for i = 1:n_img 
                 person_box = images(i).bndbox;                
                 
-                [dets, boxes] = imgdetect(imread(images(i).path), model, -Inf); %models{j}.thresh);
+                [dets, boxes] = imgdetect(imread(images(i).path), model, -Inf);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
                     [dets boxes] = my_clipboxes(images(i).size(1), images(i).size(2), dets, boxes);
