@@ -385,8 +385,11 @@ for i = 1:batchsize:numpos
     if ~isempty(bs)
       fusage = fusage + getfusage(bs);
       num = num+1;
-      scores(num) = bs(1,end);
+      scores(num) = bs(1,end);        
     end
+  end
+  if num == 0
+      scores = [];
   end
 end
 
@@ -463,7 +466,7 @@ for i = 1:numneg
     featHOG = features(double(imreadx(neg(i))), model.sbin);
   end
   if doBOF      
-    featBOF = integral_histo(struct('size', [info.Height info.Width], 'feat', neg(i).feat), model.K, model.sbin);
+    featBOF = my_crop_histo(my_integral_histo(struct('size', [info.Height info.Width], 'feat', neg(i).feat), model.K, model.sbin));
   end
   if fsize(2) > rsize(2) && fsize(1) > rsize(1)
     for j = 1:rndneg

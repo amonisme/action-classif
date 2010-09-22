@@ -1,4 +1,4 @@
-function res = run_in_parallel_local(fun, common_args, parallel_args, num_instances, debug, pg, pg_offset, pg_scale)
+function res = run_in_parallel_local(fun, common_args, parallel_args, num_instances, memory, pg, pg_offset, pg_scale)
     % Given a function name 'fun' and 'n' instances (each instance is
     % reprented by a line of 'args' (might be a cell or an array)), 'run_in_parallel' calls
     % 'num_instances' Matlab clients to run 'fun' in parallel over subpart
@@ -10,6 +10,13 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
     end
     if nargin < 5
         debug = 0;
+    else
+        if memory < 0
+            debug = 1;
+            memory = -memory;
+        else
+            debug = 0;
+        end
     end
     pg_enabled = nargin >= 6 && isa(pg, 'ProgressBar');
     if nargin < 7
@@ -83,16 +90,10 @@ function res = run_in_parallel_local(fun, common_args, parallel_args, num_instan
             pg.progress(pg_offset + pg_scale * pgr);
         end
         
-        t = timer('StartDelay', 8, 'TimerFcn', @stopTimer);
-        start(t);
-        wait(t);
+        pause(1);
     end
     res = cat(1,res{:});
     
     close_parallel_task(tid);
-end
-
-function stopTimer(obj, event)
-    stop(obj)
 end
 

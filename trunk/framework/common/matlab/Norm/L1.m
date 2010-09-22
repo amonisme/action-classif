@@ -9,12 +9,9 @@ classdef L1 < NormAPI
         %------------------------------------------------------------------
         % Norm L1
         function A = normalize(obj, A)
-            for i = 1:size(A,2)
-                n = sum(abs(A(:,i)));
-                if n ~= 0
-                    A(:,i) = obj.norm/n*A(:,i);
-                end                
-            end
+            n = sum(abs(A), 1);
+            n(n == 0) = 1;
+            A = (A * obj.norm) ./ repmat(n,size(A,1),1);              
         end
 
         %------------------------------------------------------------------

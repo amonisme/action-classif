@@ -9,7 +9,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     TEMP_DIR = '../../temp';
     cd(CLUSTER_WORKING_DIR);
     
-    if memory == 0
+    if memory <= 0
         memory = 2048;
     end
     memory = sprintf('%dmb', memory);
@@ -39,9 +39,10 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
     
     % Wait all tasks finishes.
-    average_comp_time = 0;
+    average_comp_time = Inf;
+    offset_wait = num_instances:-1:1;
     num_waiting = num_instances;
-    waiting = ones(num_instances, 1);
+    waiting = ones(1, num_instances);
     progress = zeros(num_instances, 1);
     res = cell(num_instances, 1);
     files = cell(num_instances, 2);
@@ -53,6 +54,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     tic;
     while num_waiting > 0
         pgr = 0;
+        no_finish = 1;
         for i = 1:num_instances
             if waiting(i) == 0
                 pgr = pgr + 1/num_instances;
@@ -62,7 +64,12 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
                 num_waiting = num_waiting - 1;
                 waiting(i) = 0;
                 pgr = pgr + 1/num_instances;
-                average_comp_time = average_comp_time + (t - average_comp_time) / (num_instances-num_waiting);                
+                no_finish = 0;
+                if isinf(average_comp_time)
+                    average_comp_time = t;
+                else
+                    average_comp_time = average_comp_time + (t - average_comp_time) / (num_instances-num_waiting);                
+                end
             elseif pg_enabled && exist(files{i,2}, 'file') == 2
                 fid = fopen(files{i,2},'r');
                 p = fread(fid, 1, 'float32');
@@ -72,40 +79,50 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
                 else
                     pgr = pgr + p/num_instances;
                     progress(i) = p;
-                end
+                end                
             end
         end
         
         if pg_enabled
             pg.progress(pg_offset + pg_scale * pgr);
         end
+
+        if no_finish
+            late_task = waiting & ((toc - offset_wait) > 2*average_comp_time);
+            if ~isempty(find(late_task,1))
+                M2 = M(late_task,:);            
+                compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M2,memory);            
+                tic;
+                I = find(late_task)';
+                n = length(I);
+                for i = I
+                    offset_wait(i) = 60 + n;
+                    n = n - 1;
+                end
+            end
+        end
         
-%         if toc > 2*average_comp_time && ~isempty(find(~waiting,1))
-%             cs = cumsum(waiting);
-%             late_task = waiting & (cs ~= cs(end));
-%             if waiting(end)
-%                 late_task(end) = 1;
-%             end
-%             M2 = M(late_task,:);            
-%             find(waiting)
-%             cs
-%             M2
-%             compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M2,memory);            
-%             tic;
-%         end
-        
-        t = timer('StartDelay', 1, 'TimerFcn', @stopTimer);
-        start(t);
-        wait(t);
+        if 1
+            num = find(waiting);
+            if length(num)<=3 && num_waiting>0
+                if length(num) == 3
+                    fprintf('Waiting for threads #%d, #%d and #%d\n',num(1),num(2),num(3));
+                elseif length(num) == 2
+                    fprintf('Waiting for threads #%d and #%d\n',num(1),num(2));
+                elseif length(num) == 1
+                    fprintf('Waiting for thread #%d\n',num(1));
+                end                    
+            else                
+                fprintf('Waiting for %d threads to finish...\n', num_waiting);
+            end
+                        
+        end
+        pause(1);
     end
     res = cat(1,res{:});
     
     close_parallel_task(tid);
     cd(current_dir);
     TEMP_DIR = current_temp;
-end
-
-function stopTimer(obj, event)
-    stop(obj)
 end
 

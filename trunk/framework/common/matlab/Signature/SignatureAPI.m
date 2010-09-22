@@ -77,7 +77,7 @@ classdef SignatureAPI < handle
                     end
                     args = cell(n_img, 2);
                     for i = 1:n_img
-                        args{i,1} = image(i).path;
+                        args{i,1} = images(i).path;
                         args{i,2} = scales;
                     end
                     if nargin >= 6
@@ -147,7 +147,7 @@ classdef SignatureAPI < handle
                     end
                     args = cell(n_img, 3);
                     for i = 1:n_img
-                        args{i,1} = image(i).path;
+                        args{i,1} = images(i).path;
                         args{i,2} = feat{i};
                         args{i,3} = scales;
                     end

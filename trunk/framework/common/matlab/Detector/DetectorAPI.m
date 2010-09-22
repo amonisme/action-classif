@@ -44,14 +44,14 @@ classdef DetectorAPI
     methods (Static)
         %------------------------------------------------------------------
         % Run in parallel
-        function feat = run_parallel(common, Ipath_scale)
+        function feat = run_parallel(detector, Ipath_scale)
             tid = task_open();
 
             n_img = size(Ipath, 1);
             feat = cell(n_img, 1);
             for i=1:n_img
                 task_progress(tid, i/n_img);
-                feat{i} = common.detector.get_features(Ipath_scale{i,1}, Ipath_scale{i,2});
+                feat{i} = detector.get_features(Ipath_scale{i,1}, Ipath_scale{i,2});
             end
 
             task_close(tid);

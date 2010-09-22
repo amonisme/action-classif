@@ -1,5 +1,6 @@
 function test_new_BOF()
-    db = {'train' 'test'};
+    db = {'train' 'test'};
+
 
     global USE_PARALLEL;
 
@@ -22,12 +23,15 @@ function test_new_BOF()
 
     USE_PARALLEL = 0;
     USE_CLUSTER = 0;               
-    %evaluate(classif, '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize', 'DataBaseCroppedResize', sprintf('../../test_mine_%s-%s', db{1}, db{2}), db);  
-    param = cell(1,5);
-    param{1,1} = classif;          
-    param{1,2} = '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize';
-    param{1,3} = 'DataBaseCroppedResize'; 
-    param{1,4} = sprintf('../../test_mine_%s-%s', db{1}, db{2});
-    param{1,5} = db;
-    run_in_parallel('evaluate_parallel',[],param,[],8000);
+    if 1
+        evaluate(classif, '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize', 'DataBaseCroppedResize', sprintf('../../test_mine_%s-%s', db{1}, db{2}), db);  
+    else
+        param = cell(1,5);
+        param{1,1} = classif;          
+        param{1,2} = '/data/vdelaitr/DB_mine/C-DataBaseNoCropResize';
+        param{1,3} = 'DataBaseCroppedResize'; 
+        param{1,4} = sprintf('../../test_mine_%s-%s', db{1}, db{2});
+        param{1,5} = db;
+        run_in_parallel('evaluate_parallel',[],param,[],8000);
+    end
 end

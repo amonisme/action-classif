@@ -10,7 +10,17 @@ function [images map classes_name subclasses_name] = get_labeled_files(DB, msg)
     if nargin > 1
         write_log(msg);
         %display_classes_info(subclasses_name);
-        write_log(sprintf('Found %d classes (%d sub-classes)\n', length(classes_name), length(subclasses_name)));
+        write_log(sprintf('Found %d classes (%d sub-classes) (%d images)\n', length(classes_name), length(subclasses_name), length(images)));
+        write_log(sprintf('Hash ID: %s\n', HASH_PATH));
+        write_log('Stats:\n');
+        tot = 0;
+        actions = cat(1, images(:).actions);
+        for i=1:length(subclasses_name)
+            n_img = length(find(actions(:,i)));
+            tot = tot + n_img;
+            write_log(sprintf('%s: %d instances\n', subclasses_name{i}, n_img));
+        end
+        write_log(sprintf('------------\nTotal: %d instances\n\n', tot));
     end
 end
 
