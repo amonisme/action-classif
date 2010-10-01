@@ -116,7 +116,7 @@ classdef SignatureAPI < handle
             end
             
             if resize
-                file = fullfile(TEMP_DIR, sprintf('%s_R%d_%s-%s.mat', HASH_PATH, resize, descriptor.toFileName(), detector.toFileName()));
+                file = fullfile(TEMP_DIR, sprintf('%s_R%d_%s-%s.mat',HASH_PATH, resize, descriptor.toFileName(), detector.toFileName()));
             else
                 file = fullfile(TEMP_DIR, sprintf('%s_%s-%s.mat',HASH_PATH,descriptor.toFileName(),detector.toFileName()));
             end

@@ -1,7 +1,7 @@
 function copy_src_to_cluster(copy_libs)
     global CLUSTER_WORKING_DIR;
-    
-    if strcmp(CLUSTER_WORKING_DIR, fullfile('/nfs/', cd))
+
+    if strcmp(CLUSTER_WORKING_DIR, fullfile('/nfs', cd))
         fprintf('You are already in the cluster directory!!\n');
     else       
     
@@ -40,12 +40,16 @@ function copy_src_to_cluster(copy_libs)
         end
 
         [status,message,messageid] = mkdir(CLUSTER_WORKING_DIR);
+        system(sprintf('chmod -R +w %s\n', fullfile(CLUSTER_WORKING_DIR,'*')));
         for i = 1:length(names)
             system(sprintf('cp %s %s\n', fullfile(d{dirs(i)}, names{i}), CLUSTER_WORKING_DIR));
         end
+        system(sprintf('chmod -R -w %s\n', fullfile(CLUSTER_WORKING_DIR,'*')));
 
         if copy_libs
+            system(sprintf('chmod -R +w %s\n', fullfile(CLUSTER_WORKING_DIR,'..','libs')));
             system(sprintf('cp -Rf common/libs %s\n', fullfile(CLUSTER_WORKING_DIR,'..','libs')));
+            system(sprintf('chmod -R -w %s\n', fullfile(CLUSTER_WORKING_DIR,'..','libs')));
         end
     end
 end

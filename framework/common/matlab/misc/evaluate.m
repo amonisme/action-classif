@@ -1,10 +1,10 @@
-function precision = evaluate(classifier, root, db_name, target, sets_names)
+function precision = evaluate(classifier, db, target, sets_names)
     global OUTPUT_LOG EXPERIMENT_DIR;    
 
-    if nargin < 4
+    if nargin < 3
         target = EXPERIMENT_DIR;
     end
-    if nargin < 5
+    if nargin < 4
         sets_names = {'train' 'test'};
     end
     
@@ -34,7 +34,7 @@ function precision = evaluate(classifier, root, db_name, target, sets_names)
             load(file);
             write_log(sprintf('Classifier loaded from file %s\n',file)); 
         else
-            [cv_prec cv_dev_prec cv_acc cv_dev_acc] = classifier.learn(make_DB_name(root, db_name, sets_names{1}));
+            [cv_prec cv_dev_prec cv_acc cv_dev_acc] = classifier.learn(make_DB_name(db, sets_names{1}));
             save(file, 'classifier');
             save(fullfile(dir, 'cv_log.mat'), 'cv_prec', 'cv_dev_prec', 'cv_acc', 'cv_dev_acc');  
         end
@@ -43,7 +43,7 @@ function precision = evaluate(classifier, root, db_name, target, sets_names)
         % Test
         file = fullfile(dir,'results.mat');
         tic;
-        [images classes subclasses map_sub2sup assigned_action score] = classifier.classify(make_DB_name(root, db_name, sets_names{2}));    
+        [images classes subclasses map_sub2sup assigned_action score] = classifier.classify(make_DB_name(db, sets_names{2}));    
         save(file,'images','classes','subclasses','map_sub2sup','assigned_action','score');
         t1 = toc;
 

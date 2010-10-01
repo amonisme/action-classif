@@ -5,9 +5,10 @@ function init_script(fun)
     pargs = load_file('args',TID,IID); 
     
     try 
-        tic;
+        t1 = clock;
         args = fun(cargs, pargs); 
-        t = toc;   
+        t2 = clock;
+        t = etime(t2, t1);
         save(fullfile(TEMP_DIR,TID,sprintf('res_%d.mat',IID)), 'args', 't');    
         system(sprintf('mv %s %s',fullfile(TEMP_DIR,TID,sprintf('res_%d.mat',IID)),fullfile(TEMP_DIR,TID,sprintf('res%d.mat',IID))));            
     catch ME1

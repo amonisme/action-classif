@@ -3,12 +3,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     % reprented by a line of 'args' (might be a cell or an array)), 'run_in_parallel_cluster' calls
     % 'n' Matlab clients to run 'fun' in parallel over the cluster
     global CLUSTER_WORKING_DIR CLUSTER_USER TEMP_DIR HASH_PATH;
-        
-    current_dir = cd;
-    current_temp = TEMP_DIR;
-    TEMP_DIR = '../../temp';
-    cd(CLUSTER_WORKING_DIR);
-    
+          
     if memory <= 0
         memory = 2048;
     end
@@ -36,7 +31,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     end
     
     % Run on cluster
-    compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
+    compileAndRunForCluster('cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M,memory)
     
     % Wait all tasks finishes.
     average_comp_time = Inf;
@@ -91,7 +86,7 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
             late_task = waiting & ((toc - offset_wait) > 2*average_comp_time);
             if ~isempty(find(late_task,1))
                 M2 = M(late_task,:);            
-                compileAndRunForCluster('run_instance_on_cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M2,memory);            
+                compileAndRunForCluster('cluster.m',CLUSTER_USER,CLUSTER_WORKING_DIR,M2,memory);            
                 tic;
                 I = find(late_task)';
                 n = length(I);
@@ -122,7 +117,5 @@ function res = run_in_parallel_cluster(fun, common_args, parallel_args, memory, 
     res = cat(1,res{:});
     
     close_parallel_task(tid);
-    cd(current_dir);
-    TEMP_DIR = current_temp;
 end
 

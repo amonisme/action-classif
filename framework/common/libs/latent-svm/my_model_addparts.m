@@ -1,4 +1,4 @@
-function model = my_model_addparts(model, lhs, ruleind, filterind, numparts, psize)
+function model = my_model_addparts(model, lhs, ruleind, filterind, numparts, typeparts, psize)
 % Add part filters to a model.
 %
 % model      object model
@@ -27,7 +27,7 @@ source = model.filters(filterind).w;
 pfilters = mkpartfilters(source, psize, numparts);
 
 for i = 1:numparts
-  [model, symbolf, fi] = my_model_addfilter(model, pfilters(i).w, sym, 'A');
+  [model, symbolf, fi] = my_model_addfilter(model, pfilters(i).w, sym, typeparts);
   [model, N1] = model_addnonterminal(model);
 
   % add deformation rule

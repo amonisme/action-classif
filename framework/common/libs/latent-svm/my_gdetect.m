@@ -50,11 +50,10 @@ toc;
 L = model_sort(model);
 for s = L
   for r = model.rules{s}
-    model = apply_rule(model, r, pyra.pady, pyra.padx);
+    model = apply_rule(model, r, pyra.pady, pyra.padx);    
   end
   model = symbol_score(model, s, latent, pyra, bbox, overlap);
 end
-model
 
 % find scores above threshold
 X = zeros(0, 'int32');
@@ -257,8 +256,16 @@ for s = model.symbols
     type = model.filters(s.filter).type;             % MYMOD
     doHOG(i)   = (type == 'H' || type == 'A');       % MYMOD
     doBOF(i)   = (type == 'B' || type == 'A');       % MYMOD
-    filters{i} = model.filters(s.filter).w;
-    ihistos{i} = model.filters(s.filter).histo;      % MYMOD
+    if doHOG(i)
+        filters{i} = model.filters(s.filter).w;
+    else
+        filters{i} = [];
+    end
+    if doBOF(i)
+        ihistos{i} = model.filters(s.filter).histo;      % MYMOD
+    else
+        ihistos{i} = [];
+    end
     filter_sizes(i,:) = model.filters(s.filter).size;  % MYMOD
     filter_to_symbol(i) = s.i;
     i = i + 1;

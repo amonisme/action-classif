@@ -1,4 +1,8 @@
 function [images map classes_name subclasses_name] = get_labeled_files(DB, msg)
+    if nargin > 1
+        write_log(msg);
+    end
+    
     if exist(DB, 'file') == 2
         [images map classes_name subclasses_name] = get_labeled_files_myformat(DB);
     else
@@ -8,8 +12,6 @@ function [images map classes_name subclasses_name] = get_labeled_files(DB, msg)
     global HASH_PATH;    
     HASH_PATH = num2str(get_hash_path({images(:).path}', DB));
     if nargin > 1
-        write_log(msg);
-        %display_classes_info(subclasses_name);
         write_log(sprintf('Found %d classes (%d sub-classes) (%d images)\n', length(classes_name), length(subclasses_name), length(images)));
         write_log(sprintf('Hash ID: %s\n', HASH_PATH));
         write_log('Stats:\n');
@@ -93,20 +95,24 @@ function [images map classes_name subclasses_name] = get_labeled_files_VOC(DB)
         classes_name{i} = files(i).name(1:j);
         subclasses_name{i} = classes_name{i};
         fid = fopen(fullfile(root, files(i).name));
-        ids = fscanf(fid, '%d_%d %d %d');
-        n_img = length(ids) / 4;
-        ids = reshape(ids, 4, n_img)';
+        ids = cell(0,3);
+        while ~feof(fid)
+            line = fgetl(fid);
+            ids(end+1,:) = textscan(line, '%s %d %d');
+        end
+        fclose(fid);
+        n_img = size(ids,1);
         for j = 1:size(ids,1)
-            img_id = sprintf('%d_%06d@%d', ids(j,1), ids(j,2), ids(j,3));
+            img_id = sprintf('%s@%d', ids{j,1}{1}, ids{j,2});
             if img.isKey(img_id)
-                if ids(j,4) == 1
+                if ids{j,3} == 1
                     act = img(img_id);
                     act(i) = 1;
                     img(img_id) = act;
                 end
             else
                 act = zeros(1, n_classes); 
-                if ids(j,4) == 1
+                if ids{j,3} == 1
                     act(i) = 1;
                 end
                 img(img_id) = act;
