@@ -5,6 +5,7 @@ classdef LSVM < ClassifierAPI
         models
         n_components  % number of component in the mixture model  
         n_parts       % number of parts
+        overlap       % required bndbox overlap
     end
     
     methods (Static)              
@@ -122,7 +123,6 @@ classdef LSVM < ClassifierAPI
                 
                 % split data by aspect ratio into n groups
                 spos = split(name, pos, n_compo);
-
                 cachesize = 24000;
                 maxneg = min(length(neg), 200);
 
@@ -197,19 +197,12 @@ classdef LSVM < ClassifierAPI
                 save([cachedir name '_final'], 'model');
             end
         end
-        
+                     
         %------------------------------------------------------------------
-        function scores = classify_parallel(common, models)
+        function scores = classify_img_parallel(common, images)
             tid = task_open();
                         
-            n_classes = length(models);
-            scores = cell(1,n_classes);
-            
-            for i = 1:n_classes
-                scores{i} = LSVM.classify_img(models{i}, common.images, common.overlaps);
-                task_progress(tid, i/n_classes);
-            end
-            scores = cat(1, scores{:});
+            scores = LSVM.classify_img(common.model, images, common.overlaps);
             
             task_close(tid);
         end
@@ -220,39 +213,44 @@ classdef LSVM < ClassifierAPI
             n_overlaps = length(overlaps);
             scores = ones(1,n_img,n_overlaps)*(-Inf);
             
-            for i = 1:n_img 
-                person_box = images(i).bndbox;                
+            for i = 1:n_img            
+                person_box = images(i).bndbox;
                 
                 [dets, boxes] = imgdetect(imread(images(i).path), model, -Inf);
                 if ~isempty(boxes)
                     boxes = reduceboxes(model, boxes);
                     [dets boxes] = my_clipboxes(images(i).size(1), images(i).size(2), dets, boxes);
 
-                    overlap = inter_box(person_box, dets(:, 1:4));
+                    the_overlap = inter_box(person_box, dets(:, 1:4));
                     for k = 1:n_overlaps
-                        I = overlap >= overlaps(k);
+                        I = the_overlap >= overlaps(k);
                         if ~isempty(find(I,1))
                             scores(1,i,k) = max(boxes(I,end));
                         end
                     end
                 end        
             end    
-        end    
+        end            
     end
     
     methods
         %------------------------------------------------------------------
         % Constructor
-        function obj = LSVM(n_compo, n_parts)
+        function obj = LSVM(n_compo, n_parts, overlap)
             if nargin < 1
                 n_compo = 3;
             end            
             if nargin < 2
                 n_parts = 8;
-            end            
+            end        
+            if nargin < 3
+                overlap = 50;
+            end
             obj = obj@ClassifierAPI();
             obj.n_components = n_compo;
             obj.n_parts = n_parts;
+            obj.overlap = overlap;   % required pct of overlap with the person bndbox
+            obj.overlap = floor(obj.overlap/10) + 1;
         end
         
         %------------------------------------------------------------------
@@ -319,8 +317,13 @@ classdef LSVM < ClassifierAPI
                 fprintf('Scores loaded from: %s\n', file);
             else           
                 if USE_PARALLEL 
-                    common = struct('images', images, 'overlaps', overlaps);
-                    scores = run_in_parallel('LSVM.classify_parallel', common, obj.models, [], 0, pg, 0, 1);
+                    n_classes = length(obj.models);
+                    scores = cell(1,n_classes);
+                    for i = 1:n_classes
+                        common = struct('model', obj.models{i}, 'overlaps', overlaps);            
+                        scores{i} = run_in_parallel('LSVM.classify_img_parallel', common, images, [], 0, pg, (i-1)/n_classes, 1/n_classes);
+                    end
+                    scores = cat(2, scores{:});                      
                 else            
                     n_classes = length(obj.models);
                     scores = cell(1,n_classes);
@@ -328,13 +331,12 @@ classdef LSVM < ClassifierAPI
                         scores{i} = obj.classify_img(obj.models{i}, images, overlaps);
                         pg.progress(i/n_classes);
                     end
-                    scores = cat(1, scores{:});
+                    scores = cat(2, scores{:});
                 end
                 save(file, 'scores');
             end            
-            scores = scores(:,:,6);  % 0.5 overlap
-            scores = scores';    
-
+            scores = scores(:,:,obj.overlap); 
+            
             assigned_action = zeros(n_img,size(scores, 2));
             for i = 1:n_img
                 [m, j] = max(scores(i,:));
@@ -380,10 +382,10 @@ classdef LSVM < ClassifierAPI
         %------------------------------------------------------------------
         % Describe parameters as text or filename:
         function str = toString(obj)
-            str = sprintf('LSVM (%d components, %d parts)', obj.n_components, obj.n_parts);
+            str = sprintf('LSVM (%d components, %d parts, %dpct overlap)', obj.n_components, obj.n_parts, obj.overlap*10);
         end
         function str = toFileName(obj)
-            str = sprintf('LSVM[%d-%d]', obj.n_components, obj.n_parts);
+            str = sprintf('LSVM[%d-%d-%d]', obj.n_components, obj.n_parts, obj.overlap);
         end
         function str = toName(obj)
             str = sprintf('LSVM(%d-%d)', obj.n_components, obj.n_parts);

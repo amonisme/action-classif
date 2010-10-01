@@ -47,7 +47,7 @@ classdef DetectorAPI
         function feat = run_parallel(detector, Ipath_scale)
             tid = task_open();
 
-            n_img = size(Ipath, 1);
+            n_img = size(Ipath_scale, 1);
             feat = cell(n_img, 1);
             for i=1:n_img
                 task_progress(tid, i/n_img);

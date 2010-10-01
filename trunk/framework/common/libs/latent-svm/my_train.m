@@ -325,7 +325,7 @@ for i = 1:numpos
   if doHOG    
     fwrite(fid, featHOG, 'single');    
   end
-  if doHOG
+  if doBOF
     fwrite(fid, featBOF, 'single');    
   end
   num = num+1;

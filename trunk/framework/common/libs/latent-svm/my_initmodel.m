@@ -55,7 +55,7 @@ if nargin < 7
 end
 
 % add root filter
-[model, symbol, filter] = my_model_addfilter(model, zeros([sz 32]), symmetry, 'A');
+[model, symbol, filter] = my_model_addfilter(model, zeros([sz 32]), symmetry, 'H');
 
 % start non-terminal
 [model, Q] = model_addnonterminal(model);
