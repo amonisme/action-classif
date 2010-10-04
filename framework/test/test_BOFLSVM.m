@@ -1,5 +1,5 @@
 function test_BOFLSVM(db, set)
-    classif = BOFLSVM(256,3,8,'H');
+    classif = BOFLSVM(256,3,8,'A');
     
     if nargin < 2
         set = {'train' 'test'};
